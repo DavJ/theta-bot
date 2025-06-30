@@ -1,0 +1,16 @@
+[project]
+name = "theta_bot"
+version = "0.1.0"
+description = "Theta-based crypto prediction bot"
+authors = [{ name = "David Jaroš et al." }]
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "matplotlib",
+    "statsmodels",
+    "python-binance",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
