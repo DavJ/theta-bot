@@ -1,25 +1,21 @@
-Theta PLL (EKF) Patch
-----------------------
-Nová varianta: **thetaPLL** (EKF/PLL nad rezidui + Kalman trend).
+FFT Refined Patch (pure extrapolation)
+--------------------------------------
+Přidává variantu **fftRefined** (bez Kalman/PLL):
+  • detrend (lineární), Hann okno, zero-padding (4×), RFFT
+  • peak-picking + kvadratická interpolace píku → jemnější frekvence
+  • extrapolace sumy sinů s odhadnutou fází a amplitudou + přičtení trendu
+  • volitelně: damping/shrink, min_period_bars
 
-Model:
-  • Trend (reálná část): Kalman s lokálním lineárním trendem [level,slope].
-  • Oscilace (imaginární část): pro top-N frekvencí běží EKF nad stavem
-      x_i = [A_i, B_i, phi_i, omega_i, domega_i]
-    s nelineární měřením y = Σ (A_i cos(phi_i) + B_i sin(phi_i)).
-  • Inicializace (FFT): ω z FFT píků, φ z arg(Y_k), A/B z |Y_k|.
-
-Spuštění (příklad 15m, 1h + 1d):
+Spuštění (15m, 1h+1d):
   python -m tests_backtest.cli.run_theta_forecast \
     --symbol BTCUSDT --interval 15m --limit 10000 \
-    --variants raw fft thetaPLL \
+    --variants raw fft fftRefined \
     --horizons 1h 1d \
     --window 256 --horizon-alpha 1.0 \
     --fft-topn 8 \
-    --pll-topn 1 --pll-min-period-bars 24 \
-    --pll-qL 1e-4 --pll-qS 1e-5 --pll-r 2e-2 \
-    --pll-qA 1e-5 --pll-qB 1e-5 --pll-qphi 1e-6 --pll-qomega 1e-6 --pll-qdomega 1e-8 --pll-R 1e-2 \
-    --pll-gamma 0.0 --pll-shrink 0.0 \
+    --fft-refined-topn 1 --fft-refined-zero-pad 4 \
+    --fft-refined-min-period-bars 24 \
+    --fft-refined-damping 0.0 --fft-refined-shrink 0.0 \
     --outdir reports_forecast
 
 Vyhodnocení:
@@ -28,6 +24,5 @@ Vyhodnocení:
     --metric MSE --outdir reports_forecast
 
 Tipy:
-  • 1h: min_period_bars 24, pll-gamma 0.0, pll-shrink 0.0 (reaktivní).
-  • 1d: min_period_bars 48–96, pll-gamma 0.05–0.08, pll-shrink 0.1–0.2 (stabilní).
-  • Zpřísnit fázovou stabilitu: snižte pll-qdomega (např. 1e-9) a pll-qomega.
+  • 1h: min_period_bars 24, damping 0.0, shrink 0.0
+  • 1d: min_period_bars 48–96, damping 0.04–0.08, shrink 0.1–0.2
