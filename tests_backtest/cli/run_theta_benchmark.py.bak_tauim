@@ -1,0 +1,328 @@
+
+import os, csv, argparse, numpy as np
+
+from tests_backtest.data.binance_download import download_to_csv
+from tests_backtest.common.transforms import raw_features, wavelet_features
+from tests_backtest.common.transforms_complex import fft_complex
+from tests_backtest.common.transforms_theta import (
+    theta_reim_features, theta_magphase_features
+)
+from tests_backtest.common.transforms_theta_fast import (
+    theta_fft_fast,    # kept for compatibility
+    theta_fft_hybrid,
+    theta_fft_dynamic
+)
+from tests_backtest.common.models import (
+    train_logreg, predict_logreg, Kalman1D,
+    torch_lstm_available, fit_lstm_and_predict
+)
+from tests_backtest.common.models_complex import ComplexKalmanDiag
+from tests_backtest.common.eval import load_csv_rows, simulate_trading
+
+ALLOWED_COMPLEX = ('theta1D', 'theta2D', 'theta3D')
+
+def ema(arr, alpha):
+    if alpha <= 0.0: return arr
+    out = np.zeros_like(arr, dtype=float)
+    s = arr[0]
+    for i,a in enumerate(arr):
+        s = alpha*a + (1-alpha)*s
+        out[i] = s
+    return out
+
+def build_dataset(rows, window, variant, model,
+                  theta_K=16, theta_tau=0.0, theta_tau_re=0.03,
+                  theta_beta_re=0.0, theta_beta_im=0.0,
+                  theta_ridge=1e-3, theta_gs=False):
+    closes = [float(r['c']) for r in rows]
+    feats = []; labels = []; times=[]; highs=[]; lows=[]; closes_meta=[]
+    feats_c = []
+
+    for i in range(window, len(rows)-1):
+        seg = closes[i-window:i]
+
+        if variant == 'raw':
+            f = raw_features(seg)
+
+        elif variant == 'wavelet':
+            f = wavelet_features(seg, levels=3)
+
+        elif variant == 'theta1D':
+            # 1D = čistá FFT (tau_im = 0). Vezmeme top-K komplexní harmonické.
+            z, _ = fft_complex(seg, top_n=theta_K)
+            feats_c.append(z)
+            # přidáme i reálné feature jako fallback pro logreg
+            f = theta_magphase_features(seg, K=theta_K, tau_im=0.0, ridge=theta_ridge, gram=theta_gs)
+
+        elif variant == 'theta2D':
+            # 2D = Gaussovské okno (tau_re>0), bez imag. složky (tau_im=0)
+            z, _ = theta_fft_hybrid(seg, K=theta_K, tau_re=theta_tau_re, tau_im=0.0)
+            feats_c.append(z)
+            f = theta_magphase_features(seg, K=theta_K, tau_im=0.0, ridge=theta_ridge, gram=theta_gs)
+
+        elif variant == 'theta3D':
+            # 3D = 2D + drift (beta_re, beta_im), start s tau_im0 = 0.0
+            z, _ = theta_fft_dynamic(seg, K=theta_K,
+                                     tau_re0=theta_tau_re, tau_im0=0.0,
+                                     beta_re=theta_beta_re, beta_im=theta_beta_im)
+            feats_c.append(z)
+            f = theta_magphase_features(seg, K=theta_K, tau_im=0.0, ridge=theta_ridge, gram=theta_gs)
+
+        else:
+            raise ValueError(f'unknown variant: {variant}')
+
+        feats.append(f)
+        labels.append(1 if closes[i+1] > closes[i] else 0)
+        times.append(int(rows[i]['t'])); highs.append(float(rows[i]['h']))
+        lows.append(float(rows[i]['l'])); closes_meta.append(float(rows[i]['c']))
+
+    X = np.asarray(feats, dtype=float)
+    y = np.asarray(labels, dtype=int)
+    meta = {'times':np.array(times),'highs':np.array(highs),'lows':np.array(lows),'closes':np.array(closes_meta)}
+    Xc = None
+    if len(feats_c) > 0:
+        Xc = np.stack(feats_c, axis=0)  # complex [N, B]
+    return X, y, meta, Xc
+
+def _ckalman_predict_probs(Ztr, Zte):
+    """Robust wrapper: tries different APIs of ComplexKalmanDiag.
+    Fallback: phase-difference heuristic if the class has no fit/predict.
+    Returns probabilities in [0,1] for Zte length.
+    """
+
+    try:
+        ck = ComplexKalmanDiag()
+        if hasattr(ck, 'fit') and hasattr(ck, 'predict'):
+            ck.fit(Ztr)
+            mu_c, _ = ck.predict(Zte)
+        elif hasattr(ck, 'train') and hasattr(ck, 'predict'):
+            ck.train(Ztr)
+            pr = ck.predict(Zte)
+            # Some APIs return only means, unify to array
+            mu_c = pr[0] if isinstance(pr, (tuple, list)) else pr
+        elif hasattr(ck, 'filter'):
+            mu_tr, _ = ck.filter(Ztr)
+            # init with last state and filter test block
+            mu_c, _ = ck.filter(Zte, init_state=mu_tr[-1])
+        else:
+            raise AttributeError("ComplexKalmanDiag has no known API (fit/train/filter). Using fallback.")
+    except Exception:
+        # heuristic fallback: use Zte itself as smoothed mean
+        mu_c = Zte
+
+    ref = mu_c[:, 0] if (np.ndim(mu_c) == 2 and mu_c.shape[1] >= 1) else np.asarray(mu_c).reshape(-1)
+    dphi = np.angle(ref) - np.angle(np.roll(ref, 1))
+    dphi[0] = 0.0
+    # squash to probability
+    p = 1.0/(1.0 + np.exp(-dphi))
+    return p
+
+def walk_forward_eval(rows, variant, model, window=64, train_frac=0.7, step=256,
+                      upper=0.52, lower=0.48, atr_period=14, atr_thresh=0.0,
+                      fee_side=0.00056, slip_side=0.0001, weight=1.0,
+                      ema_prob=0.0,
+                      theta_K=16, theta_tau=0.0, theta_tau_re=0.03,
+                      theta_beta_re=0.0, theta_beta_im=0.0,
+                      theta_ridge=1e-3, theta_gs=False):
+    X, y, meta, Xc_all = build_dataset(
+        rows, window, variant, model,
+        theta_K=theta_K, theta_tau=theta_tau, theta_tau_re=theta_tau_re,
+        theta_beta_re=theta_beta_re, theta_beta_im=theta_beta_im,
+        theta_ridge=theta_ridge, theta_gs=theta_gs
+    )
+    print(f"[debug] variant={variant} model={model} | X={X.shape} y={y.shape} Xc={'None' if Xc_all is None else Xc_all.shape}")
+
+    N = len(y)
+    results = []
+    start = 0
+    while True:
+        end = min(start + step, N)
+        if end - start < 2: break
+        ntr = int((end - start) * train_frac)
+        if ntr < 8:
+            start += step
+            if start >= N: break
+            continue
+
+        Xtr = X[start:end][:ntr]
+        ytr = y[start:end][:ntr]
+        Xte = X[start:end][ntr:]
+        times = meta['times'][start+window:end+window]
+        highs = meta['highs'][start+window:end+window]
+        lows  = meta['lows'][start+window:end+window]
+        closes= meta['closes'][start+window:end+window]
+
+        if model == 'logreg':
+            w, b = train_logreg(Xtr, ytr)
+            p = predict_logreg(Xte, w, b)
+
+        elif model == 'kalman':
+            x = np.array([float(v[0]) for v in Xtr], dtype=float)
+            kf = Kalman1D(); kf.fit(x)
+            x2 = np.array([float(v[0]) for v in Xte], dtype=float)
+            mu, _ = kf.predict(x2)
+            d = np.diff(np.concatenate([mu[:1], mu]))
+            p = 1.0/(1.0 + np.exp(-d))
+
+        elif model == 'ckalman':
+            if Xc_all is None:
+                p = np.zeros(len(Xte))
+            else:
+                Ztr = Xc_all[start:end][:ntr]
+                Zte = Xc_all[start:end][ntr:]
+                p = _ckalman_predict_probs(Ztr, Zte)
+
+        elif model == 'lstm':
+            if not torch_lstm_available():
+                p = np.zeros(len(Xte))
+            else:
+                p = fit_lstm_and_predict(Xtr, ytr, Xte)
+        else:
+            raise ValueError(f'unknown model: {model}')
+
+        p = np.asarray(p, dtype=float)
+        if ema_prob > 0.0:
+            p = ema(p, ema_prob)
+
+        res = simulate_trading(
+            times=times, highs=highs, lows=lows, closes=closes,
+            probs=p, upper=upper, lower=lower,
+            atr_period=atr_period, atr_thresh=atr_thresh,
+            fee_side=fee_side, slip_side=slip_side, weight=weight
+        )
+        results.append(res)
+
+        start += step
+        if start >= N: break
+
+    if not results:
+        return {'runs':0,'sharpe':0.0,'maxdd':0.0,'cagr':0.0,'total_return':0.0,'trades':0,'fees':0.0}
+
+    sharpe = float(np.mean([r.get('sharpe', 0.0) for r in results]))
+    maxdd  = float(np.mean([r.get('maxdd', 0.0)  for r in results]))
+    cagr   = float(np.mean([r.get('cagr', 0.0)   for r in results]))
+    totret = float(np.mean([r.get('total_return', 0.0) for r in results]))
+    trades = int(np.sum([r.get('trades', 0)     for r in results]))
+    fees   = float(np.sum([r.get('fees', 0.0)   for r in results]))
+    return {'runs':len(results),'sharpe':sharpe,'maxdd':maxdd,'cagr':cagr,
+            'total_return':totret,'trades':trades,'fees':fees}
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--symbol', required=True)
+    ap.add_argument('--interval', default='5m')
+    ap.add_argument('--limit', type=int, default=10000)
+    ap.add_argument('--start', type=int, default=None)
+    ap.add_argument('--end', type=int, default=None)
+
+    ap.add_argument('--variants', nargs='+', default=['raw'])
+    ap.add_argument('--models', nargs='+', default=['logreg'])
+
+    ap.add_argument('--window', type=int, default=64)
+    ap.add_argument('--train-frac', type=float, default=0.7)
+    ap.add_argument('--step', type=int, default=256)
+
+    ap.add_argument('--upper', type=float, default=0.52)
+    ap.add_argument('--lower', type=float, default=0.48)
+    ap.add_argument('--upper-grid', default=None)
+    ap.add_argument('--lower-grid', default=None)
+
+    ap.add_argument('--atr-period', type=int, default=14)
+    ap.add_argument('--atr-thresh', type=float, default=0.0)
+    ap.add_argument('--fee-side', type=float, default=0.00056)
+    ap.add_argument('--slip-side', type=float, default=0.0001)
+    ap.add_argument('--weight', type=float, default=1.0)
+    ap.add_argument('--ema-prob', type=float, default=0.0)
+
+    # Theta knobs
+    ap.add_argument('--theta-K', type=int, default=16)
+    ap.add_argument('--theta-tau', type=float, default=0.0,
+                    help='Imag part tau_im (for 1D keep 0.0)')
+    ap.add_argument('--theta-tau-re', type=float, default=0.03,
+                    help='Real part tau_re for Gaussian window (2D/3D)')
+    ap.add_argument('--theta-beta-re', type=float, default=0.0,
+                    help='Drift of tau_re (3D)')
+    ap.add_argument('--theta-beta-im', type=float, default=0.0,
+                    help='Drift of tau_im (3D)')
+    ap.add_argument('--theta-ridge', type=float, default=1e-3)
+    ap.add_argument('--theta-gs', action='store_true')
+
+    ap.add_argument('--outdir', default='reports_theta_benchmark')
+    args = ap.parse_args()
+
+    os.makedirs(args.outdir, exist_ok=True)
+    csv_path = os.path.join(args.outdir, f"e2e_{args.symbol}_{args.interval}.csv")
+    print("[download] ->", csv_path)
+    download_to_csv(args.symbol, args.interval, csv_path, limit=args.limit, start_ms=args.start, end_ms=args.end)
+
+    rows = load_csv_rows(csv_path)
+
+    alias_map = {'1D':'theta1D', '2D':'theta2D', '3D':'theta3D'}
+    args.variants = [alias_map.get(v, v) for v in args.variants]
+
+    upper_grid = [args.upper] if not args.upper_grid else [float(x) for x in args.upper_grid.split(',')]
+    lower_grid = [args.lower] if not args.lower_grid else [float(x) for x in args.lower_grid.split(',')]
+
+    grid_writers = {}
+    def gw(path):
+        if path in grid_writers: return grid_writers[path]
+        f = open(path, 'w', newline='', encoding='utf-8')
+        w = csv.writer(f); w.writerow(['upper','lower','runs','sharpe_mean','maxdd_mean','cagr_mean','total_return_mean','trades_sum','fees_sum'])
+        grid_writers[path] = (f, w); return grid_writers[path]
+
+    results_all = []
+    for variant in args.variants:
+        for model in args.models:
+            if model == 'ckalman' and variant not in ALLOWED_COMPLEX:
+                continue
+            best = None
+            grid_path = os.path.join(args.outdir, f"grid_{variant}_{model}.csv")
+            fgw, wgw = gw(grid_path)
+
+            for up in upper_grid:
+                for lo in lower_grid:
+                    res = walk_forward_eval(
+                        rows, variant, model,
+                        window=args.window, train_frac=args.train_frac, step=args.step,
+                        upper=up, lower=lo,
+                        atr_period=args.atr_period, atr_thresh=args.atr_thresh,
+                        fee_side=args.fee_side, slip_side=args.slip_side, weight=args.weight,
+                        ema_prob=args.ema_prob,
+                        theta_K=args.theta_K, theta_tau=args.theta_tau, theta_tau_re=args.theta_tau_re,
+                        theta_beta_re=args.theta_beta_re, theta_beta_im=args.theta_beta_im,
+                        theta_ridge=args.theta_ridge, theta_gs=args.theta_gs
+                    )
+                    wgw.writerow([up, lo, res.get('runs',0), res.get('sharpe',0.0),
+                                  res.get('maxdd',0.0), res.get('cagr',0.0),
+                                  res.get('total_return',0.0), res.get('trades',0),
+                                  res.get('fees',0.0)])
+                    if (best is None) or (res.get('sharpe', -1e9) > best.get('sharpe', -1e9)):
+                        best = {'variant':variant,'model':model,'upper':up,'lower':lo, **res}
+
+            results_all.append(best if best else {'variant':variant,'model':model,'upper':None,'lower':None})
+
+    for f, _ in grid_writers.values():
+        f.close()
+
+    # Write summary and combined_best
+    sum_path = os.path.join(args.outdir, "summary.md")
+    with open(sum_path, "w", encoding="utf-8") as f:
+        f.write(f"# Theta Benchmark Summary ({args.symbol} {args.interval})\n\n")
+        f.write("| variant | model | runs | sharpe | maxdd | cagr | total_return | trades | fees |\n")
+        f.write("|---|---|---:|---:|---:|---:|---:|---:|---:|\n")
+        for r in results_all:
+            if r is None: continue
+            f.write(f"| {r.get('variant','')} | {r.get('model','')} | {r.get('runs',0)} | {r.get('sharpe',0.0):.3f} | {r.get('maxdd',0.0):.2f} | {r.get('cagr',0.0):.2f} | {r.get('total_return',0.0):.2f} | {r.get('trades',0)} | {r.get('fees',0.0):.2f} |\n")
+
+    best_path = os.path.join(args.outdir, "combined_best.md")
+    with open(best_path, "w", encoding="utf-8") as f:
+        f.write(f"# Theta Benchmark – Best Thresholds ({args.symbol} {args.interval})\n\n")
+        f.write("| variant | model | upper | lower | runs | sharpe | maxdd | cagr | total_return | trades | fees |\n")
+        f.write("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n")
+        for r in results_all:
+            if r is None: continue
+            f.write(f"| {r.get('variant','')} | {r.get('model','')} | {r.get('upper','')} | {r.get('lower','')} | {r.get('runs',0)} | {r.get('sharpe',0.0):.3f} | {r.get('maxdd',0.0):.2f} | {r.get('cagr',0.0):.2f} | {r.get('total_return',0.0):.2f} | {r.get('trades',0)} | {r.get('fees',0.0):.2f} |\n")
+
+
+if __name__ == "__main__":
+    main()

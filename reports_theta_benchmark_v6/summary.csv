@@ -1,0 +1,8 @@
+variant,model,runs,sharpe_mean,maxdd_mean,cagr_mean,total_return_mean,trades_sum,fees_sum
+raw,logreg,1,11.365730153022657,1.020344779205465,-1.0,-0.9994434966070894,12,6.843829901456878
+fft,logreg,1,0.0,0.0,0.0,0.0,2,2.244613544075513
+fft_complex,logreg,1,0.0,0.0,0.0,0.0,0,0.0
+fft_complex,ckalman,1,0.0,0.0,0.0,0.0,0,0.0
+wavelet,logreg,1,-11.690137969176375,1.0139422609890731,-1.0,-1.0000001722297187,12,2.292123522910832
+fft_complex,logreg,1,0.0,0.0,0.0,0.0,0,0.0
+fft_complex,ckalman,1,0.0,0.0,0.0,0.0,0,0.0

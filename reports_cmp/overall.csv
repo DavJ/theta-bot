@@ -1,0 +1,6 @@
+label,variant,model,upper,lower,sharpe,maxdd,cagr,total_return,trades,fees
+raw,raw,logreg,0.504,0.496,0.198,1.0,-1.0,-1.0,46,1.45
+theta1D,,,,,,,,,,
+theta2D,,,,,,,,,,
+theta3D,,,,,,,,,,
+wavelet,wavelet,logreg,0.504,0.496,-7.242,1.0,-1.0,-1.0,28,1.44

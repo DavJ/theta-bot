@@ -1,0 +1,2 @@
+variant,model,upper,lower,runs,sharpe,maxdd,cagr,total_return,trades,fees
+wavelet,logreg,0.504,0.496,1,0.01407574732360493,1.0034037286218283,-1.0,-1.0,30,4.326357693112921
