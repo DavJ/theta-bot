@@ -1,2 +1,0 @@
-variant,model,upper,lower,runs,sharpe,maxdd,cagr,total_return,trades,fees
-theta_complex,ckalman,0.504,0.496,1,0.0,0.0,0.0,0.0,0,0.0

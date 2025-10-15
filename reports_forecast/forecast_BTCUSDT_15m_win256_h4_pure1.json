@@ -1,0 +1,58 @@
+{
+  "args": {
+    "symbol": "BTCUSDT",
+    "interval": "15m",
+    "limit": 10000,
+    "csv": null,
+    "variants": [
+      "raw",
+      "thetaPLL"
+    ],
+    "window": 256,
+    "horizons": [
+      "1h"
+    ],
+    "horizon_alpha": 1.0,
+    "fft_topn": 8,
+    "pll_qL": 5e-05,
+    "pll_qS": 1e-06,
+    "pll_r": 0.02,
+    "pll_topn": 1,
+    "pll_min_period_bars": 24,
+    "pll_qA": 5e-06,
+    "pll_qB": 5e-06,
+    "pll_qphi": 1e-07,
+    "pll_qomega": 1e-07,
+    "pll_qdomega": 1e-09,
+    "pll_R": 0.01,
+    "pll_gamma": 0.0,
+    "pll_shrink": 0.0,
+    "outdir": "reports_forecast"
+  },
+  "debug": {
+    "params": {
+      "window": 256,
+      "horizons": [
+        4
+      ],
+      "horizon_alpha": 1.0,
+      "fft_topn": 8,
+      "thetaPLL": {
+        "qL": 5e-05,
+        "qS": 1e-06,
+        "r": 0.02,
+        "topn": 1,
+        "min_period_bars": 24,
+        "qA": 5e-06,
+        "qB": 5e-06,
+        "qphi": 1e-07,
+        "qomega": 1e-07,
+        "qdomega": 1e-09,
+        "R": 0.01,
+        "gamma": 0.0,
+        "shrink": 0.0
+      }
+    },
+    "n_rows": 9740
+  }
+}
