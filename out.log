@@ -1,0 +1,4 @@
+[download] -> reports_theta_v9_rolling/e2e_BTCUSDT_5m.csv
+[run] fft_complex + ckalman
+[run] theta_complex + ckalman
+Hotovo -> reports_theta_v9_rolling

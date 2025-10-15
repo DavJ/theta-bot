@@ -1,13 +1,17 @@
+
 import os, csv, argparse, numpy as np
 
-from tests_backtest.common.transforms_theta_fast import theta_fft_fast, theta_fft_hybrid, theta_fft_dynamic
 from tests_backtest.data.binance_download import download_to_csv
 from tests_backtest.common.transforms import raw_features, wavelet_features
 from tests_backtest.common.transforms_complex import fft_complex
 from tests_backtest.common.transforms_theta import (
     theta_reim_features, theta_magphase_features
 )
-from tests_backtest.common.transforms_theta_fast import theta_fft_fast, theta_fft_hybrid, theta_fft_dynamic
+from tests_backtest.common.transforms_theta_fast import (
+    theta_fft_fast,    # kept for compatibility
+    theta_fft_hybrid,
+    theta_fft_dynamic
+)
 from tests_backtest.common.models import (
     train_logreg, predict_logreg, Kalman1D,
     torch_lstm_available, fit_lstm_and_predict
@@ -28,7 +32,7 @@ def ema(arr, alpha):
 
 def build_dataset(rows, window, variant, model,
                   theta_K=16, theta_tau=0.0, theta_tau_re=0.03,
-                  theta_phi_scale=0.0, 
+                  theta_beta_re=0.0, theta_beta_im=0.0,
                   theta_ridge=1e-3, theta_gs=False):
     closes = [float(r['c']) for r in rows]
     feats = []; labels = []; times=[]; highs=[]; lows=[]; closes_meta=[]
@@ -48,21 +52,21 @@ def build_dataset(rows, window, variant, model,
             z, _ = fft_complex(seg, top_n=theta_K)
             feats_c.append(z)
             # přidáme i reálné feature jako fallback pro logreg
-            f = theta_magphase_features(seg, K=theta_K, tau_re=0.0, ridge=theta_ridge, gram=theta_gs)
+            f = theta_magphase_features(seg, K=theta_K, tau_im=0.0, ridge=theta_ridge, gram=theta_gs)
 
         elif variant == 'theta2D':
-            # 2D = Gaussovské okno (tau_re>0), bez imag. složky (tau_re=0)
+            # 2D = Gaussovské okno (tau_re>0), bez imag. složky (tau_im=0)
             z, _ = theta_fft_hybrid(seg, K=theta_K, tau_re=theta_tau_re, tau_im=0.0)
             feats_c.append(z)
-            f = theta_magphase_features(seg, K=theta_K, tau_re=0.0, ridge=theta_ridge, gram=theta_gs)
+            f = theta_magphase_features(seg, K=theta_K, tau_im=0.0, ridge=theta_ridge, gram=theta_gs)
 
         elif variant == 'theta3D':
             # 3D = 2D + drift (beta_re, beta_im), start s tau_im0 = 0.0
             z, _ = theta_fft_dynamic(seg, K=theta_K,
                                      tau_re0=theta_tau_re, tau_im0=0.0,
-                                     phi_scale=theta_phi_scale)
+                                     beta_re=theta_beta_re, beta_im=theta_beta_im)
             feats_c.append(z)
-            f = theta_magphase_features(seg, K=theta_K, tau_re=0.0, ridge=theta_ridge, gram=theta_gs)
+            f = theta_magphase_features(seg, K=theta_K, tau_im=0.0, ridge=theta_ridge, gram=theta_gs)
 
         else:
             raise ValueError(f'unknown variant: {variant}')
@@ -118,12 +122,12 @@ def walk_forward_eval(rows, variant, model, window=64, train_frac=0.7, step=256,
                       fee_side=0.00056, slip_side=0.0001, weight=1.0,
                       ema_prob=0.0,
                       theta_K=16, theta_tau=0.0, theta_tau_re=0.03,
-                      theta_phi_scale=0.0, 
+                      theta_beta_re=0.0, theta_beta_im=0.0,
                       theta_ridge=1e-3, theta_gs=False):
     X, y, meta, Xc_all = build_dataset(
         rows, window, variant, model,
         theta_K=theta_K, theta_tau=theta_tau, theta_tau_re=theta_tau_re,
-        theta_phi_scale=theta_phi_scale, 
+        theta_beta_re=theta_beta_re, theta_beta_im=theta_beta_im,
         theta_ridge=theta_ridge, theta_gs=theta_gs
     )
     print(f"[debug] variant={variant} model={model} | X={X.shape} y={y.shape} Xc={'None' if Xc_all is None else Xc_all.shape}")
@@ -231,18 +235,20 @@ def main():
     ap.add_argument('--ema-prob', type=float, default=0.0)
 
     # Theta knobs
-
-    ap.add_argument('--outdir', default='reports_theta_benchmark')
-
-    ap.add_argument('--theta-tau-re', type=float, default=0.03)
-    ap.add_argument('--theta-phi-scale', type=float, default=0.002)
-    ap.add_argument('--theta-K', type=int, default=48)
-    ap.add_argument('--theta-tau', type=float, default=0.12)
+    ap.add_argument('--theta-K', type=int, default=16)
+    ap.add_argument('--theta-tau', type=float, default=0.0,
+                    help='Imag part tau_im (for 1D keep 0.0)')
+    ap.add_argument('--theta-tau-re', type=float, default=0.03,
+                    help='Real part tau_re for Gaussian window (2D/3D)')
+    ap.add_argument('--theta-beta-re', type=float, default=0.0,
+                    help='Drift of tau_re (3D)')
+    ap.add_argument('--theta-beta-im', type=float, default=0.0,
+                    help='Drift of tau_im (3D)')
     ap.add_argument('--theta-ridge', type=float, default=1e-3)
     ap.add_argument('--theta-gs', action='store_true')
-    args = ap.parse_args()
 
-    ap.parse_args()
+    ap.add_argument('--outdir', default='reports_theta_benchmark')
+    args = ap.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
     csv_path = os.path.join(args.outdir, f"e2e_{args.symbol}_{args.interval}.csv")
@@ -283,7 +289,7 @@ def main():
                         fee_side=args.fee_side, slip_side=args.slip_side, weight=args.weight,
                         ema_prob=args.ema_prob,
                         theta_K=args.theta_K, theta_tau=args.theta_tau, theta_tau_re=args.theta_tau_re,
-                        theta_phi_scale=args.theta_phi_scale,
+                        theta_beta_re=args.theta_beta_re, theta_beta_im=args.theta_beta_im,
                         theta_ridge=args.theta_ridge, theta_gs=args.theta_gs
                     )
                     wgw.writerow([up, lo, res.get('runs',0), res.get('sharpe',0.0),

@@ -60,7 +60,7 @@ def build_dataset(rows, window, variant, model,
             # 3D = 2D + drift (beta_re, beta_im), start s tau_im0 = 0.0
             z, _ = theta_fft_dynamic(seg, K=theta_K,
                                      tau_re0=theta_tau_re, tau_im0=0.0,
-                                     phi_scale=theta_phi_scale)
+                                     phi_scale=theta_beta_re)
             feats_c.append(z)
             f = theta_magphase_features(seg, K=theta_K, tau_re=0.0, ridge=theta_ridge, gram=theta_gs)
 
@@ -236,10 +236,6 @@ def main():
 
     ap.add_argument('--theta-tau-re', type=float, default=0.03)
     ap.add_argument('--theta-phi-scale', type=float, default=0.002)
-    ap.add_argument('--theta-K', type=int, default=48)
-    ap.add_argument('--theta-tau', type=float, default=0.12)
-    ap.add_argument('--theta-ridge', type=float, default=1e-3)
-    ap.add_argument('--theta-gs', action='store_true')
     args = ap.parse_args()
 
     ap.parse_args()
@@ -283,7 +279,7 @@ def main():
                         fee_side=args.fee_side, slip_side=args.slip_side, weight=args.weight,
                         ema_prob=args.ema_prob,
                         theta_K=args.theta_K, theta_tau=args.theta_tau, theta_tau_re=args.theta_tau_re,
-                        theta_phi_scale=args.theta_phi_scale,
+                        theta_phi_scale=args.theta_beta_re,
                         theta_ridge=args.theta_ridge, theta_gs=args.theta_gs
                     )
                     wgw.writerow([up, lo, res.get('runs',0), res.get('sharpe',0.0),
