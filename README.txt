@@ -1,32 +1,33 @@
-Theta PLL Guard Patch
-----------------------
-Nová varianta: **thetaPLLGuard** – PLL s ochranami proti rozjezdu fáze:
-  • Gated update: když je inovace > k·σ, zvýší se dočasně měřicí šum (R×boost) a update je jemnější
-  • Limity na |Δω| a |ω̇| (kvadratika fáze se drží na uzdě)
-  • Auto-FFT reseed po N po sobě jdoucích outlierech (krátké okno reziduí)
-  • Post-reset tlumení (gamma/shrink) na pár barů
-  • Trend: Kalman (level+slope)
+Theta OrthoQR Patch
+---------------------
+Přidává variantu **thetaOrthoQR** – ortogonální theta-fit s **váženým QR** a **globálním refitem** po každém kroku (OMP+QR).
+Báze: \(\cos(\omega\,\tau(t)),\ \sin(\omega\,\tau(t))\) s \(\tau(t)=t+i\psi(t)\).
 
-Spuštění (15m, 1h):
+Psi(t):
+  • `--theta-psi-mode const` (default) s `--theta-psi-const`,
+  • `--theta-psi-mode ema_absret` → \(\psi(t)=\text{scale}\cdot\text{EMA}(|\Delta p|)\).
+
+Váhy W:
+  • `--theta-w-alpha 0` → jednotkové váhy,
+  • >0 → W ~ 1 + alpha*EMA(|ret|) (praktický proxy na |dτ/dt|).
+
+Doporučený běh (15m, 1h + 1d):
   python -m tests_backtest.cli.run_theta_forecast \
     --symbol BTCUSDT --interval 15m --limit 10000 \
-    --variants raw thetaPLLGuard \
-    --horizons 1h \
+    --variants raw thetaOrthoQR \
+    --horizons 1h 1d \
     --window 256 --horizon-alpha 1.0 \
-    --pll-topn 1 --pll-min-period-bars 24 \
-    --pll-qL 2e-5 --pll-qS 5e-7 --pll-r 2e-2 \
-    --pll-qA 2e-6 --pll-qB 2e-6 --pll-qphi 1e-7 --pll-qomega 5e-8 --pll-qdomega 1e-10 --pll-R 1e-2 \
-    --pll-guard-k 3.0 --pll-guard-boost 10.0 --pll-guard-max-misses 3 \
-    --pll-reseed-window 96 --pll-reseed-topn 1 \
-    --pll-dw-max 0.02 --pll-d2w-max 0.001 \
-    --pll-gamma 0.0 --pll-shrink 0.0 --pll-post-gamma 0.05 --pll-post-shrink 0.1 --pll-post-len 16 \
+    --ortho-topn 1 --ortho-zero-pad 4 --ortho-min-period-bars 24 --ortho-lam 1e-5 \
+    --theta-psi-mode ema_absret --theta-psi-scale 1.0 --theta-psi-ema 32 --theta-w-alpha 0.5 \
+    --ortho-damping 0.0 --ortho-shrink 0.0 \
     --outdir reports_forecast
 
 Vyhodnocení:
   python -m tests_backtest.cli.eval_theta_forecast \
-    --csv reports_forecast/forecast_BTCUSDT_15m_win256_h4_pure1.csv \
+    --csv reports_forecast/forecast_BTCUSDT_15m_win256_h4-96_pure1.csv \
     --metric MSE --outdir reports_forecast
 
 Poznámky:
-  • Pro 1d zvyšte pll-min-period-bars (48–96), snižte qomega/qdomega, zapněte gamma/shrink.
-  • Pokud reseed nechcete, dejte --pll-reseed-window 0.
+  • OrthoQR dělá **globální** refit (všech dosud vybraných atomů) přes QR. Je to numericky stabilní a férová rekonstrukce (pseudoinverze).
+  • Výběr ω začíná z mřížky (zero-pad FFT), ale fit je v theta-prostoru (cos/sin(ωτ)).
+  • Psi lze držet konstantní nebo „vědomou“: EMA(|ret|). Pro další verzi lze přidat i vlastní ψ(t).

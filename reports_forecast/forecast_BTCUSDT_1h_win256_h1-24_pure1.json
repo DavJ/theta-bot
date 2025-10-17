@@ -1,0 +1,44 @@
+{
+  "args": {
+    "symbol": "BTCUSDT",
+    "interval": "1h",
+    "limit": 10000,
+    "csv": null,
+    "variants": [
+      "raw",
+      "thetaOrtho"
+    ],
+    "window": 256,
+    "horizons": [
+      "1h",
+      "1d"
+    ],
+    "horizon_alpha": 1.0,
+    "ortho_topn": 1,
+    "ortho_zero_pad": 4,
+    "ortho_min_period_bars": 24,
+    "ortho_lam": 1e-05,
+    "ortho_damping": 0.0,
+    "ortho_shrink": 0.0,
+    "outdir": "reports_forecast"
+  },
+  "debug": {
+    "params": {
+      "window": 256,
+      "horizons": [
+        1,
+        24
+      ],
+      "horizon_alpha": 1.0,
+      "thetaOrtho": {
+        "topn": 1,
+        "zero_pad": 4,
+        "min_period_bars": 24,
+        "lam": 1e-05,
+        "damping": 0.0,
+        "shrink": 0.0
+      }
+    },
+    "n_rows": 9720
+  }
+}
