@@ -1,0 +1,55 @@
+*** Begin Patch
+*** Update File: tests_backtest/cli/run_theta_biquat_true.py
+@@
+ def build_roll_forecast(df: pd.DataFrame, variants: List[str], window: int, horizons: List[int],
+                         horizon_alpha: float,
+                         biq_zero_pad: int, biq_min_period_bars: int, biq_lam: float,
+                         biq_mode: str, biq_const, biq_scale, biq_ema,
+                         biq_w_alpha: float, biq_w_ema: int,
+                         biq_topn: int, biq_scan_every: int,
+                         biq_max_coherence: float, biq_max_cond: float,
+                         biq_damping: float, biq_shrink: float,
+-                        log_steps: bool):
++                        log_steps: bool,
++                        post_kalman: bool=False,
++                        post_kalman_r_mult: float=1.0,
++                        post_kalman_q_mult: float=0.10,
++                        post_scale: float=1.0):
+@@
+-    rows = []
++    rows = []
+     logs = []
++    # --- Kalman state per horizon (random-walk model) ---
++    kf_state = {H: {'m': None, 'P': None} for H in horizons}
++
++    def kf_update(H, meas, local_var):
++        st = kf_state[H]
++        if st['m'] is None:
++            st['m'] = float(meas)
++            st['P'] = float(local_var) if local_var>0 else 1.0
++            return st['m']
++        Q = post_kalman_q_mult * post_kalman_r_mult * max(local_var, 1e-12)
++        R = post_kalman_r_mult * max(local_var, 1e-12)
++        m_pred = st['m']
++        P_pred = st['P'] + Q
++        K = P_pred / (P_pred + R)
++        m = m_pred + K * (meas - m_pred)
++        P = (1.0 - K) * P_pred
++        st['m'], st['P'] = float(m), float(P)
++        return st['m']
+@@
+             if 'thetaBiquatTrue' in variants:
+                 v, dbg = forecast_theta_biquat_true(
+@@
+                 key = f'pred_thetaBiquatTrue_h{H}'
+-                row[key] = float(horizon_alpha*v + (1.0-horizon_alpha)*row['close'])
++                base_pred = float(horizon_alpha*v + (1.0-horizon_alpha)*row['close'])
++                if post_scale != 1.0:
++                    base_pred = float(row['close'] + post_scale * (base_pred - row['close']))
++                if post_kalman:
++                    diffs = np.diff(w).astype(float)
++                    local_var = float(np.var(diffs)) if diffs.size>0 else 0.0
++                    base_pred = float(kf_update(H, base_pred, local_var))
++                row[key] = base_pred
+                 log_row['entries'][key] = dbg
+*** End Patch

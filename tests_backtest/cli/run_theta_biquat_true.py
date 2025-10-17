@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Theta Biquaternionic TRUE (BCH-2) — with weighted-QR ortho guards + Kalman/post-scale
+-------------------------------------------------------------------------------------
+Blocks (2 cols each: cos, sin): time, lin_psi, lin_phi, lin_xi, quad_xx, quad_yy, quad_zz, cross_xy, cross_xz, cross_yz
+Selection: block-OMP with weighted-QR refit and guards (coherence μ, condition κ)
+Post-proc: optional extra post_scale (shrink) and 1D Kalman smoothing across rolling predictions per horizon.
+
+Outputs stay compatible with your evaluators: pred_raw_h*, pred_thetaBiquatTrue_h*
+"""
 from __future__ import annotations
 import argparse, json, math, os
 from pathlib import Path
@@ -8,10 +17,11 @@ import numpy as np
 import pandas as pd
 
 try:
-    import requests
+    import requests  # optional (Binance)
 except Exception:
     requests = None
 
+# ---------------- IO helpers ----------------
 def parse_interval_to_minutes(interval: str) -> int:
     s = interval.strip().lower()
     num_str = ''.join(ch for ch in s if ch.isdigit())
@@ -101,6 +111,7 @@ def load_or_download(symbol: str, interval: str, limit: int, csv_path: Optional[
     df.to_csv(cache, index=False)
     return df
 
+# ---------------- math helpers ----------------
 def _lin_trend(y: np.ndarray):
     n = len(y)
     if n < 2: return 0.0, float(y[-1]) if n else 0.0
@@ -124,6 +135,7 @@ def ema(arr: np.ndarray, alpha: float) -> np.ndarray:
 def forecast_raw(window_vals: np.ndarray, horizon: int) -> float:
     return float(window_vals[-1])
 
+# ---------------- biquat components ----------------
 def parse_triplet(s: str, default: Tuple[float,float,float]) -> Tuple[float,float,float]:
     try:
         p = [x.strip() for x in s.split(',')]
@@ -135,7 +147,7 @@ def parse_triplet(s: str, default: Tuple[float,float,float]) -> Tuple[float,floa
 def make_biq_components(y: np.ndarray, mode: str,
                         const_triplet: Tuple[float,float,float],
                         scale_triplet: Tuple[float,float,float],
-                        ema_triplet: Tuple[int,int,int]):
+                        ema_triplet: Tuple[int,int,int]) -> Tuple[np.ndarray,np.ndarray,np.ndarray]:
     n = len(y)
     dy = np.diff(y, prepend=y[0])
     absret = np.abs(dy)
@@ -161,6 +173,7 @@ def make_weights(y: np.ndarray, w_alpha: float, w_ema: int) -> np.ndarray:
     a = 2.0/max(1, w_ema+1)
     return 1.0 + w_alpha * ema(absret, a)
 
+# ---------------- block factory ----------------
 def trig2(arg: np.ndarray) -> np.ndarray:
     c = np.cos(arg); s = np.sin(arg)
     return np.column_stack([c, s])
@@ -184,10 +197,15 @@ BLOCK_KINDS = ['time','lin_psi','lin_phi','lin_xi','quad_xx','quad_yy','quad_zz'
 def weighted_qr(C: np.ndarray, y: np.ndarray, w: np.ndarray, lam: float=0.0):
     W = np.sqrt(w)[:,None]
     Cw = C * W; yw = y[:,None] * W
-    if lam>0.0:
+    if lam>0.0 and C.shape[1]>0:
         d = C.shape[1]
         Cw = np.vstack([Cw, np.sqrt(lam)*np.eye(d)])
         yw = np.vstack([yw, np.zeros((d,1))])
+    if Cw.shape[1]==0:
+        # no regressors
+        resid = yw
+        rss = float((resid.T @ resid).ravel()[0])
+        return np.zeros(0), rss
     Q,R = np.linalg.qr(Cw, mode='reduced')
     beta = np.linalg.solve(R, Q.T @ yw)
     resid = yw - Cw @ beta
@@ -197,6 +215,8 @@ def weighted_qr(C: np.ndarray, y: np.ndarray, w: np.ndarray, lam: float=0.0):
 def gram_and_metrics(C: np.ndarray, w: np.ndarray):
     W = np.sqrt(w)[:,None]
     Cw = C * W
+    if Cw.shape[1]==0:
+        return np.zeros((0,0)), 0.0, 1.0
     G = Cw.T @ Cw
     diag = np.sqrt(np.maximum(1e-18, np.diag(G)))
     if G.shape[0] <= 1:
@@ -208,6 +228,7 @@ def gram_and_metrics(C: np.ndarray, w: np.ndarray):
     kappa = float((s[0]/max(s[-1],1e-18)) if s.size else 1.0)
     return G, mu, kappa
 
+# ---------------- OMP with guards ----------------
 def omp_biquat(y: np.ndarray, t: np.ndarray, psi: np.ndarray, phi: np.ndarray, xi: np.ndarray,
                omega_grid: np.ndarray,
                w: np.ndarray, lam: float, topn: int, scan_every:int,
@@ -217,7 +238,7 @@ def omp_biquat(y: np.ndarray, t: np.ndarray, psi: np.ndarray, phi: np.ndarray, x
     n = len(y)
     active = []
     C_sel = np.zeros((n,0))
-    _, rss_best = weighted_qr(C_sel if C_sel.size else np.zeros((n,0)), r, w, lam=0.0)
+    _, rss_best = weighted_qr(C_sel, r, w, lam=0.0)
     steps_log = []
     for it in range(max(1, topn)):
         best = None; best_gain = 0.0; best_mu=None; best_kappa=None
@@ -301,6 +322,7 @@ def forecast_theta_biquat_true(y: np.ndarray, horizon: int,
     debug = {'active': [{'kind':k, 'omega':om} for (k,om) in active], 'steps': steps}
     return float(y_hat), debug
 
+# ---------------- Rolling runner ----------------
 def build_roll_forecast(df: pd.DataFrame, variants: List[str], window: int, horizons: List[int],
                         horizon_alpha: float,
                         biq_zero_pad: int, biq_min_period_bars: int, biq_lam: float,
@@ -309,7 +331,11 @@ def build_roll_forecast(df: pd.DataFrame, variants: List[str], window: int, hori
                         biq_topn: int, biq_scan_every: int,
                         biq_max_coherence: float, biq_max_cond: float,
                         biq_damping: float, biq_shrink: float,
-                        log_steps: bool):
+                        log_steps: bool,
+                        post_kalman: bool=False,
+                        post_kalman_r_mult: float=1.0,
+                        post_kalman_q_mult: float=0.10,
+                        post_scale: float=1.0):
     ts = pd.to_datetime(df['timestamp'])
     closes = df['close'].astype(float).to_numpy()
     n = len(closes)
@@ -319,13 +345,36 @@ def build_roll_forecast(df: pd.DataFrame, variants: List[str], window: int, hori
         raise RuntimeError(f'Nedostatek dat: n={n}, window={window}, horizons={horizons}')
     rows = []
     logs = []
-    for t in range(start, end):
-        w = closes[t-window:t]
-        row = {'timestamp': ts.iloc[t].isoformat(), 'close': float(closes[t])}
-        log_row = {'timestamp': ts.iloc[t].isoformat(), 'entries': {}}
+    # --- Kalman state per horizon (random-walk model) ---
+    kf_state = {H: {'m': None, 'P': None} for H in horizons}
+
+    def kf_update(H, meas, local_var):
+        st = kf_state[H]
+        # Initialize if needed
+        if st['m'] is None:
+            st['m'] = float(meas)
+            st['P'] = float(local_var) if local_var>0 else 1.0
+            return st['m']
+        # Model: x_t = x_{t-1} + w,  y_t = x_t + v
+        R = post_kalman_r_mult * max(local_var, 1e-12)
+        Q = post_kalman_q_mult * R
+        # Predict
+        m_pred = st['m']
+        P_pred = st['P'] + Q
+        # Update
+        K = P_pred / (P_pred + R)
+        m = m_pred + K * (meas - m_pred)
+        P = (1.0 - K) * P_pred
+        st['m'], st['P'] = float(m), float(P)
+        return st['m']
+
+    for t_idx in range(start, end):
+        w = closes[t_idx-window:t_idx]
+        row = {'timestamp': ts.iloc[t_idx].isoformat(), 'close': float(closes[t_idx])}
+        log_row = {'timestamp': ts.iloc[t_idx].isoformat(), 'entries': {}}
         for H in horizons:
             if 'raw' in variants:
-                v = float(w[-1])
+                v = forecast_raw(w, H)
                 row[f'pred_raw_h{H}'] = float(horizon_alpha*v + (1.0-horizon_alpha)*row['close'])
             if 'thetaBiquatTrue' in variants:
                 v, dbg = forecast_theta_biquat_true(
@@ -339,7 +388,17 @@ def build_roll_forecast(df: pd.DataFrame, variants: List[str], window: int, hori
                     log_steps=log_steps
                 )
                 key = f'pred_thetaBiquatTrue_h{H}'
-                row[key] = float(horizon_alpha*v + (1.0-horizon_alpha)*row['close'])
+                base_pred = float(horizon_alpha*v + (1.0-horizon_alpha)*row['close'])
+                # Extra post scaling (relative to current close)
+                if post_scale != 1.0:
+                    base_pred = float(row['close'] + post_scale * (base_pred - row['close']))
+                # Optional Kalman smoothing across rolling predictions
+                if post_kalman:
+                    # local variance proxy: variance of last window diffs
+                    diffs = np.diff(w).astype(float)
+                    local_var = float(np.var(diffs)) if diffs.size>0 else 0.0
+                    base_pred = float(kf_update(H, base_pred, local_var))
+                row[key] = base_pred
                 log_row['entries'][key] = dbg
         rows.append(row)
         if log_steps:
@@ -353,21 +412,25 @@ def build_roll_forecast(df: pd.DataFrame, variants: List[str], window: int, hori
             'topn':biq_topn,'scan_every':biq_scan_every,
             'max_coherence':biq_max_coherence,'max_cond':biq_max_cond,
             'damping':biq_damping,'shrink':biq_shrink,
-            'log_steps': log_steps}},
+            'log_steps': log_steps},
+        'post': {'post_kalman': post_kalman, 'post_kalman_r_mult': post_kalman_r_mult,
+                 'post_kalman_q_mult': post_kalman_q_mult, 'post_scale': post_scale}},
         'n_rows': len(rows),
         'logs': logs if log_steps else None}
     return rows, debug
 
+# ---------------- CLI ----------------
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description='Theta Biquaternionic TRUE (BCH-2) with orthogonalization guards')
+    p = argparse.ArgumentParser(description='Theta Biquaternionic TRUE (BCH-2) with ortho guards + post Kalman/scale')
     p.add_argument('--symbol', required=True)
     p.add_argument('--interval', required=True)
     p.add_argument('--limit', type=int, default=10000)
-    p.add_argument('--csv', type=str, default=None)
+    p.add_argument('--csv', type=str, default=None, help='Optional CSV with OHLCV; otherwise downloads from Binance')
     p.add_argument('--variants', nargs='+', default=['raw','thetaBiquatTrue'])
     p.add_argument('--window', type=int, default=256)
     p.add_argument('--horizons', nargs='+', default=['1h'])
     p.add_argument('--horizon-alpha', type=float, default=1.0, dest='horizon_alpha')
+    # biquat true params
     p.add_argument('--biq-zero-pad', type=int, default=4, dest='biq_zero_pad')
     p.add_argument('--biq-min-period-bars', type=int, default=24, dest='biq_min_period_bars')
     p.add_argument('--biq-lam', type=float, default=1e-5, dest='biq_lam')
@@ -383,7 +446,15 @@ def parse_args() -> argparse.Namespace:
     p.add_argument('--biq-max-cond', type=float, default=1e4, dest='biq_max_cond')
     p.add_argument('--biq-damping', type=float, default=0.0, dest='biq_damping')
     p.add_argument('--biq-shrink', type=float, default=0.0, dest='biq_shrink')
-    p.add_argument('--log-steps', action='store_true')
+    p.add_argument('--log-steps', action='store_true', help='Log active blocks per step into JSON')
+    # --- post-processing (stabilizace predikce) ---
+    p.add_argument('--post-kalman', action='store_true', help='Apply simple RW Kalman smoothing across rolling predictions per horizon')
+    p.add_argument('--post-kalman-r-mult', type=float, default=1.0, dest='post_kalman_r_mult',
+                   help='Measurement noise multiplier R relative to local variance')
+    p.add_argument('--post-kalman-q-mult', type=float, default=0.10, dest='post_kalman_q_mult',
+                   help='Process noise multiplier Q relative to R (Q = q_mult * R)')
+    p.add_argument('--post-scale', type=float, default=1.0, dest='post_scale',
+                   help='Extra shrink on deviation from close: y = close + post_scale*(y-close)')
     p.add_argument('--outdir', type=str, default='reports_forecast')
     return p.parse_args()
 
@@ -396,6 +467,13 @@ def main():
         df = normalize_ohlcv(pd.read_csv(args.csv))
     else:
         df = load_or_download(args.symbol, args.interval, args.limit, None, outdir)
+    def parse_triplet(s: str, default):
+        try:
+            p = [x.strip() for x in s.split(',')]
+            if len(p)!=3: return default
+            return (float(p[0]), float(p[1]), float(p[2]))
+        except Exception:
+            return default
     const_triplet = tuple(float(x) for x in parse_triplet(args.biq_const, (0.0,0.0,0.0)))
     scale_triplet = tuple(float(x) for x in parse_triplet(args.biq_scale, (1.0,0.5,0.5)))
     ema_triplet   = tuple(int(x)   for x in parse_triplet(args.biq_ema, (32,64,32)))
@@ -407,7 +485,11 @@ def main():
         args.biq_topn, args.biq_scan_every,
         args.biq_max_coherence, args.biq_max_cond,
         args.biq_damping, args.biq_shrink,
-        args.log_steps
+        args.log_steps,
+        post_kalman=args.post_kalman,
+        post_kalman_r_mult=args.post_kalman_r_mult,
+        post_kalman_q_mult=args.post_kalman_q_mult,
+        post_scale=args.post_scale
     )
     base = f"{args.symbol}_{args.interval}_win{args.window}_h{'-'.join(map(str,horizons))}_pure{int(args.horizon_alpha==1.0)}"
     csv_path = outdir / f"forecast_{base}.csv"

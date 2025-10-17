@@ -1,0 +1,24 @@
+*** Begin Patch
+*** Update File: tests_backtest/cli/run_theta_biquat_true.py
+@@
+ def main():
+     args = parse_args()
+@@
+-    rows, debug = build_roll_forecast(
++    rows, debug = build_roll_forecast(
+         df, args.variants, args.window, horizons, args.horizon_alpha,
+         args.biq_zero_pad, args.biq_min_period_bars, args.biq_lam,
+         args.biq_mode, const_triplet, scale_triplet, ema_triplet,
+         args.biq_w_alpha, args.biq_w_ema,
+         args.biq_topn, args.biq_scan_every,
+         args.biq_max_coherence, args.biq_max_cond,
+-        args.biq_damping, args.biq_shrink,
+-        args.log_steps
++        args.biq_damping, args.biq_shrink,
++        args.log_steps,
++        post_kalman=args.post_kalman,
++        post_kalman_r_mult=args.post_kalman_r_mult,
++        post_kalman_q_mult=args.post_kalman_q_mult,
++        post_scale=args.post_scale
+     )
+*** End Patch

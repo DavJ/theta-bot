@@ -1,0 +1,16 @@
+*** Begin Patch
+*** Update File: tests_backtest/cli/run_theta_biquat_true.py
+@@
+     p.add_argument('--biq-shrink', type=float, default=0.0, dest='biq_shrink')
+     p.add_argument('--log-steps', action='store_true')
++    # --- post-processing (stabilizace predikce) ---
++    p.add_argument('--post-kalman', action='store_true', help='Apply simple RW Kalman smoothing across rolling predictions per horizon')
++    p.add_argument('--post-kalman-r-mult', type=float, default=1.0, dest='post_kalman_r_mult',
++                   help='Measurement noise multiplier R relative to local variance')
++    p.add_argument('--post-kalman-q-mult', type=float, default=0.10, dest='post_kalman_q_mult',
++                   help='Process noise multiplier Q relative to R (Q = q_mult * R)')
++    p.add_argument('--post-scale', type=float, default=1.0, dest='post_scale',
++                   help='Extra shrink on deviation from close: y = close + post_scale*(y-close)')
+     p.add_argument('--outdir', type=str, default='reports_forecast')
+     return p.parse_args()
+*** End Patch

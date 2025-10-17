@@ -1,0 +1,592 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Runner: thetaBiquatTrue + thetaMixSVD
+=====================================
+- Keeps existing thetaBiquatTrue pipeline (block-OMP with guards).
+- Adds thetaMixSVD: SVD-orthogonalized library of theta-like modes (phased trig on biquat arguments),
+  model selection by BIC (or holdout), adaptive top-k.
+"""
+from __future__ import annotations
+import argparse, json, math, os
+from pathlib import Path
+from typing import Dict, List, Tuple, Optional
+import numpy as np
+import pandas as pd
+
+try:
+    import requests
+except Exception:
+    requests = None
+
+# ------------------ Helpers (shared) ------------------
+def parse_interval_to_minutes(interval: str) -> int:
+    s = interval.strip().lower()
+    num_str = ''.join(ch for ch in s if ch.isdigit())
+    unit = ''.join(ch for ch in s if ch.isalpha())
+    if not num_str or not unit:
+        raise ValueError(f'Invalid interval: {interval}')
+    num = int(num_str)
+    return {'m':num,'h':60*num,'d':1440*num,'w':10080*num}[unit]
+
+def parse_horizons(tokens: List[str], base_minutes: int) -> List[int]:
+    out = []
+    for t in tokens:
+        t = t.strip().lower()
+        if t.isdigit():
+            out.append(int(t)); continue
+        num_str = ''.join(ch for ch in t if ch.isdigit())
+        unit = ''.join(ch for ch in t if ch.isalpha())
+        if not num_str or not unit:
+            raise ValueError(f'Invalid horizon token: {t}')
+        num = int(num_str)
+        minutes = {'m':num,'h':60*num,'d':1440*num,'w':10080*num}[unit]
+        bars = max(1, round(minutes/base_minutes))
+        out.append(bars)
+    return sorted(set(out))
+
+def normalize_ohlcv(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    short2long = {'t':'timestamp','o':'open','h':'high','l':'low','c':'close','v':'volume'}
+    if any(c in df.columns for c in short2long):
+        df.rename(columns={k:v for k,v in short2long.items() if k in df.columns}, inplace=True)
+    alt = {'Timestamp':'timestamp','Time':'timestamp','open_time':'timestamp',
+           'Open':'open','High':'high','Low':'low','Close':'close','Volume':'volume'}
+    for k,v in alt.items():
+        if k in df.columns and v not in df.columns:
+            df.rename(columns={k:v}, inplace=True)
+    req = ['timestamp','open','high','low','close','volume']
+    missing = [c for c in req if c not in df.columns]
+    if missing:
+        raise RuntimeError(f'Missing columns {missing}')
+    ts = pd.to_datetime(df['timestamp'], errors='coerce', unit='ms')
+    if ts.isna().all():
+        ts = pd.to_datetime(df['timestamp'], errors='coerce')
+    df['timestamp'] = ts
+    for c in ['open','high','low','close','volume']:
+        df[c] = pd.to_numeric(df[c], errors='coerce')
+    return df.dropna(subset=['timestamp','close']).sort_values('timestamp').reset_index(drop=True)
+
+def fetch_klines_binance(symbol: str, interval: str, limit: int) -> pd.DataFrame:
+    if requests is None:
+        raise RuntimeError('requests not available; use --csv')
+    url = 'https://api.binance.com/api/v3/klines'
+    max_batch = 1000
+    remaining = int(limit)
+    rows = []
+    params = {'symbol': symbol.upper(), 'interval': interval, 'limit': min(max_batch, remaining)}
+    r = requests.get(url, params=params, timeout=30); r.raise_for_status()
+    batch = r.json()
+    if not batch: raise RuntimeError('Empty klines response')
+    rows.extend(batch); remaining -= len(batch)
+    end_time = int(batch[0][0]) - 1
+    while remaining > 0:
+        params = {'symbol': symbol.upper(), 'interval': interval, 'limit': min(max_batch, remaining), 'endTime': end_time}
+        r = requests.get(url, params=params, timeout=30); r.raise_for_status()
+        batch = r.json()
+        if not batch: break
+        rows.extend(batch); remaining -= len(batch)
+        end_time = int(batch[0][0]) - 1
+    rows.reverse()
+    out = [{
+        'timestamp': int(k[0]),
+        'open': float(k[1]),
+        'high': float(k[2]),
+        'low':  float(k[3]),
+        'close': float(k[4]),
+        'volume': float(k[5]),
+    } for k in rows]
+    return normalize_ohlcv(pd.DataFrame(out))
+
+def ema(arr: np.ndarray, alpha: float) -> np.ndarray:
+    if len(arr)==0: return arr
+    out = np.empty_like(arr, dtype=float)
+    s=0.0; a=float(alpha); one=1.0-a
+    for i,v in enumerate(arr):
+        s = float(v) if i==0 else a*float(v)+one*s
+        out[i]=s
+    return out
+
+def _lin_trend(y: np.ndarray):
+    n = len(y)
+    if n < 2: return 0.0, float(y[-1]) if n else 0.0
+    x = np.arange(n, dtype=float)
+    xm, ym = x.mean(), y.mean()
+    denom = np.sum((x-xm)**2)
+    if denom == 0: return 0.0, float(ym)
+    a = np.sum((x-xm)*(y-ym))/denom
+    b = ym - a*xm
+    return float(a), float(b)
+
+def make_biq_components(y: np.ndarray, mode: str,
+                        const_triplet: Tuple[float,float,float],
+                        scale_triplet: Tuple[float,float,float],
+                        ema_triplet: Tuple[int,int,int]) -> Tuple[np.ndarray,np.ndarray,np.ndarray]:
+    n = len(y)
+    dy = np.diff(y, prepend=y[0])
+    absret = np.abs(dy)
+    if mode == 'const':
+        psi = np.full(n, const_triplet[0], dtype=float)
+        phi = np.full(n, const_triplet[1], dtype=float)
+        xi  = np.full(n, const_triplet[2], dtype=float)
+        return psi, phi, xi
+    a1 = 2.0/max(1, ema_triplet[0]+1)
+    a2 = 2.0/max(1, ema_triplet[1]+1)
+    a3 = 2.0/max(1, ema_triplet[2]+1)
+    s1 = scale_triplet[0] * ema(absret, a1)
+    s2 = scale_triplet[1] * ema(absret**2, a2)
+    s3 = scale_triplet[2] * ema(absret - ema(absret, a1), a3)
+    denom = max(1e-12, np.nanmean(np.abs(y)))
+    psi = s1/denom; phi = s2/(denom**2); xi = s3/denom
+    return psi, phi, xi
+
+def make_weights(y: np.ndarray, w_alpha: float, w_ema: int) -> np.ndarray:
+    if w_alpha<=0: return np.ones(len(y), dtype=float)
+    dy = np.diff(y, prepend=y[0])
+    absret = np.abs(dy) / max(1e-12, np.nanmean(np.abs(y)))
+    a = 2.0/max(1, w_ema+1)
+    return 1.0 + w_alpha * ema(absret, a)
+
+def forecast_raw(window_vals: np.ndarray, horizon: int) -> float:
+    return float(window_vals[-1])
+
+# ------------------ thetaBiquatTrue (trim) ------------------
+def trig2(arg: np.ndarray) -> np.ndarray:
+    c = np.cos(arg); s = np.sin(arg)
+    return np.column_stack([c, s])
+
+BLOCK_KINDS = ['time','lin_psi','lin_phi','lin_xi','quad_xx','quad_yy','quad_zz','cross_xy','cross_xz','cross_yz']
+
+def make_block(kind: str, omega: float,
+               t: np.ndarray, psi: np.ndarray, phi: np.ndarray, xi: np.ndarray) -> np.ndarray:
+    if kind == 'time':      return trig2(omega * t)
+    if kind == 'lin_psi':   return trig2(omega * psi)
+    if kind == 'lin_phi':   return trig2(omega * phi)
+    if kind == 'lin_xi':    return trig2(omega * xi)
+    if kind == 'quad_xx':   return trig2(omega * (psi**2))
+    if kind == 'quad_yy':   return trig2(omega * (phi**2))
+    if kind == 'quad_zz':   return trig2(omega * (xi**2))
+    if kind == 'cross_xy':  return trig2(omega * (psi*phi))
+    if kind == 'cross_xz':  return trig2(omega * (psi*xi))
+    if kind == 'cross_yz':  return trig2(omega * (phi*xi))
+    raise ValueError(f'Unknown block kind: {kind}')
+
+def weighted_qr(C: np.ndarray, y: np.ndarray, w: np.ndarray, lam: float=0.0):
+    W = np.sqrt(w)[:,None]
+    Cw = C * W; yw = y[:,None] * W
+    if lam>0.0 and C.shape[1]>0:
+        d = C.shape[1]
+        Cw = np.vstack([Cw, np.sqrt(lam)*np.eye(d)])
+        yw = np.vstack([yw, np.zeros((d,1))])
+    if Cw.shape[1]==0:
+        resid = yw
+        rss = float((resid.T @ resid).ravel()[0])
+        return np.zeros(0), rss
+    Q,R = np.linalg.qr(Cw, mode='reduced')
+    beta = np.linalg.solve(R, Q.T @ yw)
+    resid = yw - Cw @ beta
+    rss = float((resid.T @ resid).ravel()[0])
+    return beta.ravel(), rss
+
+def gram_and_metrics(C: np.ndarray, w: np.ndarray):
+    W = np.sqrt(w)[:,None]
+    Cw = C * W
+    if Cw.shape[1]==0:
+        return np.zeros((0,0)), 0.0, 1.0
+    G = Cw.T @ Cw
+    diag = np.sqrt(np.maximum(1e-18, np.diag(G)))
+    if G.shape[0] <= 1:
+        mu = 0.0
+    else:
+        Gnorm = G / (diag[:,None]*diag[None,:] + 1e-18)
+        mu = float(np.max(np.abs(Gnorm - np.eye(G.shape[0]))))
+    s = np.linalg.svd(G, compute_uv=False)
+    kappa = float((s[0]/max(s[-1],1e-18)) if s.size else 1.0)
+    return G, mu, kappa
+
+def omp_biquat(y, t, psi, phi, xi, omega_grid, w, lam, topn, scan_every, max_coherence, max_cond):
+    a,b = _lin_trend(y)
+    r = y - (a*t + b)
+    n = len(y)
+    active = []
+    C_sel = np.zeros((n,0))
+    _, rss_best = weighted_qr(C_sel, r, w, lam=0.0)
+    for it in range(max(1, topn)):
+        best = None; best_gain = 0.0
+        for idx, om in enumerate(omega_grid):
+            if idx % max(1,scan_every) != 0: continue
+            for kind in BLOCK_KINDS:
+                Cb = make_block(kind, om, t, psi, phi, xi)
+                C_try = np.hstack([C_sel, Cb]) if C_sel.size else Cb
+                _, mu, kappa = gram_and_metrics(C_try, w)
+                if mu > max_coherence or kappa > max_cond:
+                    continue
+                _, rss_try = weighted_qr(C_try, r, w, lam=lam if C_sel.size else 0.0)
+                gain = rss_best - rss_try
+                if gain > best_gain:
+                    best_gain = gain; best = (kind, float(om), C_try, rss_try)
+        if best is None or best_gain <= 0.0: break
+        kind, om, C_sel, rss_best = best
+        active.append((kind, om))
+    if not active:
+        return active, np.zeros(0), a, b
+    C_final = np.hstack([make_block(kind, om, t, psi, phi, xi) for (kind,om) in active])
+    beta, _ = weighted_qr(C_final, r, w, lam=lam)
+    return active, beta, a, b
+
+def synth_from_blocks(active, beta, t_val, psi_val, phi_val, xi_val) -> float:
+    assert len(beta) == 2*len(active)
+    total = 0.0
+    for k,(kind,om) in enumerate(active):
+        if kind == 'time':      arg = om * t_val
+        elif kind == 'lin_psi': arg = om * psi_val
+        elif kind == 'lin_phi': arg = om * phi_val
+        elif kind == 'lin_xi':  arg = om * xi_val
+        elif kind == 'quad_xx': arg = om * (psi_val**2)
+        elif kind == 'quad_yy': arg = om * (phi_val**2)
+        elif kind == 'quad_zz': arg = om * (xi_val**2)
+        elif kind == 'cross_xy':arg = om * (psi_val*phi_val)
+        elif kind == 'cross_xz':arg = om * (psi_val*xi_val)
+        elif kind == 'cross_yz':arg = om * (phi_val*xi_val)
+        else: continue
+        c = math.cos(arg); s = math.sin(arg)
+        a = beta[2*k]; b = beta[2*k+1]
+        total += a*c + b*s
+    return float(total)
+
+def forecast_theta_biquat_true(y: np.ndarray, horizon: int,
+                               zero_pad: int, min_period_bars: int, lam: float,
+                               biq_mode: str, biq_const, biq_scale, biq_ema,
+                               w_alpha: float, w_ema: int,
+                               topn: int, scan_every: int,
+                               max_coherence: float, max_cond: float,
+                               damping: float, shrink: float):
+    y = y.astype(float); n = len(y); t = np.arange(n, dtype=float)
+    psi,phi,xi = make_biq_components(y, biq_mode, biq_const, biq_scale, biq_ema)
+    w = make_weights(y, w_ema=w_ema, w_alpha=w_alpha)
+    N = int(n*max(1,zero_pad))
+    freqs = np.fft.rfftfreq(N, d=1.0)
+    mask = freqs>0
+    if min_period_bars>0:
+        mask &= (1.0/np.maximum(freqs,1e-12)) >= min_period_bars
+    freqs = freqs[mask]
+    if freqs.size==0: 
+        return float(y[-1])
+    omega_grid = 2.0*np.pi*freqs
+    active, beta, a, b = omp_biquat(
+        y, t, psi, phi, xi, omega_grid, w, lam=lam, topn=topn, scan_every=scan_every,
+        max_coherence=max_coherence, max_cond=max_cond
+    )
+    t_f = (n-1) + horizon
+    psi_f, phi_f, xi_f = psi[-1], phi[-1], xi[-1]
+    synth = synth_from_blocks(active, beta, t_f, psi_f, phi_f, xi_f)
+    if shrink>0.0: synth *= (1.0 - shrink)
+    if damping>0.0: synth *= float(np.exp(-damping*horizon))
+    y_hat = synth + (a*(n-1+horizon)+b)
+    return float(y_hat)
+
+# ------------------ thetaMixSVD ------------------
+def build_theta_mix_library(t, psi, phi, xi, omegas, arg_kinds, phases):
+    cols = []
+    meta = []
+    def arg_of(kind):
+        if kind=='time': return t
+        if kind=='lin_psi': return psi
+        if kind=='lin_phi': return phi
+        if kind=='lin_xi':  return xi
+        if kind=='cross_xy': return psi*phi
+        if kind=='cross_xz': return psi*xi
+        if kind=='cross_yz': return phi*xi
+        if kind=='quad_xx': return psi**2
+        if kind=='quad_yy': return phi**2
+        if kind=='quad_zz': return xi**2
+        raise ValueError(kind)
+    for om in omegas:
+        for kind in arg_kinds:
+            arg = arg_of(kind)
+            for ph in phases:
+                cols.append(np.cos(om*arg + ph)); meta.append((kind, float(om), float(ph), 'cos'))
+                cols.append(np.sin(om*arg + ph)); meta.append((kind, float(om), float(ph), 'sin'))
+    X = np.column_stack(cols) if cols else np.zeros((len(t),0))
+    return X, meta
+
+def svd_fit_predict(X, y, w, lam, topk_max, use_bic=True, holdout_frac=0.0, Xf=None):
+    W = np.sqrt(w)[:,None]
+    Xw = X * W
+    yw = y[:,None] * W
+    n, p = X.shape
+    n_hold = int(n*holdout_frac)
+    if n_hold>0 and not use_bic:
+        train_idx = np.arange(0, n-n_hold)
+        hold_idx  = np.arange(n-n_hold, n)
+        Xw_tr, yw_tr = Xw[train_idx], yw[train_idx]
+        Xw_ho, yw_ho = Xw[hold_idx],  yw[hold_idx]
+    else:
+        Xw_tr, yw_tr = Xw, yw
+        Xw_ho = yw_ho = None
+
+    U, S, Vt = np.linalg.svd(Xw_tr, full_matrices=False)
+    def fit_k(k):
+        if k==0:
+            beta = np.zeros((p,1)); rss_tr = float((yw_tr.T @ yw_tr).ravel()[0])
+            rss_ho = rss_tr if Xw_ho is None else float((yw_ho.T @ yw_ho).ravel()[0])
+            return beta, rss_tr, rss_ho
+        Uk = U[:, :k]; Sk = S[:k]; Vk = Vt[:k,:].T
+        A = (Uk*Sk)
+        AtA = A.T @ A + lam*np.eye(k)
+        alpha = np.linalg.solve(AtA, A.T @ yw_tr)
+        beta = Vk @ (alpha / Sk[:,None])
+        rss_tr = float(((yw_tr - Xw_tr @ beta).T @ (yw_tr - Xw_tr @ beta)).ravel()[0])
+        if Xw_ho is None:
+            rss_ho = rss_tr
+        else:
+            rss_ho = float(((yw_ho - Xw_ho @ beta).T @ (yw_ho - Xw_ho @ beta)).ravel()[0])
+        return beta, rss_tr, rss_ho
+
+    best = None
+    max_k = min(topk_max, min(len(S), p))
+    for k in range(1, max_k+1):
+        beta, rss_tr, rss_ho = fit_k(k)
+        if use_bic:
+            n_tr = Xw_tr.shape[0]
+            score = n_tr*np.log(max(rss_tr/n_tr,1e-18)) + k*np.log(max(n_tr,2))
+        else:
+            score = rss_ho
+        if (best is None) or (score < best['score']):
+            best = {'k':k,'beta':beta,'rss_tr':rss_tr,'rss_ho':rss_ho,'score':score}
+    if best is None:
+        return np.zeros((p,1)), 0, 0.0, 0.0, (0.0 if Xf is None else float(Xf @ np.zeros((p,1))))
+    beta = best['beta']
+
+    y_hat = None
+    if Xf is not None and Xf.size>0:
+        y_hat = float(Xf @ beta)
+    return beta, best['k'], best['rss_tr'], best['rss_ho'], y_hat
+
+def forecast_theta_mix_svd(y: np.ndarray, horizon: int,
+                           zero_pad: int, min_period_bars: int,
+                           biq_mode: str, biq_const, biq_scale, biq_ema,
+                           w_alpha: float, w_ema: int,
+                           mix_arg_kinds: List[str],
+                           mix_phases: List[float],
+                           mix_topk_max: int,
+                           lam: float,
+                           use_bic: bool=True, holdout_frac: float=0.0,
+                           damping: float=0.0, shrink: float=0.0):
+    y = y.astype(float); n = len(y); t = np.arange(n, dtype=float)
+    psi,phi,xi = make_biq_components(y, biq_mode, biq_const, biq_scale, biq_ema)
+    w = make_weights(y, w_alpha=w_alpha, w_ema=w_ema)
+    a,b = _lin_trend(y); r = y - (a*t + b)
+
+    N = int(n*max(1,zero_pad))
+    freqs = np.fft.rfftfreq(N, d=1.0)
+    mask = freqs>0
+    if min_period_bars>0:
+        mask &= (1.0/np.maximum(freqs,1e-12)) >= min_period_bars
+    freqs = freqs[mask]
+    if freqs.size==0:
+        return float(y[-1])
+
+    omegas = 2.0*np.pi*freqs
+    X, meta = build_theta_mix_library(t, psi, phi, xi, omegas, mix_arg_kinds, mix_phases)
+    beta, k_sel, rss_tr, rss_ho, _ = svd_fit_predict(X, r, w, lam=lam, topk_max=mix_topk_max,
+                                                     use_bic=use_bic, holdout_frac=holdout_frac, Xf=None)
+    t_f = (n-1) + horizon
+    psi_f, phi_f, xi_f = psi[-1], phi[-1], xi[-1]
+    # Build Xf row from meta
+    Xf_cols = []
+    for (kind,om,ph,base) in meta:
+        if kind=='time':      arg = om * t_f
+        elif kind=='lin_psi': arg = om * psi_f
+        elif kind=='lin_phi': arg = om * phi_f
+        elif kind=='lin_xi':  arg = om * xi_f
+        elif kind=='cross_xy':arg = om * (psi_f*phi_f)
+        elif kind=='cross_xz':arg = om * (psi_f*xi_f)
+        elif kind=='cross_yz':arg = om * (phi_f*xi_f)
+        elif kind=='quad_xx': arg = om * (psi_f**2)
+        elif kind=='quad_yy': arg = om * (phi_f**2)
+        elif kind=='quad_zz': arg = om * (xi_f**2)
+        else: raise ValueError(kind)
+        val = math.cos(arg + ph) if base=='cos' else math.sin(arg + ph)
+        Xf_cols.append(val)
+    Xf = np.array(Xf_cols, dtype=float)[None,:] if len(Xf_cols)>0 else np.zeros((1,0))
+    val = Xf @ beta
+    synth = float(np.ravel(val)[0]) if val.size else 0.0
+    if shrink>0.0: synth *= (1.0 - shrink)
+    if damping>0.0: synth *= float(np.exp(-damping*horizon))
+    y_hat = synth + (a*(n-1+horizon)+b)
+    return float(y_hat)
+
+# ------------------ Rolling engine ------------------
+def build_roll_forecast(df: pd.DataFrame, variants: List[str], window: int, horizons: List[int],
+                        horizon_alpha: float,
+                        biq_zero_pad: int, biq_min_period_bars: int, biq_lam: float,
+                        biq_mode: str, biq_const, biq_scale, biq_ema,
+                        biq_w_alpha: float, biq_w_ema: int,
+                        biq_topn: int, biq_scan_every: int,
+                        biq_max_coherence: float, biq_max_cond: float,
+                        mix_arg_kinds: List[str], mix_phases: List[float],
+                        mix_topk_max: int, mix_use_bic: bool, mix_holdout: float,
+                        biq_damping: float, biq_shrink: float,
+                        post_kalman: bool, post_kalman_r_mult: float, post_kalman_q_mult: float,
+                        post_scale: float):
+    ts = pd.to_datetime(df['timestamp'])
+    closes = df['close'].astype(float).to_numpy()
+    n = len(closes)
+    start = window
+    end = n - max(horizons)
+    if end <= start:
+        raise RuntimeError(f'Nedostatek dat: n={n}, window={window}, horizons={horizons}')
+    rows = []
+    kf_state = {H: {'m': None, 'P': None} for H in horizons}
+    def kf_update(H, meas, local_var):
+        st = kf_state[H]
+        if st['m'] is None:
+            st['m'] = float(meas)
+            st['P'] = float(local_var) if local_var>0 else 1.0
+            return st['m']
+        R = post_kalman_r_mult * max(local_var, 1e-12)
+        Q = post_kalman_q_mult * R
+        m_pred = st['m']; P_pred = st['P'] + Q
+        K = P_pred / (P_pred + R)
+        m = m_pred + K * (meas - m_pred); P = (1.0 - K) * P_pred
+        st['m'], st['P'] = float(m), float(P)
+        return st['m']
+
+    for t_idx in range(start, end):
+        w = closes[t_idx-window:t_idx]
+        row = {'timestamp': ts.iloc[t_idx].isoformat(), 'close': float(closes[t_idx])}
+        for H in horizons:
+            if 'raw' in variants:
+                v = forecast_raw(w, H)
+                row[f'pred_raw_h{H}'] = float(horizon_alpha*v + (1.0-horizon_alpha)*row['close'])
+            if 'thetaBiquatTrue' in variants:
+                v = forecast_theta_biquat_true(
+                    w, H,
+                    zero_pad=biq_zero_pad, min_period_bars=biq_min_period_bars, lam=biq_lam,
+                    biq_mode=biq_mode, biq_const=biq_const, biq_scale=biq_scale, biq_ema=biq_ema,
+                    w_alpha=biq_w_alpha, w_ema=biq_w_ema,
+                    topn=biq_topn, scan_every=biq_scan_every,
+                    max_coherence=biq_max_coherence, max_cond=biq_max_cond,
+                    damping=biq_damping, shrink=biq_shrink
+                )
+                key = f'pred_thetaBiquatTrue_h{H}'
+                base_pred = float(horizon_alpha*v + (1.0-horizon_alpha)*row['close'])
+                if post_scale != 1.0:
+                    base_pred = float(row['close'] + post_scale * (base_pred - row['close']))
+                if post_kalman:
+                    diffs = np.diff(w).astype(float)
+                    local_var = float(np.var(diffs)) if diffs.size>0 else 0.0
+                    base_pred = float(kf_update(H, base_pred, local_var))
+                row[key] = base_pred
+            if 'thetaMixSVD' in variants:
+                phases = np.array(mix_phases, dtype=float)
+                v = forecast_theta_mix_svd(
+                    w, H,
+                    zero_pad=biq_zero_pad, min_period_bars=biq_min_period_bars,
+                    biq_mode=biq_mode, biq_const=biq_const, biq_scale=biq_scale, biq_ema=biq_ema,
+                    w_alpha=biq_w_alpha, w_ema=biq_w_ema,
+                    mix_arg_kinds=[x.strip() for x in mix_arg_kinds],
+                    mix_phases=phases,
+                    mix_topk_max=mix_topk_max, lam=biq_lam,
+                    use_bic=mix_use_bic, holdout_frac=mix_holdout,
+                    damping=biq_damping, shrink=biq_shrink
+                )
+                key = f'pred_thetaMixSVD_h{H}'
+                base_pred = float(horizon_alpha*v + (1.0-horizon_alpha)*row['close'])
+                if post_scale != 1.0:
+                    base_pred = float(row['close'] + post_scale * (base_pred - row['close']))
+                if post_kalman:
+                    diffs = np.diff(w).astype(float)
+                    local_var = float(np.var(diffs)) if diffs.size>0 else 0.0
+                    base_pred = float(kf_update(H, base_pred, local_var))
+                row[key] = base_pred
+        rows.append(row)
+    return rows
+
+def parse_triplet(s: str, default: Tuple[float,float,float]) -> Tuple[float,float,float]:
+    try:
+        p = [x.strip() for x in s.split(',')]
+        if len(p)!=3: return default
+        return (float(p[0]), float(p[1]), float(p[2]))
+    except Exception:
+        return default
+
+def parse_list(s: str, typ=float):
+    parts = [x.strip() for x in s.split(',') if x.strip()!='']
+    return [typ(x) for x in parts]
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description='thetaBiquatTrue + thetaMixSVD runner')
+    p.add_argument('--symbol', required=True)
+    p.add_argument('--interval', required=True)
+    p.add_argument('--limit', type=int, default=10000)
+    p.add_argument('--csv', type=str, default=None)
+    p.add_argument('--variants', nargs='+', default=['raw','thetaBiquatTrue','thetaMixSVD'])
+    p.add_argument('--window', type=int, default=256)
+    p.add_argument('--horizons', nargs='+', default=['1h'])
+    p.add_argument('--horizon-alpha', type=float, default=1.0, dest='horizon_alpha')
+    # shared biq
+    p.add_argument('--biq-zero-pad', type=int, default=4, dest='biq_zero_pad')
+    p.add_argument('--biq-min-period-bars', type=int, default=24, dest='biq_min_period_bars')
+    p.add_argument('--biq-lam', type=float, default=2e-4, dest='biq_lam')
+    p.add_argument('--biq-mode', type=str, default='ema3', choices=['const','ema3'])
+    p.add_argument('--biq-const', type=str, default='0,0,0')
+    p.add_argument('--biq-scale', type=str, default='0.5,0.25,0.25')
+    p.add_argument('--biq-ema', type=str, default='32,64,32')
+    p.add_argument('--biq-w-alpha', type=float, default=0.3, dest='biq_w_alpha')
+    p.add_argument('--biq-w-ema', type=int, default=32, dest='biq_w_ema')
+    # biquat true specific
+    p.add_argument('--biq-topn', type=int, default=1, dest='biq_topn')
+    p.add_argument('--biq-scan-every', type=int, default=4, dest='biq_scan_every')
+    p.add_argument('--biq-max-coherence', type=float, default=0.18, dest='biq_max_coherence')
+    p.add_argument('--biq-max-cond', type=float, default=7000, dest='biq_max_cond')
+    p.add_argument('--biq-damping', type=float, default=0.015, dest='biq_damping')
+    p.add_argument('--biq-shrink', type=float, default=0.30, dest='biq_shrink')
+    # thetaMixSVD specific
+    p.add_argument('--mix-arg-kinds', type=str, default='time,lin_psi,lin_phi,lin_xi', help='comma-separated kinds to include')
+    p.add_argument('--mix-phases', type=str, default='0,1.57079632679', help='radians; default [0, pi/2] to emulate θ3/θ2')
+    p.add_argument('--mix-topk-max', type=int, default=6)
+    p.add_argument('--mix-use-bic', action='store_true', help='Use BIC on train (otherwise holdout RSS)')
+    p.add_argument('--mix-holdout', type=float, default=0.10, help='Holdout fraction for model selection (if not using BIC)')
+    # post
+    p.add_argument('--post-kalman', action='store_true')
+    p.add_argument('--post-kalman-r-mult', type=float, default=2.0)
+    p.add_argument('--post-kalman-q-mult', type=float, default=0.02)
+    p.add_argument('--post-scale', type=float, default=0.65)
+    p.add_argument('--outdir', type=str, default='reports_forecast')
+    return p.parse_args()
+
+def main():
+    args = parse_args()
+    outdir = Path(args.outdir); outdir.mkdir(parents=True, exist_ok=True)
+    base_minutes = parse_interval_to_minutes(args.interval)
+    horizons = parse_horizons(args.horizons, base_minutes)
+    if args.csv:
+        df = normalize_ohlcv(pd.read_csv(args.csv))
+    else:
+        df = fetch_klines_binance(args.symbol, args.interval, args.limit)
+    const_triplet = tuple(float(x) for x in parse_triplet(args.biq_const, (0.0,0.0,0.0)))
+    scale_triplet = tuple(float(x) for x in parse_triplet(args.biq_scale, (0.5,0.25,0.25)))
+    ema_triplet   = tuple(int(x)   for x in parse_triplet(args.biq_ema, (32,64,32)))
+    mix_arg_kinds = [x.strip() for x in args.mix_arg_kinds.split(',') if x.strip()!='']
+    mix_phases = parse_list(args.mix_phases, float)
+
+    rows = build_roll_forecast(
+        df, args.variants, args.window, horizons, args.horizon_alpha,
+        args.biq_zero_pad, args.biq_min_period_bars, args.biq_lam,
+        args.biq_mode, const_triplet, scale_triplet, ema_triplet,
+        args.biq_w_alpha, args.biq_w_ema,
+        args.biq_topn, args.biq_scan_every,
+        args.biq_max_coherence, args.biq_max_cond,
+        mix_arg_kinds, mix_phases, args.mix_topk_max, args.mix_use_bic, args.mix_holdout,
+        args.biq_damping, args.biq_shrink,
+        args.post_kalman, args.post_kalman_r_mult, args.post_kalman_q_mult, args.post_scale
+    )
+    base = f"{args.symbol}_{args.interval}_win{args.window}_h{'-'.join(map(str,horizons))}_pure{int(args.horizon_alpha==1.0)}"
+    csv_path = outdir / f"forecast_{base}.csv"
+    pd.DataFrame(rows).to_csv(csv_path, index=False)
+    print(f"Saved: {csv_path}")
+
+if __name__ == '__main__':
+    main()
