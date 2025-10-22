@@ -1,0 +1,2 @@
+symbol,phase,hit_rate_pred,hit_rate_hold,delta_hit,corr_pred_true,mae_price,mae_return,count
+/Users/davidjaros/workspace/theta-bot/data/mydata.csv,biquat,0.4555921052631579,0.5444078947368421,-0.08881578947368424,0.14208385108592644,128058.37813207915,1.1137225624408689,608

@@ -1,0 +1,26 @@
+
+# argparse (doplňky)
+parser.add_argument("--phase", choices=["none","biquat"], default="none")
+parser.add_argument("--phase-sigma", type=float, default=0.8)
+parser.add_argument("--phase-harm", type=int, default=3)
+parser.add_argument("--phase-ema", type=str, default="16,32,64")
+parser.add_argument("--phase-ridge", type=float, default=1e-6)
+
+# integrace v kódu
+from theta.biquat_phase import build_biquat_basis
+ema_spans = tuple(int(x) for x in args.phase_ema.split(","))
+X_biq, biq_names = build_biquat_basis(
+    prices_win, t_win,
+    sigma=args.phase_sigma,
+    max_harm=args.phase_harm,
+    ema_spans=ema_spans,
+    ridge=args.phase_ridge,
+    return_names=True
+)
+X_full = np.hstack([X_existing, X_biq]) if X_existing.size else X_biq
+
+# ridge regrese
+lam = args.lambda if hasattr(args, "lambda") else 1e-3
+XtX = X_full.T @ X_full
+beta = np.linalg.solve(XtX + lam * np.eye(X_full.shape[1]), X_full.T @ y)
+pred_delta = float(X_full[-1] @ beta)

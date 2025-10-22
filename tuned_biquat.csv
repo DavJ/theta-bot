@@ -1,0 +1,2 @@
+symbol,phase,hit_rate_pred,hit_rate_hold,delta_hit,corr_pred_true,mae_price,mae_return,count
+.tmp/cleaned_bd2879c34f.csv,biquat,0.44485294117647056,0.5551470588235294,-0.11029411764705888,0.16955598065910396,65288.34809608515,0.5659842015626307,544

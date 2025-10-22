@@ -1,0 +1,11 @@
+{
+  "symbol": "SOLUSDT",
+  "phase": "biquat",
+  "hit_rate_pred": 0.55,
+  "hit_rate_hold": 0.4486486486486487,
+  "delta_hit": 0.10135135135135137,
+  "corr_pred_true": 0.21913215059820576,
+  "mae_price": 172.28020133277818,
+  "mae_return": 0.8135058905156058,
+  "count": 740
+}

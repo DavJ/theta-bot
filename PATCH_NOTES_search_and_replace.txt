@@ -1,0 +1,16 @@
+# PATCH NOTES (search & replace)
+Pokud máš v hourly datech `mae_return` ~0.4–5.0, pravděpodobně se počítá z CEN.
+Přepni na poměrné návratnosti.
+
+A) MAE skutečných návratností (doporučeno):
+    true_delta = future_price - last_price
+    mae_return = float(np.mean(np.abs(true_delta / last_price)))
+
+B) MAE chyby predikce v návratnostech:
+    pred_delta = pred_price - last_price
+    true_delta = future_price - last_price
+    mae_return = float(np.mean(np.abs((pred_delta - true_delta) / last_price)))
+
+A nezapomeň, že směr se má hodnotit přes delty:
+    pred_dir = np.sign(pred_price - last_price)
+    true_dir = np.sign(future_price - last_price)

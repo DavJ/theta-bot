@@ -1,0 +1,106 @@
+*** a/theta_eval_hbatch_biquat.py
+--- b/theta_eval_hbatch_biquat.py
+***************
+*** 140,170 ****
+  def fetch_ohlcv(symbol: str, interval: str, limit: int) -> pd.DataFrame:
+-     # If symbol looks like a CSV path, load it; otherwise fetch from exchange
+-     if symbol.lower().endswith(".csv"):
+-         df = pd.read_csv(symbol)
+-         if not {"time","close"}.issubset(df.columns):
+-             raise ValueError("CSV must contain columns: time, close")
+-         return df[["time","close"]].copy()
++     """
++     If `symbol` is a CSV path, load it; otherwise fetch from exchange.
++     Accepts optional CLI overrides for column names.
++     """
++     if symbol.lower().endswith(".csv"):
++         df = pd.read_csv(symbol)
++         time_col  = ARGS.get("csv_time_col")  or "time"
++         close_col = ARGS.get("csv_close_col") or "close"
++         missing = [c for c in [time_col, close_col] if c not in df.columns]
++         if missing:
++             raise ValueError(f"CSV missing required column(s): {missing}. "
++                              f"Use --csv-time-col/--csv-close-col or rename headers.")
++         out = df[[time_col, close_col]].rename(columns={time_col:"time", close_col:"close"}).copy()
++         if not pd.api.types.is_numeric_dtype(out["close"]):
++             out["close"] = pd.to_numeric(out["close"], errors="coerce")
++         out = out.dropna()
++         if len(out) < 300:
++             print(f"[warn] CSV has only {len(out)} rows after cleaning – results may be noisy.")
++         return out
+      # else: real exchange fetch (omitted here)
+      raise FileNotFoundError(f"Could not fetch symbol '{symbol}'. If this is a CSV path, ensure it exists.")
+  
+***************
+*** 173,202 ****
+  def safe_basename(sym: str) -> str:
+-     base = sym
+-     if base.lower().endswith(".csv"):
+-         base = base.split("/")[-1]
+-         base = base.replace(".csv","")
+-     base = base.replace(":","_").replace("/","_")
+-     return base
++     import os
++     base = sym
++     if base.lower().endswith(".csv"):
++         base = os.path.basename(base)[:-4]  # strip .csv
++     return base.replace(":", "_").replace("/", "_")
+  
+  def evaluate_symbol(symbol, interval, window, horizon, minP, maxP, nP, sigma, lam, limit, phase, out_prefix=""):
+      df = fetch_ohlcv(symbol, interval, limit)
+      # ... compute predictions etc. ...
+-     base = safe_basename(symbol)
+-     df.to_csv(f"eval_h_{base}.csv", index=False)
+-     with open(f"sum_h_{base}.json","w") as f:
++     base = safe_basename(symbol)
++     df.to_csv(f"eval_h_{base}.csv", index=False)
++     with open(f"sum_h_{base}.json","w") as f:
+          f.write(json.dumps(summary, indent=2))
+      return df, summary
+  
+***************
+*** 320,366 ****
+  def main():
+      parser = argparse.ArgumentParser()
+      parser.add_argument("--symbols", required=True, help="Comma-separated symbols or CSV paths")
+      parser.add_argument("--interval", default="1h")
+      parser.add_argument("--window", type=int, default=256)
+      parser.add_argument("--horizon", type=int, default=4)
+      parser.add_argument("--minP", type=int, default=24)
+      parser.add_argument("--maxP", type=int, default=480)
+      parser.add_argument("--nP", type=int, default=12)
+      parser.add_argument("--sigma", type=float, default=0.8)
+      parser.add_argument("--lambda", dest="lam", type=float, default=1e-3)
+      parser.add_argument("--limit", type=int, default=2000)
+      parser.add_argument("--phase", choices=["simple","complex","biquat"], default="biquat")
++     parser.add_argument("--csv-time-col", dest="csv_time_col", default=None, help="Override time column name in CSV")
++     parser.add_argument("--csv-close-col", dest="csv_close_col", default=None, help="Override close column name in CSV")
+      parser.add_argument("--out", required=True)
+      args = parser.parse_args()
+  
++     # Expose parsed args for fetch_ohlcv
++     global ARGS
++     ARGS = vars(args)
++ 
+      syms = [s.strip() for s in args.symbols.split(",") if s.strip()]
+      rows = []
+      for sym in syms:
+          print(f"\n=== Running {sym} ===")
+          try:
+              df, summ = evaluate_symbol(
+                  symbol=sym, interval=args.interval, window=args.window, horizon=args.horizon,
+                  minP=args.minP, maxP=args.maxP, nP=args.nP, sigma=args.sigma, lam=args.lam,
+                  limit=args.limit, phase=args.phase, out_prefix=""
+              )
+              row = {
+                  "symbol": safe_basename(sym),
+                  "phase": args.phase,
+                  **summ
+              }
+              rows.append(row)
+          except Exception as e:
+              print(f"[error] {sym}: {e}")
+      pd.DataFrame(rows).to_csv(args.out, index=False)
+  
+  if __name__ == "__main__":
+      main()

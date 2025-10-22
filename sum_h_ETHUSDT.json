@@ -1,0 +1,11 @@
+{
+  "symbol": "ETHUSDT",
+  "phase": "biquat",
+  "hit_rate_pred": 0.5081081081081081,
+  "hit_rate_hold": 0.4918918918918919,
+  "delta_hit": 0.016216216216216217,
+  "corr_pred_true": 0.22566081111832922,
+  "mae_price": 3401.9281429348553,
+  "mae_return": 0.8086316950303202,
+  "count": 740
+}

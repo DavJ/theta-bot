@@ -1,0 +1,11 @@
+{
+  "symbol": "BNBUSDT",
+  "phase": "biquat",
+  "hit_rate_pred": 0.46621621621621623,
+  "hit_rate_hold": 0.5337837837837838,
+  "delta_hit": -0.06756756756756754,
+  "corr_pred_true": 0.16595611877225414,
+  "mae_price": 878.7997982865797,
+  "mae_return": 0.79613797568826,
+  "count": 740
+}

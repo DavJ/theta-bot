@@ -1,0 +1,2 @@
+symbol,phase,hit_rate_pred,hit_rate_hold,delta_hit,corr_pred_true,mae_price,mae_return,count
+data/mydata.csv,simple,0.45416666666666666,0.5458333333333333,-0.09166666666666662,0.22509825351310242,227717.5380701697,1.9621964888733838,480

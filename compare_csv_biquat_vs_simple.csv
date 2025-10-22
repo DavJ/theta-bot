@@ -1,0 +1,2 @@
+symbol,simple_hit_rate_pred,simple_hit_rate_hold,simple_corr_pred_true,simple_mae_return,simple_count,biquat_hit_rate_pred,biquat_hit_rate_hold,biquat_corr_pred_true,biquat_mae_return,biquat_count
+/Users/davidjaros/workspace/theta-bot/data/mydata.csv,0.4541666666666666,0.5458333333333333,0.2250982535131024,1.962196488873384,480,0.4541666666666666,0.5458333333333333,0.172036100428933,0.8024467566485357,480

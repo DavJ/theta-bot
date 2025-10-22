@@ -1,0 +1,11 @@
+{
+  "symbol": "data/mydata.csv",
+  "phase": "biquat",
+  "hit_rate_pred": 0.45416666666666666,
+  "hit_rate_hold": 0.5458333333333333,
+  "delta_hit": -0.09166666666666662,
+  "corr_pred_true": 0.06687570891635584,
+  "mae_price": 94307.64498615528,
+  "mae_return": 0.8078310555666471,
+  "count": 480
+}

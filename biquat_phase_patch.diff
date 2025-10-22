@@ -1,0 +1,295 @@
+*** a/theta_eval_hbatch.py
+--- b/theta_eval_hbatch.py
+***************
+*** 1,20 ****
+  import argparse
+  import json
+  import numpy as np
+  import pandas as pd
+  from datetime import datetime
+  from pathlib import Path
+  
+  # Původní helpery (zkráceno): fetch kladných period, stavba gridu, atd.
+  
+  def ema(x, alpha):
+      y = np.empty_like(x, dtype=float)
+      s = 0.0
+      w = 0.0
+      for i, xi in enumerate(x):
+          w = alpha + (1.0 - alpha) * w
+          s = alpha * xi + (1.0 - alpha) * s
+          y[i] = s / w
+      return y
+  
+  def make_period_grid(minP, maxP, nP):
+      return np.linspace(minP, maxP, nP)
+  
+  def gram_schmidt(X, eps=1e-12):
+      Q = np.zeros_like(X)
+      R = np.zeros((X.shape[1], X.shape[1]))
+      k = 0
+      for j in range(X.shape[1]):
+          v = X[:, j].copy()
+          for i in range(k):
+              rij = np.dot(Q[:, i], v)
+              v -= rij * Q[:, i]
+          nrm = np.linalg.norm(v)
+          if nrm > eps:
+              Q[:, k] = v / nrm
+              R[k, k] = nrm
+              k += 1
+      return Q[:, :k]
+  
+  def ridge_solve(X, y, lam=1e-3):
+      # (X^T X + lam I)^{-1} X^T y
+      XtX = X.T @ X
+      XtX.flat[::XtX.shape[0]+1] += lam
+      return np.linalg.solve(XtX, X.T @ y)
+  
+  def fetch_ohlc(symbol, interval, limit=2000):
+      import pandas as pd
+      from tests_backtest.data.binance_klines import load_klines  # existující loader
+      df = load_klines(symbol=symbol, interval=interval, limit=limit)
+      df["time"] = pd.to_datetime(df["open_time"], unit="ms")
+      return df[["time", "close"]].rename(columns={"close":"price"})
+  
+  def build_theta_basis_complex(t_idx, periods, sigma):
+      """
+      Původní (komplexní) „theta“-inspirovaná báze:
+      okna ~ Gauss, harmonické cos/sin na mřížce period.
+      Vrací matici [T x 2*nP]: [cos, sin] pro každé P.
+      """
+      T = t_idx.size
+      nP = periods.size
+      # normalizace času do [0,1]
+      tau = (t_idx - t_idx[0]) / max(1, (t_idx[-1] - t_idx[0]))
+      Xc = []
+      for k in range(nP):
+          P = periods[k]
+          phase = 2.0 * np.pi * tau * (1.0 / max(1e-9, P))
+          w = np.exp(-0.5 * ((tau - 0.5) / max(1e-9, sigma))**2)
+          Xc.append(w * np.cos(phase))
+          Xc.append(w * np.sin(phase))
+      return np.column_stack(Xc)
+  
++ def build_theta_basis_biquat(t_idx, periods, sigma, psi1, psi2, psi3, mix="ijk"):
++     """
++     Bikvaternionická fáze: 3 nezávislé „vědomé“ osy psi1,psi2,psi3.
++     Každá osa generuje [cos,sin] harmoniky s Gauss oknem. Výsledná
++     reálná embed je přímý součet projekcí. Volba mix určí pořadí kombinace.
++     """
++     T = t_idx.size
++     nP = periods.size
++     tau = (t_idx - t_idx[0]) / max(1, (t_idx[-1] - t_idx[0]))
++     # zajištění shodné délky psí složek
++     psi1 = np.asarray(psi1, dtype=float); psi2 = np.asarray(psi2, dtype=float); psi3 = np.asarray(psi3, dtype=float)
++     assert psi1.shape[0]==T and psi2.shape[0]==T and psi3.shape[0]==T, "psi*(t) musí mít délku T"
++     blocks = []
++     for k in range(nP):
++         P = periods[k]
++         base = 2.0 * np.pi * tau * (1.0 / max(1e-9, P))
++         w = np.exp(-0.5 * ((tau - 0.5) / max(1e-9, sigma))**2)
++         # tři ortogonální fáze
++         ph_i = base + psi1
++         ph_j = base + psi2
++         ph_k = base + psi3
++         # reálná embed (přímý součet projekcí i,j,k):
++         c = w * (np.cos(ph_i) + np.cos(ph_j) + np.cos(ph_k))
++         s = w * (np.sin(ph_i) + np.sin(ph_j) + np.sin(ph_k))
++         blocks.append(c); blocks.append(s)
++     return np.column_stack(blocks)
++ 
+  def evaluate_series(prices, window, horizon, minP, maxP, nP, sigma, lam):
+      """
+      Pro daný index t (od window-1 do T-horizon-1):
+        1) postav bázi na [t-window+1 .. t]
+        2) ortonormalizace
+        3) ridge fit na ceny v okně
+        4) extrapolace do t+horizon
+      """
+      T = prices.size
+      periods = make_period_grid(minP, maxP, nP)
+      rows = []
+      t_idx = np.arange(T)
+      for t in range(window-1, T - horizon):
+          sl = slice(t - (window-1), t+1)
+          X = build_theta_basis_complex(t_idx[sl], periods, sigma)
+          Q = gram_schmidt(X)
+          beta = ridge_solve(Q, prices[sl], lam=lam)
+          # predikce o h dopředu: vezmeme "budoucí" řádek báze a projektujeme
+          Xf = build_theta_basis_complex(t_idx[sl.stop-1:sl.stop] + horizon, periods, sigma)
+          Qf = gram_schmidt(Xf) if Xf.shape[0]>1 else Xf  # jednor. řádek nech v X
+          pred = float((Qf @ beta).ravel()[0])
+          rows.append((t, t+horizon, prices[t], pred))
+      return rows
+  
++ def evaluate_series_biquat(prices, window, horizon, minP, maxP, nP, sigma, lam,
++                             psi1_ema=32, psi2_ema=64, psi3_ema=96, psi_alpha=0.5):
++     """
++     Totéž jako evaluate_series, ale s bikvaternionickou fází:
++       psi_a(t) vznikne jako vyhlazený „moment“ z dPrices (EMA + kum. fáze).
++     """
++     T = prices.size
++     periods = make_period_grid(minP, maxP, nP)
++     rows = []
++     t_idx = np.arange(T)
++     # odhad fázových drah z derivací:
++     d = np.diff(np.log(prices + 1e-12), prepend=np.log(prices[0]+1e-12))
++     # surové „úhly“ (normalizované), následně EMA:
++     ang = np.cumsum(d)
++     psi1 = ema(ang, alpha=min(0.999, 2.0/(psi1_ema+1.0)))
++     psi2 = ema(ang, alpha=min(0.999, 2.0/(psi2_ema+1.0)))
++     psi3 = ema(ang, alpha=min(0.999, 2.0/(psi3_ema+1.0)))
++     # lehká normalizace amplitudy fází
++     s = np.std(psi1) + 1e-12
++     psi1 = psi_alpha * (psi1 / s)
++     psi2 = psi_alpha * (psi2 / s)
++     psi3 = psi_alpha * (psi3 / s)
++     for t in range(window-1, T - horizon):
++         sl = slice(t - (window-1), t+1)
++         X = build_theta_basis_biquat(t_idx[sl], periods, sigma, psi1[sl], psi2[sl], psi3[sl])
++         Q = gram_schmidt(X)
++         beta = ridge_solve(Q, prices[sl], lam=lam)
++         Xf = build_theta_basis_biquat(t_idx[sl.stop-1:sl.stop] + horizon, periods, sigma,
++                                       psi1[sl.stop-1:sl.stop] , psi2[sl.stop-1:sl.stop], psi3[sl.stop-1:sl.stop])
++         Qf = gram_schmidt(Xf) if Xf.shape[0]>1 else Xf
++         pred = float((Qf @ beta).ravel()[0])
++         rows.append((t, t+horizon, prices[t], pred))
++     return rows
++ 
+  def main():
+      ap = argparse.ArgumentParser()
+      ap.add_argument("--symbols", required=True, help="Comma-separated list")
+      ap.add_argument("--interval", default="1h")
+      ap.add_argument("--window", type=int, default=256)
+      ap.add_argument("--horizon", type=int, default=4)
+      ap.add_argument("--minP", type=int, default=24)
+      ap.add_argument("--maxP", type=int, default=480)
+      ap.add_argument("--nP", type=int, default=12)
+      ap.add_argument("--sigma", type=float, default=0.8)
+      ap.add_argument("--lambda", dest="lam", type=float, default=1e-3)
+      ap.add_argument("--limit", type=int, default=2000)
+      ap.add_argument("--out", default="hbatch_summary.csv")
++     ap.add_argument("--phase", choices=["complex","biquat"], default="complex",
++                     help="Typ fáze v bázi: complex (původní) nebo biquat (3-složková).")
++     ap.add_argument("--psi-ema", default="32,64,96",
++                     help="EMA oken pro psi1,psi2,psi3 (jen pro --phase biquat).")
++     ap.add_argument("--psi-alpha", type=float, default=0.5,
++                     help="Amplitudová škála fázových složek (jen pro --phase biquat).")
+      args = ap.parse_args()
+  
+      syms = [s.strip() for s in args.symbols.split(",") if s.strip()]
+      out_rows = []
+      for sym in syms:
+          print(f"\n=== Running {sym} ===")
+          df = fetch_ohlc(sym, args.interval, limit=args.limit)
+          ts = df["time"].to_numpy()
+          px = df["price"].to_numpy(dtype=float)
+  
+          rows = []
+          if args.phase == "complex":
+-             rows = evaluate_series(px, args.window, args.horizon,
+-                                    args.minP, args.maxP, args.nP, args.sigma, args.lam)
++             rows = evaluate_series(px, args.window, args.horizon,
++                                    args.minP, args.maxP, args.nP, args.sigma, args.lam)
+          else:
++             p1,p2,p3 = [int(x) for x in args.psi_ema.split(",")]
++             rows = evaluate_series_biquat(px, args.window, args.horizon,
++                                           args.minP, args.maxP, args.nP, args.sigma, args.lam,
++                                           psi1_ema=p1, psi2_ema=p2, psi3_ema=p3,
++                                           psi_alpha=args.psi_alpha)
+  
+          recs = []
+          for (t_idx, cmp_idx, last_p, pred_p) in rows:
+              future_p = px[cmp_idx]
+              recs.append({
+                  "time": ts[t_idx].isoformat(),
+                  "entry_idx": int(t_idx),
+                  "compare_idx": int(cmp_idx),
+                  "last_price": float(last_p),
+                  "pred_price": float(pred_p),
+                  "future_price": float(future_p),
+                  "pred_delta": float(pred_p - last_p),
+                  "true_delta": float(future_p - last_p),
+                  "pred_dir": int(np.sign(pred_p - last_p) > 0) * 1 + int(np.sign(pred_p - last_p) < 0) * (-1),
+                  "true_dir": int(np.sign(future_p - last_p) > 0) * 1 + int(np.sign(future_p - last_p) < 0) * (-1),
+              })
+  
+          df_out = pd.DataFrame(recs)
+          # jednoduché srovnání „hit rate“ vs HOLD
+          df_out["hold_ret"] = (df_out["future_price"] - df_out["last_price"]) / df_out["last_price"]
+          df_out["correct_pred"] = (np.sign(df_out["pred_delta"]) == np.sign(df_out["true_delta"])).astype(int)
+          df_out["hold_up"] = (df_out["hold_ret"] > 0).astype(int)
+  
+          hit_pred = df_out["correct_pred"].mean()
+          hit_hold = df_out["hold_up"].mean()
+          corr_pt = np.corrcoef(df_out["pred_delta"], df_out["true_delta"])[0,1]
+          mae_p = np.mean(np.abs(df_out["pred_price"] - df_out["future_price"]))
+          mae_r = np.mean(np.abs(df_out["future_price"]/df_out["last_price"] - 1.0))
+          print("\n--- HSTRATEGY vs HOLD ---")
+          print(f"hit_rate_pred:  {hit_pred: .6f}")
+          print(f"hit_rate_hold:  {hit_hold: .6f}")
+          print(f"corr_pred_true: {corr_pt: .6f}")
+          print(f"mae_price:      {mae_p: .6f}")
+          print(f"mae_return:     {mae_r: .6f}")
+          print(f"count:          {len(df_out)}")
+  
+          # ulož CSV i JSON sumář
+          csv_path = f"eval_h_{sym}.csv"
+          df_out.to_csv(csv_path, index=False)
+          with open(f"sum_h_{sym}.json","w") as f:
+              json.dump({
+                  "symbol": sym,
+                  "hit_rate_pred": float(hit_pred),
+                  "hit_rate_hold": float(hit_hold),
+                  "delta_hit": float(hit_pred - hit_hold),
+                  "corr_pred_true": float(corr_pt),
+                  "count": int(len(df_out)),
+              }, f, indent=2)
+          print(f"\nUloženo CSV: {csv_path}")
+          print(f"Uloženo summary: sum_h_{sym}.json")
+  
+      # agregovaný přehled
+      Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+      agg = []
+      for sym in syms:
+          with open(f"sum_h_{sym}.json") as f:
+              s = json.load(f)
+              agg.append(s)
+      df_sum = pd.DataFrame(agg)
+      df_sum.to_csv(args.out, index=False)
+      print(f"\nUloženo: {args.out}")
+  
+  if __name__ == "__main__":
+      main()
+*** /dev/null
+--- b/theta/biquat_phase.py
+***************
+*** 0,0 ****
++ """
++ Biquaternion phase helpers (pokud bys to chtěl použít i jinde).
++ Zatím držíme minimalisticky – hlavní logika je v theta_eval_hbatch.py.
++ """
++ import numpy as np
++ 
++ def ema(x, alpha):
++     y = np.empty_like(x, dtype=float)
++     s = 0.0
++     w = 0.0
++     for i, xi in enumerate(x):
++         w = alpha + (1.0 - alpha) * w
++         s = alpha * xi + (1.0 - alpha) * s
++         y[i] = s / w
++     return y
++ 
++ def estimate_psi_triplet(prices, ema_windows=(32,64,96), psi_alpha=0.5):
++     d = np.diff(np.log(prices + 1e-12), prepend=np.log(prices[0]+1e-12))
++     ang = np.cumsum(d)
++     a1,a2,a3 = [min(0.999, 2.0/(w+1.0)) for w in ema_windows]
++     psi1 = ema(ang, a1); psi2 = ema(ang, a2); psi3 = ema(ang, a3)
++     s = np.std(psi1) + 1e-12
++     psi1 = psi_alpha * (psi1 / s)
++     psi2 = psi_alpha * (psi2 / s)
++     psi3 = psi_alpha * (psi3 / s)
++     return psi1, psi2, psi3
+

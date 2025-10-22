@@ -1,0 +1,841 @@
+(venv) davidjaros@Davids-Mac-mini:~/workspace/theta-bot (paper_trading)$ for sym in BTCUSDT ETHUSDT BNBUSDT SOLUSDT ADAUSDT XRPUSDT; do
+>   for sigma in 0.6 0.8 1.0; do
+>     for nP in 8 12; do
+>       python theta_eval_hbatch.py \
+>         --symbols $sym --interval 1h \
+>         --window 256 --horizon 4 \
+>         --minP 24 --maxP 480 --nP $nP \
+>         --sigma $sigma --lambda 1e-3 \
+>         --limit 2000 \
+>         --out hbatch_${sym}_sig${sigma}_nP${nP}.csv
+>     done
+>   done
+> done
+
+=== Running BTCUSDT ===
+               time  entry_idx  compare_idx  last_price    pred_price  future_price   pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259   116662.25 112344.538535     117108.30 -4317.711465      446.05        -1         1  0.003823             0        1
+2025-09-17T02:00:00        256          260   116686.43 112434.873554     117234.27 -4251.556446      547.84        -1         1  0.004695             0        1
+2025-09-17T03:00:00        257          261   116372.04 112540.942125     117162.48 -3831.097875      790.44        -1         1  0.006792             0        1
+2025-09-17T04:00:00        258          262   116313.49 112646.051141     116860.00 -3667.438859      546.51        -1         1  0.004699             0        1
+2025-09-17T05:00:00        259          263   117108.30 112779.356835     116550.01 -4328.943165     -558.29        -1        -1 -0.004767             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.510811
+hit_rate_hold:  0.485135
+corr_pred_true: -0.021908
+mae_price:      3770.542246
+mae_return:     0.032485
+count:          740
+
+Uloženo CSV: eval_h_BTCUSDT.csv
+Uloženo summary: sum_h_BTCUSDT.json
+
+Uloženo: hbatch_BTCUSDT_sig0.6_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BTCUSDT       0.510811       0.485135   0.025676       -0.021908    740
+
+=== Running BTCUSDT ===
+               time  entry_idx  compare_idx  last_price    pred_price  future_price   pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259   116662.25 115374.164463     117108.30 -1288.085537      446.05        -1         1  0.003823             0        1
+2025-09-17T02:00:00        256          260   116686.43 115044.362727     117234.27 -1642.067273      547.84        -1         1  0.004695             0        1
+2025-09-17T03:00:00        257          261   116372.04 114509.403227     117162.48 -1862.636773      790.44        -1         1  0.006792             0        1
+2025-09-17T04:00:00        258          262   116313.49 114610.014994     116860.00 -1703.475006      546.51        -1         1  0.004699             0        1
+2025-09-17T05:00:00        259          263   117108.30 114853.458606     116550.01 -2254.841394     -558.29        -1        -1 -0.004767             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.541892
+hit_rate_hold:  0.485135
+corr_pred_true: 0.011729
+mae_price:      3045.086366
+mae_return:     0.026193
+count:          740
+
+Uloženo CSV: eval_h_BTCUSDT.csv
+Uloženo summary: sum_h_BTCUSDT.json
+
+Uloženo: hbatch_BTCUSDT_sig0.6_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BTCUSDT       0.541892       0.485135   0.056757        0.011729    740
+
+=== Running BTCUSDT ===
+               time  entry_idx  compare_idx  last_price    pred_price  future_price   pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259   116662.25 112344.534380     117108.30 -4317.715620      446.05        -1         1  0.003823             0        1
+2025-09-17T02:00:00        256          260   116686.43 112434.894824     117234.27 -4251.535176      547.84        -1         1  0.004695             0        1
+2025-09-17T03:00:00        257          261   116372.04 112540.946354     117162.48 -3831.093646      790.44        -1         1  0.006792             0        1
+2025-09-17T04:00:00        258          262   116313.49 112646.057205     116860.00 -3667.432795      546.51        -1         1  0.004699             0        1
+2025-09-17T05:00:00        259          263   117108.30 112779.363094     116550.01 -4328.936906     -558.29        -1        -1 -0.004767             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.510811
+hit_rate_hold:  0.485135
+corr_pred_true: -0.021908
+mae_price:      3770.530570
+mae_return:     0.032485
+count:          740
+
+Uloženo CSV: eval_h_BTCUSDT.csv
+Uloženo summary: sum_h_BTCUSDT.json
+
+Uloženo: hbatch_BTCUSDT_sig0.8_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BTCUSDT       0.510811       0.485135   0.025676       -0.021908    740
+
+=== Running BTCUSDT ===
+               time  entry_idx  compare_idx  last_price    pred_price  future_price   pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259   116662.25 115374.773602     117108.30 -1287.476398      446.05        -1         1  0.003823             0        1
+2025-09-17T02:00:00        256          260   116686.43 115044.277753     117234.27 -1642.152247      547.84        -1         1  0.004695             0        1
+2025-09-17T03:00:00        257          261   116372.04 114509.458376     117162.48 -1862.581624      790.44        -1         1  0.006792             0        1
+2025-09-17T04:00:00        258          262   116313.49 114609.533613     116860.00 -1703.956387      546.51        -1         1  0.004699             0        1
+2025-09-17T05:00:00        259          263   117108.30 114853.094222     116550.01 -2255.205778     -558.29        -1        -1 -0.004767             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.541892
+hit_rate_hold:  0.485135
+corr_pred_true: 0.011723
+mae_price:      3045.123025
+mae_return:     0.026193
+count:          740
+
+Uloženo CSV: eval_h_BTCUSDT.csv
+Uloženo summary: sum_h_BTCUSDT.json
+
+Uloženo: hbatch_BTCUSDT_sig0.8_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BTCUSDT       0.541892       0.485135   0.056757        0.011723    740
+
+=== Running BTCUSDT ===
+               time  entry_idx  compare_idx  last_price    pred_price  future_price   pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259   116662.25 110989.124720     117108.30 -5673.125280      446.05        -1         1  0.003823             0        1
+2025-09-17T02:00:00        256          260   116686.43 110125.400499     117234.27 -6561.029501      547.84        -1         1  0.004695             0        1
+2025-09-17T03:00:00        257          261   116372.04 113621.155963     117162.48 -2750.884037      790.44        -1         1  0.006792             0        1
+2025-09-17T04:00:00        258          262   116313.49 110989.124720     116860.00 -5324.365280      546.51        -1         1  0.004699             0        1
+2025-09-17T05:00:00        259          263   117108.30 113621.155963     116550.01 -3487.144037     -558.29        -1        -1 -0.004767             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.504054
+hit_rate_hold:  0.485135
+corr_pred_true: -0.012318
+mae_price:      4535.567099
+mae_return:     0.039253
+count:          740
+
+Uloženo CSV: eval_h_BTCUSDT.csv
+Uloženo summary: sum_h_BTCUSDT.json
+
+Uloženo: hbatch_BTCUSDT_sig1.0_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BTCUSDT       0.504054       0.485135   0.018919       -0.012318    740
+
+=== Running BTCUSDT ===
+               time  entry_idx  compare_idx  last_price    pred_price  future_price   pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259   116662.25 111423.523872     117108.30 -5238.726128      446.05        -1         1  0.003823             0        1
+2025-09-17T02:00:00        256          260   116686.43 113178.189056     117234.27 -3508.240944      547.84        -1         1  0.004695             0        1
+2025-09-17T03:00:00        257          261   116372.04 111423.523872     117162.48 -4948.516128      790.44        -1         1  0.006792             0        1
+2025-09-17T04:00:00        258          262   116313.49 111423.523872     116860.00 -4889.966128      546.51        -1         1  0.004699             0        1
+2025-09-17T05:00:00        259          263   117108.30 111423.523872     116550.01 -5684.776128     -558.29        -1        -1 -0.004767             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.524324
+hit_rate_hold:  0.485135
+corr_pred_true: -0.005074
+mae_price:      5505.652239
+mae_return:     0.047610
+count:          740
+
+Uloženo CSV: eval_h_BTCUSDT.csv
+Uloženo summary: sum_h_BTCUSDT.json
+
+Uloženo: hbatch_BTCUSDT_sig1.0_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BTCUSDT       0.524324       0.485135   0.039189       -0.005074    740
+
+=== Running ETHUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259     4513.80 4295.919964       4514.91 -217.880036        1.11        -1         1  0.000246             0        1
+2025-09-17T02:00:00        256          260     4530.85 4301.023892       4545.99 -229.826108       15.14        -1         1  0.003342             0        1
+2025-09-17T03:00:00        257          261     4497.79 4309.830344       4544.07 -187.959656       46.28        -1         1  0.010289             0        1
+2025-09-17T04:00:00        258          262     4477.44 4313.314796       4511.08 -164.125204       33.64        -1         1  0.007513             0        1
+2025-09-17T05:00:00        259          263     4514.91 4322.340509       4494.85 -192.569491      -20.06        -1        -1 -0.004443             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.463514
+hit_rate_hold:  0.474324
+corr_pred_true: 0.035223
+mae_price:      201.518558
+mae_return:     0.047524
+count:          740
+
+Uloženo CSV: eval_h_ETHUSDT.csv
+Uloženo summary: sum_h_ETHUSDT.json
+
+Uloženo: hbatch_ETHUSDT_sig0.6_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ETHUSDT       0.463514       0.474324  -0.010811        0.035223    740
+
+=== Running ETHUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259     4513.80 4439.926529       4514.91  -73.873471        1.11        -1         1  0.000246             0        1
+2025-09-17T02:00:00        256          260     4530.85 4428.856387       4545.99 -101.993613       15.14        -1         1  0.003342             0        1
+2025-09-17T03:00:00        257          261     4497.79 4402.034049       4544.07  -95.755951       46.28        -1         1  0.010289             0        1
+2025-09-17T04:00:00        258          262     4477.44 4403.811840       4511.08  -73.628160       33.64        -1         1  0.007513             0        1
+2025-09-17T05:00:00        259          263     4514.91 4412.647129       4494.85 -102.262871      -20.06        -1        -1 -0.004443             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.509459
+hit_rate_hold:  0.474324
+corr_pred_true: 0.063341
+mae_price:      160.429805
+mae_return:     0.037675
+count:          740
+
+Uloženo CSV: eval_h_ETHUSDT.csv
+Uloženo summary: sum_h_ETHUSDT.json
+
+Uloženo: hbatch_ETHUSDT_sig0.6_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ETHUSDT       0.509459       0.474324   0.035135        0.063341    740
+
+=== Running ETHUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259     4513.80 4295.918903       4514.91 -217.881097        1.11        -1         1  0.000246             0        1
+2025-09-17T02:00:00        256          260     4530.85 4301.024633       4545.99 -229.825367       15.14        -1         1  0.003342             0        1
+2025-09-17T03:00:00        257          261     4497.79 4309.830408       4544.07 -187.959592       46.28        -1         1  0.010289             0        1
+2025-09-17T04:00:00        258          262     4477.44 4313.315189       4511.08 -164.124811       33.64        -1         1  0.007513             0        1
+2025-09-17T05:00:00        259          263     4514.91 4322.340635       4494.85 -192.569365      -20.06        -1        -1 -0.004443             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.463514
+hit_rate_hold:  0.474324
+corr_pred_true: 0.035223
+mae_price:      201.517762
+mae_return:     0.047523
+count:          740
+
+Uloženo CSV: eval_h_ETHUSDT.csv
+Uloženo summary: sum_h_ETHUSDT.json
+
+Uloženo: hbatch_ETHUSDT_sig0.8_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ETHUSDT       0.463514       0.474324  -0.010811        0.035223    740
+
+=== Running ETHUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259     4513.80 4439.937321       4514.91  -73.862679        1.11        -1         1  0.000246             0        1
+2025-09-17T02:00:00        256          260     4530.85 4428.840528       4545.99 -102.009472       15.14        -1         1  0.003342             0        1
+2025-09-17T03:00:00        257          261     4497.79 4402.025694       4544.07  -95.764306       46.28        -1         1  0.010289             0        1
+2025-09-17T04:00:00        258          262     4477.44 4403.822847       4511.08  -73.617153       33.64        -1         1  0.007513             0        1
+2025-09-17T05:00:00        259          263     4514.91 4412.651291       4494.85 -102.258709      -20.06        -1        -1 -0.004443             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.509459
+hit_rate_hold:  0.474324
+corr_pred_true: 0.063338
+mae_price:      160.431541
+mae_return:     0.037676
+count:          740
+
+Uloženo CSV: eval_h_ETHUSDT.csv
+Uloženo summary: sum_h_ETHUSDT.json
+
+Uloženo: hbatch_ETHUSDT_sig0.8_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ETHUSDT       0.509459       0.474324   0.035135        0.063338    740
+
+=== Running ETHUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259     4513.80 4474.947953       4514.91  -38.852047        1.11        -1         1  0.000246             0        1
+2025-09-17T02:00:00        256          260     4530.85 4074.486478       4545.99 -456.363522       15.14        -1         1  0.003342             0        1
+2025-09-17T03:00:00        257          261     4497.79 4474.947953       4544.07  -22.842047       46.28        -1         1  0.010289             0        1
+2025-09-17T04:00:00        258          262     4477.44 4616.998049       4511.08  139.558049       33.64         1         1  0.007513             1        1
+2025-09-17T05:00:00        259          263     4514.91 4474.947953       4494.85  -39.962047      -20.06        -1        -1 -0.004443             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.481081
+hit_rate_hold:  0.474324
+corr_pred_true: 0.007374
+mae_price:      245.010500
+mae_return:     0.057711
+count:          740
+
+Uloženo CSV: eval_h_ETHUSDT.csv
+Uloženo summary: sum_h_ETHUSDT.json
+
+Uloženo: hbatch_ETHUSDT_sig1.0_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ETHUSDT       0.481081       0.474324   0.006757        0.007374    740
+
+=== Running ETHUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259     4513.80 4171.110140       4514.91 -342.689860        1.11        -1         1  0.000246             0        1
+2025-09-17T02:00:00        256          260     4530.85 4253.377916       4545.99 -277.472084       15.14        -1         1  0.003342             0        1
+2025-09-17T03:00:00        257          261     4497.79 4220.277866       4544.07 -277.512134       46.28        -1         1  0.010289             0        1
+2025-09-17T04:00:00        258          262     4477.44 4171.110140       4511.08 -306.329860       33.64        -1         1  0.007513             0        1
+2025-09-17T05:00:00        259          263     4514.91 4154.848523       4494.85 -360.061477      -20.06        -1        -1 -0.004443             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.475676
+hit_rate_hold:  0.474324
+corr_pred_true: 0.015895
+mae_price:      314.649799
+mae_return:     0.073559
+count:          740
+
+Uloženo CSV: eval_h_ETHUSDT.csv
+Uloženo summary: sum_h_ETHUSDT.json
+
+Uloženo: hbatch_ETHUSDT_sig1.0_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ETHUSDT       0.475676       0.474324   0.001351        0.015895    740
+
+=== Running BNBUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      956.85  893.080481        951.76  -63.769519       -5.09        -1        -1 -0.005320             1        0
+2025-09-17T02:00:00        256          260      959.91  894.321583        954.44  -65.588417       -5.47        -1        -1 -0.005698             1        0
+2025-09-17T03:00:00        257          261      957.00  896.091252        954.70  -60.908748       -2.30        -1        -1 -0.002403             1        0
+2025-09-17T04:00:00        258          262      951.80  896.528223        956.55  -55.271777        4.75        -1         1  0.004991             0        1
+2025-09-17T05:00:00        259          263      951.76  897.243237        955.01  -54.516763        3.25        -1         1  0.003415             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.460811
+hit_rate_hold:  0.531081
+corr_pred_true: 0.043915
+mae_price:      69.923379
+mae_return:     0.063508
+count:          740
+
+Uloženo CSV: eval_h_BNBUSDT.csv
+Uloženo summary: sum_h_BNBUSDT.json
+
+Uloženo: hbatch_BNBUSDT_sig0.6_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BNBUSDT       0.460811       0.531081   -0.07027        0.043915    740
+
+=== Running BNBUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      956.85  943.406218        951.76  -13.443782       -5.09        -1        -1 -0.005320             1        0
+2025-09-17T02:00:00        256          260      959.91  941.081966        954.44  -18.828034       -5.47        -1        -1 -0.005698             1        0
+2025-09-17T03:00:00        257          261      957.00  936.926600        954.70  -20.073400       -2.30        -1        -1 -0.002403             1        0
+2025-09-17T04:00:00        258          262      951.80  937.548509        956.55  -14.251491        4.75        -1         1  0.004991             0        1
+2025-09-17T05:00:00        259          263      951.76  937.766456        955.01  -13.993544        3.25        -1         1  0.003415             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.489189
+hit_rate_hold:  0.531081
+corr_pred_true: 0.060915
+mae_price:      53.921448
+mae_return:     0.048853
+count:          740
+
+Uloženo CSV: eval_h_BNBUSDT.csv
+Uloženo summary: sum_h_BNBUSDT.json
+
+Uloženo: hbatch_BNBUSDT_sig0.6_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BNBUSDT       0.489189       0.531081  -0.041892        0.060915    740
+
+=== Running BNBUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      956.85  893.080392        951.76  -63.769608       -5.09        -1        -1 -0.005320             1        0
+2025-09-17T02:00:00        256          260      959.91  894.321847        954.44  -65.588153       -5.47        -1        -1 -0.005698             1        0
+2025-09-17T03:00:00        257          261      957.00  896.091320        954.70  -60.908680       -2.30        -1        -1 -0.002403             1        0
+2025-09-17T04:00:00        258          262      951.80  896.528317        956.55  -55.271683        4.75        -1         1  0.004991             0        1
+2025-09-17T05:00:00        259          263      951.76  897.243352        955.01  -54.516648        3.25        -1         1  0.003415             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.460811
+hit_rate_hold:  0.531081
+corr_pred_true: 0.043915
+mae_price:      69.923223
+mae_return:     0.063508
+count:          740
+
+Uloženo CSV: eval_h_BNBUSDT.csv
+Uloženo summary: sum_h_BNBUSDT.json
+
+Uloženo: hbatch_BNBUSDT_sig0.8_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BNBUSDT       0.460811       0.531081   -0.07027        0.043915    740
+
+=== Running BNBUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      956.85  943.409703        951.76  -13.440297       -5.09        -1        -1 -0.005320             1        0
+2025-09-17T02:00:00        256          260      959.91  941.069776        954.44  -18.840224       -5.47        -1        -1 -0.005698             1        0
+2025-09-17T03:00:00        257          261      957.00  936.927206        954.70  -20.072794       -2.30        -1        -1 -0.002403             1        0
+2025-09-17T04:00:00        258          262      951.80  937.547516        956.55  -14.252484        4.75        -1         1  0.004991             0        1
+2025-09-17T05:00:00        259          263      951.76  937.763917        955.01  -13.996083        3.25        -1         1  0.003415             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.489189
+hit_rate_hold:  0.531081
+corr_pred_true: 0.060914
+mae_price:      53.922180
+mae_return:     0.048854
+count:          740
+
+Uloženo CSV: eval_h_BNBUSDT.csv
+Uloženo summary: sum_h_BNBUSDT.json
+
+Uloženo: hbatch_BNBUSDT_sig0.8_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BNBUSDT       0.489189       0.531081  -0.041892        0.060914    740
+
+=== Running BNBUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      956.85  895.045898        951.76  -61.804102       -5.09        -1        -1 -0.005320             1        0
+2025-09-17T02:00:00        256          260      959.91  827.782137        954.44 -132.127863       -5.47        -1        -1 -0.005698             1        0
+2025-09-17T03:00:00        257          261      957.00  938.000048        954.70  -18.999952       -2.30        -1        -1 -0.002403             1        0
+2025-09-17T04:00:00        258          262      951.80  967.775366        956.55   15.975366        4.75         1         1  0.004991             1        1
+2025-09-17T05:00:00        259          263      951.76  881.169498        955.01  -70.590502        3.25        -1         1  0.003415             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.494595
+hit_rate_hold:  0.531081
+corr_pred_true: 0.058424
+mae_price:      79.787190
+mae_return:     0.073047
+count:          740
+
+Uloženo CSV: eval_h_BNBUSDT.csv
+Uloženo summary: sum_h_BNBUSDT.json
+
+Uloženo: hbatch_BNBUSDT_sig1.0_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BNBUSDT       0.494595       0.531081  -0.036486        0.058424    740
+
+=== Running BNBUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      956.85  877.734144        951.76  -79.115856       -5.09        -1        -1 -0.005320             1        0
+2025-09-17T02:00:00        256          260      959.91  895.045898        954.44  -64.864102       -5.47        -1        -1 -0.005698             1        0
+2025-09-17T03:00:00        257          261      957.00  881.169498        954.70  -75.830502       -2.30        -1        -1 -0.002403             1        0
+2025-09-17T04:00:00        258          262      951.80  888.080596        956.55  -63.719404        4.75        -1         1  0.004991             0        1
+2025-09-17T05:00:00        259          263      951.76  877.734144        955.01  -74.025856        3.25        -1         1  0.003415             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.491892
+hit_rate_hold:  0.531081
+corr_pred_true: 0.012961
+mae_price:      98.741474
+mae_return:     0.091804
+count:          740
+
+Uloženo CSV: eval_h_BNBUSDT.csv
+Uloženo summary: sum_h_BNBUSDT.json
+
+Uloženo: hbatch_BNBUSDT_sig1.0_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+BNBUSDT       0.491892       0.531081  -0.039189        0.012961    740
+
+=== Running SOLUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      236.29  217.928393        235.07  -18.361607       -1.22        -1        -1 -0.005163             1        0
+2025-09-17T02:00:00        256          260      236.33  218.231606        236.09  -18.098394       -0.24        -1        -1 -0.001016             1        0
+2025-09-17T03:00:00        257          261      234.07  218.830959        237.69  -15.239041        3.62        -1         1  0.015465             0        1
+2025-09-17T04:00:00        258          262      233.73  218.900317        235.87  -14.829683        2.14        -1         1  0.009156             0        1
+2025-09-17T05:00:00        259          263      235.07  219.266852        235.20  -15.803148        0.13        -1         1  0.000553             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.486486
+hit_rate_hold:  0.452703
+corr_pred_true: 0.020185
+mae_price:      13.468105
+mae_return:     0.062890
+count:          740
+
+Uloženo CSV: eval_h_SOLUSDT.csv
+Uloženo summary: sum_h_SOLUSDT.json
+
+Uloženo: hbatch_SOLUSDT_sig0.6_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+SOLUSDT       0.486486       0.452703   0.033784        0.020185    740
+
+=== Running SOLUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      236.29  231.652893        235.07   -4.637107       -1.22        -1        -1 -0.005163             1        0
+2025-09-17T02:00:00        256          260      236.33  229.609149        236.09   -6.720851       -0.24        -1        -1 -0.001016             1        0
+2025-09-17T03:00:00        257          261      234.07  226.912708        237.69   -7.157292        3.62        -1         1  0.015465             0        1
+2025-09-17T04:00:00        258          262      233.73  226.352840        235.87   -7.377160        2.14        -1         1  0.009156             0        1
+2025-09-17T05:00:00        259          263      235.07  226.181192        235.20   -8.888808        0.13        -1         1  0.000553             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.535135
+hit_rate_hold:  0.452703
+corr_pred_true: 0.063822
+mae_price:      10.745286
+mae_return:     0.050033
+count:          740
+
+Uloženo CSV: eval_h_SOLUSDT.csv
+Uloženo summary: sum_h_SOLUSDT.json
+
+Uloženo: hbatch_SOLUSDT_sig0.6_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+SOLUSDT       0.535135       0.452703   0.082432        0.063822    740
+
+=== Running SOLUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      236.29  217.928277        235.07  -18.361723       -1.22        -1        -1 -0.005163             1        0
+2025-09-17T02:00:00        256          260      236.33  218.231715        236.09  -18.098285       -0.24        -1        -1 -0.001016             1        0
+2025-09-17T03:00:00        257          261      234.07  218.830978        237.69  -15.239022        3.62        -1         1  0.015465             0        1
+2025-09-17T04:00:00        258          262      233.73  218.900341        235.87  -14.829659        2.14        -1         1  0.009156             0        1
+2025-09-17T05:00:00        259          263      235.07  219.266864        235.20  -15.803136        0.13        -1         1  0.000553             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.486486
+hit_rate_hold:  0.452703
+corr_pred_true: 0.020185
+mae_price:      13.468052
+mae_return:     0.062890
+count:          740
+
+Uloženo CSV: eval_h_SOLUSDT.csv
+Uloženo summary: sum_h_SOLUSDT.json
+
+Uloženo: hbatch_SOLUSDT_sig0.8_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+SOLUSDT       0.486486       0.452703   0.033784        0.020185    740
+
+=== Running SOLUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      236.29  231.656409        235.07   -4.633591       -1.22        -1        -1 -0.005163             1        0
+2025-09-17T02:00:00        256          260      236.33  229.606514        236.09   -6.723486       -0.24        -1        -1 -0.001016             1        0
+2025-09-17T03:00:00        257          261      234.07  226.911607        237.69   -7.158393        3.62        -1         1  0.015465             0        1
+2025-09-17T04:00:00        258          262      233.73  226.352255        235.87   -7.377745        2.14        -1         1  0.009156             0        1
+2025-09-17T05:00:00        259          263      235.07  226.183079        235.20   -8.886921        0.13        -1         1  0.000553             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.535135
+hit_rate_hold:  0.452703
+corr_pred_true: 0.063821
+mae_price:      10.745371
+mae_return:     0.050033
+count:          740
+
+Uloženo CSV: eval_h_SOLUSDT.csv
+Uloženo summary: sum_h_SOLUSDT.json
+
+Uloženo: hbatch_SOLUSDT_sig0.8_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+SOLUSDT       0.535135       0.452703   0.082432        0.063821    740
+
+=== Running SOLUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      236.29  237.163553        235.07    0.873553       -1.22         1        -1 -0.005163             0        0
+2025-09-17T02:00:00        256          260      236.33  190.566268        236.09  -45.763732       -0.24        -1        -1 -0.001016             1        0
+2025-09-17T03:00:00        257          261      234.07  229.866798        237.69   -4.203202        3.62        -1         1  0.015465             0        1
+2025-09-17T04:00:00        258          262      233.73  237.163553        235.87    3.433553        2.14         1         1  0.009156             1        1
+2025-09-17T05:00:00        259          263      235.07  209.296101        235.20  -25.773899        0.13        -1         1  0.000553             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.495946
+hit_rate_hold:  0.452703
+corr_pred_true: 0.017728
+mae_price:      15.875108
+mae_return:     0.073853
+count:          740
+
+Uloženo CSV: eval_h_SOLUSDT.csv
+Uloženo summary: sum_h_SOLUSDT.json
+
+Uloženo: hbatch_SOLUSDT_sig1.0_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+SOLUSDT       0.495946       0.452703   0.043243        0.017728    740
+
+=== Running SOLUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      236.29  229.866798        235.07   -6.423202       -1.22        -1        -1 -0.005163             1        0
+2025-09-17T02:00:00        256          260      236.33  206.051266        236.09  -30.278734       -0.24        -1        -1 -0.001016             1        0
+2025-09-17T03:00:00        257          261      234.07  196.615491        237.69  -37.454509        3.62        -1         1  0.015465             0        1
+2025-09-17T04:00:00        258          262      233.73  201.278093        235.87  -32.451907        2.14        -1         1  0.009156             0        1
+2025-09-17T05:00:00        259          263      235.07  209.296101        235.20  -25.773899        0.13        -1         1  0.000553             0        1
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.498649
+hit_rate_hold:  0.452703
+corr_pred_true: 0.039518
+mae_price:      21.330308
+mae_return:     0.098291
+count:          740
+
+Uloženo CSV: eval_h_SOLUSDT.csv
+Uloženo summary: sum_h_SOLUSDT.json
+
+Uloženo: hbatch_SOLUSDT_sig1.0_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+SOLUSDT       0.498649       0.452703   0.045946        0.039518    740
+
+=== Running ADAUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      0.8778    0.838982        0.8784   -0.038818      0.0006        -1         1  0.000684             0        1
+2025-09-17T02:00:00        256          260      0.8790    0.840423        0.8815   -0.038577      0.0025        -1         1  0.002844             0        1
+2025-09-17T03:00:00        257          261      0.8739    0.842593        0.8823   -0.031307      0.0084        -1         1  0.009612             0        1
+2025-09-17T04:00:00        258          262      0.8696    0.844400        0.8767   -0.025200      0.0071        -1         1  0.008165             0        1
+2025-09-17T05:00:00        259          263      0.8784    0.847244        0.8719   -0.031156     -0.0065        -1        -1 -0.007400             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.477027
+hit_rate_hold:  0.485135
+corr_pred_true: 0.014386
+mae_price:      0.044572
+mae_return:     0.057559
+count:          740
+
+Uloženo CSV: eval_h_ADAUSDT.csv
+Uloženo summary: sum_h_ADAUSDT.json
+
+Uloženo: hbatch_ADAUSDT_sig0.6_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ADAUSDT       0.477027       0.485135  -0.008108        0.014386    740
+
+=== Running ADAUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      0.8778    0.882661        0.8784    0.004861      0.0006         1         1  0.000684             1        1
+2025-09-17T02:00:00        256          260      0.8790    0.878787        0.8815   -0.000213      0.0025        -1         1  0.002844             0        1
+2025-09-17T03:00:00        257          261      0.8739    0.872456        0.8823   -0.001444      0.0084        -1         1  0.009612             0        1
+2025-09-17T04:00:00        258          262      0.8696    0.871957        0.8767    0.002357      0.0071         1         1  0.008165             1        1
+2025-09-17T05:00:00        259          263      0.8784    0.873188        0.8719   -0.005212     -0.0065        -1        -1 -0.007400             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.505405
+hit_rate_hold:  0.485135
+corr_pred_true: 0.043678
+mae_price:      0.036351
+mae_return:     0.046858
+count:          740
+
+Uloženo CSV: eval_h_ADAUSDT.csv
+Uloženo summary: sum_h_ADAUSDT.json
+
+Uloženo: hbatch_ADAUSDT_sig0.6_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ADAUSDT       0.505405       0.485135    0.02027        0.043678    740
+
+=== Running ADAUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      0.8778    0.838982        0.8784   -0.038818      0.0006        -1         1  0.000684             0        1
+2025-09-17T02:00:00        256          260      0.8790    0.840423        0.8815   -0.038577      0.0025        -1         1  0.002844             0        1
+2025-09-17T03:00:00        257          261      0.8739    0.842593        0.8823   -0.031307      0.0084        -1         1  0.009612             0        1
+2025-09-17T04:00:00        258          262      0.8696    0.844400        0.8767   -0.025200      0.0071        -1         1  0.008165             0        1
+2025-09-17T05:00:00        259          263      0.8784    0.847244        0.8719   -0.031156     -0.0065        -1        -1 -0.007400             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.477027
+hit_rate_hold:  0.485135
+corr_pred_true: 0.014386
+mae_price:      0.044572
+mae_return:     0.057559
+count:          740
+
+Uloženo CSV: eval_h_ADAUSDT.csv
+Uloženo summary: sum_h_ADAUSDT.json
+
+Uloženo: hbatch_ADAUSDT_sig0.8_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ADAUSDT       0.477027       0.485135  -0.008108        0.014386    740
+
+=== Running ADAUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      0.8778    0.882665        0.8784    0.004865      0.0006         1         1  0.000684             1        1
+2025-09-17T02:00:00        256          260      0.8790    0.878785        0.8815   -0.000215      0.0025        -1         1  0.002844             0        1
+2025-09-17T03:00:00        257          261      0.8739    0.872458        0.8823   -0.001442      0.0084        -1         1  0.009612             0        1
+2025-09-17T04:00:00        258          262      0.8696    0.871958        0.8767    0.002358      0.0071         1         1  0.008165             1        1
+2025-09-17T05:00:00        259          263      0.8784    0.873189        0.8719   -0.005211     -0.0065        -1        -1 -0.007400             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.505405
+hit_rate_hold:  0.485135
+corr_pred_true: 0.043675
+mae_price:      0.036351
+mae_return:     0.046858
+count:          740
+
+Uloženo CSV: eval_h_ADAUSDT.csv
+Uloženo summary: sum_h_ADAUSDT.json
+
+Uloženo: hbatch_ADAUSDT_sig0.8_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ADAUSDT       0.505405       0.485135    0.02027        0.043675    740
+
+=== Running ADAUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      0.8778    0.855345        0.8784   -0.022455      0.0006        -1         1  0.000684             0        1
+2025-09-17T02:00:00        256          260      0.8790    0.720273        0.8815   -0.158727      0.0025        -1         1  0.002844             0        1
+2025-09-17T03:00:00        257          261      0.8739    0.868815        0.8823   -0.005085      0.0084        -1         1  0.009612             0        1
+2025-09-17T04:00:00        258          262      0.8696    0.829029        0.8767   -0.040571      0.0071        -1         1  0.008165             0        1
+2025-09-17T05:00:00        259          263      0.8784    0.855345        0.8719   -0.023055     -0.0065        -1        -1 -0.007400             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.518919
+hit_rate_hold:  0.485135
+corr_pred_true: 0.039862
+mae_price:      0.052951
+mae_return:     0.067604
+count:          740
+
+Uloženo CSV: eval_h_ADAUSDT.csv
+Uloženo summary: sum_h_ADAUSDT.json
+
+Uloženo: hbatch_ADAUSDT_sig1.0_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ADAUSDT       0.518919       0.485135   0.033784        0.039862    740
+
+=== Running ADAUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      0.8778    0.830650        0.8784   -0.047150      0.0006        -1         1  0.000684             0        1
+2025-09-17T02:00:00        256          260      0.8790    0.809825        0.8815   -0.069175      0.0025        -1         1  0.002844             0        1
+2025-09-17T03:00:00        257          261      0.8739    0.845380        0.8823   -0.028520      0.0084        -1         1  0.009612             0        1
+2025-09-17T04:00:00        258          262      0.8696    0.825797        0.8767   -0.043803      0.0071        -1         1  0.008165             0        1
+2025-09-17T05:00:00        259          263      0.8784    0.838801        0.8719   -0.039599     -0.0065        -1        -1 -0.007400             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.485135
+hit_rate_hold:  0.485135
+corr_pred_true: 0.012034
+mae_price:      0.069464
+mae_return:     0.087688
+count:          740
+
+Uloženo CSV: eval_h_ADAUSDT.csv
+Uloženo summary: sum_h_ADAUSDT.json
+
+Uloženo: hbatch_ADAUSDT_sig1.0_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+ADAUSDT       0.485135       0.485135        0.0        0.012034    740
+
+=== Running XRPUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      3.0399    2.936353        3.0200   -0.103547     -0.0199        -1        -1 -0.006546             1        0
+2025-09-17T02:00:00        256          260      3.0374    2.937613        3.0235   -0.099787     -0.0139        -1        -1 -0.004576             1        0
+2025-09-17T03:00:00        257          261      3.0162    2.939854        3.0342   -0.076346      0.0180        -1         1  0.005968             0        1
+2025-09-17T04:00:00        258          262      3.0112    2.945952        3.0205   -0.065248      0.0093        -1         1  0.003088             0        1
+2025-09-17T05:00:00        259          263      3.0200    2.952897        3.0146   -0.067103     -0.0054        -1        -1 -0.001788             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.531081
+hit_rate_hold:  0.475676
+corr_pred_true: 0.006928
+mae_price:      0.119589
+mae_return:     0.043815
+count:          740
+
+Uloženo CSV: eval_h_XRPUSDT.csv
+Uloženo summary: sum_h_XRPUSDT.json
+
+Uloženo: hbatch_XRPUSDT_sig0.6_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+XRPUSDT       0.531081       0.475676   0.055405        0.006928    740
+
+=== Running XRPUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      3.0399    3.030403        3.0200   -0.009497     -0.0199        -1        -1 -0.006546             1        0
+2025-09-17T02:00:00        256          260      3.0374    3.016900        3.0235   -0.020500     -0.0139        -1        -1 -0.004576             1        0
+2025-09-17T03:00:00        257          261      3.0162    2.994484        3.0342   -0.021716      0.0180        -1         1  0.005968             0        1
+2025-09-17T04:00:00        258          262      3.0112    2.998075        3.0205   -0.013125      0.0093        -1         1  0.003088             0        1
+2025-09-17T05:00:00        259          263      3.0200    3.001275        3.0146   -0.018725     -0.0054        -1        -1 -0.001788             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.502703
+hit_rate_hold:  0.475676
+corr_pred_true: 0.014772
+mae_price:      0.096610
+mae_return:     0.035314
+count:          740
+
+Uloženo CSV: eval_h_XRPUSDT.csv
+Uloženo summary: sum_h_XRPUSDT.json
+
+Uloženo: hbatch_XRPUSDT_sig0.6_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+XRPUSDT       0.502703       0.475676   0.027027        0.014772    740
+
+=== Running XRPUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      3.0399    2.936352        3.0200   -0.103548     -0.0199        -1        -1 -0.006546             1        0
+2025-09-17T02:00:00        256          260      3.0374    2.937614        3.0235   -0.099786     -0.0139        -1        -1 -0.004576             1        0
+2025-09-17T03:00:00        257          261      3.0162    2.939854        3.0342   -0.076346      0.0180        -1         1  0.005968             0        1
+2025-09-17T04:00:00        258          262      3.0112    2.945952        3.0205   -0.065248      0.0093        -1         1  0.003088             0        1
+2025-09-17T05:00:00        259          263      3.0200    2.952897        3.0146   -0.067103     -0.0054        -1        -1 -0.001788             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.531081
+hit_rate_hold:  0.475676
+corr_pred_true: 0.006928
+mae_price:      0.119589
+mae_return:     0.043815
+count:          740
+
+Uloženo CSV: eval_h_XRPUSDT.csv
+Uloženo summary: sum_h_XRPUSDT.json
+
+Uloženo: hbatch_XRPUSDT_sig0.8_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+XRPUSDT       0.531081       0.475676   0.055405        0.006928    740
+
+=== Running XRPUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      3.0399    3.030404        3.0200   -0.009496     -0.0199        -1        -1 -0.006546             1        0
+2025-09-17T02:00:00        256          260      3.0374    3.016886        3.0235   -0.020514     -0.0139        -1        -1 -0.004576             1        0
+2025-09-17T03:00:00        257          261      3.0162    2.994476        3.0342   -0.021724      0.0180        -1         1  0.005968             0        1
+2025-09-17T04:00:00        258          262      3.0112    2.998071        3.0205   -0.013129      0.0093        -1         1  0.003088             0        1
+2025-09-17T05:00:00        259          263      3.0200    3.001275        3.0146   -0.018725     -0.0054        -1        -1 -0.001788             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.502703
+hit_rate_hold:  0.475676
+corr_pred_true: 0.014770
+mae_price:      0.096611
+mae_return:     0.035315
+count:          740
+
+Uloženo CSV: eval_h_XRPUSDT.csv
+Uloženo summary: sum_h_XRPUSDT.json
+
+Uloženo: hbatch_XRPUSDT_sig0.8_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+XRPUSDT       0.502703       0.475676   0.027027         0.01477    740
+
+=== Running XRPUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      3.0399    3.177993        3.0200    0.138093     -0.0199         1        -1 -0.006546             0        0
+2025-09-17T02:00:00        256          260      3.0374    2.939163        3.0235   -0.098237     -0.0139        -1        -1 -0.004576             1        0
+2025-09-17T03:00:00        257          261      3.0162    2.871078        3.0342   -0.145122      0.0180        -1         1  0.005968             0        1
+2025-09-17T04:00:00        258          262      3.0112    2.962216        3.0205   -0.048984      0.0093        -1         1  0.003088             0        1
+2025-09-17T05:00:00        259          263      3.0200    2.893596        3.0146   -0.126404     -0.0054        -1        -1 -0.001788             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.516216
+hit_rate_hold:  0.475676
+corr_pred_true: 0.037754
+mae_price:      0.144599
+mae_return:     0.052481
+count:          740
+
+Uloženo CSV: eval_h_XRPUSDT.csv
+Uloženo summary: sum_h_XRPUSDT.json
+
+Uloženo: hbatch_XRPUSDT_sig1.0_nP8.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+XRPUSDT       0.516216       0.475676   0.040541        0.037754    740
+
+=== Running XRPUSDT ===
+               time  entry_idx  compare_idx  last_price  pred_price  future_price  pred_delta  true_delta  pred_dir  true_dir  hold_ret  correct_pred  hold_up
+2025-09-17T01:00:00        255          259      3.0399    2.871078        3.0200   -0.168822     -0.0199        -1        -1 -0.006546             1        0
+2025-09-17T02:00:00        256          260      3.0374    2.882315        3.0235   -0.155085     -0.0139        -1        -1 -0.004576             1        0
+2025-09-17T03:00:00        257          261      3.0162    2.887950        3.0342   -0.128250      0.0180        -1         1  0.005968             0        1
+2025-09-17T04:00:00        258          262      3.0112    2.848735        3.0205   -0.162465      0.0093        -1         1  0.003088             0        1
+2025-09-17T05:00:00        259          263      3.0200    2.871078        3.0146   -0.148922     -0.0054        -1        -1 -0.001788             1        0
+
+--- HSTRATEGY vs HOLD ---
+hit_rate_pred:  0.514865
+hit_rate_hold:  0.475676
+corr_pred_true: -0.001366
+mae_price:      0.182203
+mae_return:     0.065515
+count:          740
+
+Uloženo CSV: eval_h_XRPUSDT.csv
+Uloženo summary: sum_h_XRPUSDT.json
+
+Uloženo: hbatch_XRPUSDT_sig1.0_nP12.csv
+ symbol  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true  count
+XRPUSDT       0.514865       0.475676   0.039189       -0.001366    740
