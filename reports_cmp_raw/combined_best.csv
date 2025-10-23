@@ -1,2 +1,0 @@
-variant,model,upper,lower,runs,sharpe,maxdd,cagr,total_return,trades,fees
-raw,logreg,0.504,0.496,1,0.18679420227139895,1.0000090856016324,-1.0,-1.0,42,1.4462972691494467
