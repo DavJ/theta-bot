@@ -1,7 +1,7 @@
 {
-  "hit_rate_pred": 0.8,
+  "hit_rate_pred": 0.5297297297297298,
   "hit_rate_hold": 0.4756756756756757,
-  "corr_pred_true": 0.8218754894653532,
+  "corr_pred_true": 0.13676322134627464,
   "mae_price": 2.6352297297297302,
   "mae_return": 0.012976098783507412,
   "count": 740
