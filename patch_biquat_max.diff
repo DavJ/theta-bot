@@ -1,0 +1,36 @@
+--- a/theta_eval_hbatch_biquat.py
++++ b/theta_eval_hbatch_biquat.py
+@@
+ def main():
+     parser = argparse.ArgumentParser()
+     parser.add_argument("--symbols", required=True, help="Comma-separated symbols or CSV paths")
+     parser.add_argument("--interval", default="1h")
+     parser.add_argument("--window", type=int, default=256)
+     parser.add_argument("--horizon", type=int, default=4)
+     parser.add_argument("--minP", type=int, default=24)
+     parser.add_argument("--maxP", type=int, default=480)
+     parser.add_argument("--nP", type=int, default=12)
+     parser.add_argument("--sigma", type=float, default=0.8)
+     parser.add_argument("--lambda", dest="lam", type=float, default=1e-3)
+     parser.add_argument("--limit", type=int, default=2000)
+     parser.add_argument("--phase", choices=["simple","complex","biquat"], default="biquat")
++    parser.add_argument("--pred-ensemble", choices=["avg","max"], default="avg",
++                        help="How to combine per-ψ contributions: avg (sum) or max (dominant ψ).")
++    parser.add_argument("--max-by", choices=["contrib","transform"], default="contrib",
++                        help="For --pred-ensemble max: select dominant ψ by |X_j*β_j| (contrib) or |X_j| (transform).")
+     parser.add_argument("--out", required=True)
+     args = parser.parse_args()
++    global ARGS
++    ARGS = vars(args)
+@@
+-    pred = X @ beta
++    contrib = X * beta.reshape(1, -1)
++    if ARGS.get("pred_ensemble","avg") == "avg":
++        pred = contrib.sum(axis=1)
++    else:
++        if ARGS.get("max_by","contrib") == "transform":
++            idx = np.abs(X).argmax(axis=1)
++        else:
++            idx = np.abs(contrib).argmax(axis=1)
++        rows = np.arange(contrib.shape[0])
++        pred = contrib[rows, idx]

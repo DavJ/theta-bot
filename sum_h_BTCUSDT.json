@@ -1,11 +1,8 @@
 {
-  "symbol": "BTCUSDT",
-  "phase": "biquat",
-  "hit_rate_pred": 0.4851351351351351,
-  "hit_rate_hold": 0.5148648648648648,
-  "delta_hit": -0.029729729729729704,
-  "corr_pred_true": 0.17754276158079352,
-  "mae_price": 92421.27603914432,
-  "mae_return": 0.8045054157479651,
+  "hit_rate_pred": 0.49864864864864866,
+  "hit_rate_hold": 0.4972972972972973,
+  "corr_pred_true": 0.0020049941397447435,
+  "mae_price": 3887.4087018094015,
+  "mae_return": 0.033706326930117034,
   "count": 740
 }

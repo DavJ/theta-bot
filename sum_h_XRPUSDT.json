@@ -1,11 +1,8 @@
 {
-  "symbol": "XRPUSDT",
-  "phase": "biquat",
-  "hit_rate_pred": 0.5202702702702703,
-  "hit_rate_hold": 0.4783783783783784,
-  "delta_hit": 0.04189189189189191,
-  "corr_pred_true": 0.09578020590880125,
-  "mae_price": 2.246080969394221,
-  "mae_return": 0.8128749060769623,
+  "hit_rate_pred": 0.504054054054054,
+  "hit_rate_hold": 0.4810810810810811,
+  "corr_pred_true": 0.022294195220048586,
+  "mae_price": 0.13402924979321537,
+  "mae_return": 0.050088878650289576,
   "count": 740
 }

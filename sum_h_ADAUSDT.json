@@ -1,11 +1,8 @@
 {
-  "symbol": "ADAUSDT",
-  "phase": "biquat",
-  "hit_rate_pred": 0.5297297297297298,
-  "hit_rate_hold": 0.4689189189189189,
-  "delta_hit": 0.060810810810810856,
-  "corr_pred_true": 0.1319295754909408,
-  "mae_price": 0.638388145039989,
-  "mae_return": 0.8169069335186497,
+  "hit_rate_pred": 0.4797297297297297,
+  "hit_rate_hold": 0.4756756756756757,
+  "corr_pred_true": 0.037666868514096175,
+  "mae_price": 0.050250428513287725,
+  "mae_return": 0.0668969308889794,
   "count": 740
 }

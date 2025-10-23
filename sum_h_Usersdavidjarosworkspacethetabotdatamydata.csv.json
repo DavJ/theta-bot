@@ -1,11 +1,11 @@
 {
   "symbol": "/Users/davidjaros/workspace/theta-bot/data/mydata.csv",
-  "phase": "complex",
+  "phase": "biquat",
   "hit_rate_pred": 0.44485294117647056,
   "hit_rate_hold": 0.5551470588235294,
   "delta_hit": -0.11029411764705888,
-  "corr_pred_true": 0.17414235844648973,
-  "mae_price": 552814.2735327149,
-  "mae_return": 4.789551976799164,
+  "corr_pred_true": 0.16955598065910396,
+  "mae_price": 65288.34809608515,
+  "mae_return": 0.5659842015626307,
   "count": 544
 }
