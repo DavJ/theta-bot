@@ -1,0 +1,67 @@
+cat > .gitignore.new <<'EOF'
+# === Python / build ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+build/
+dist/
+
+# === Native artifacts ===
+*.o
+*.a
+*.so
+*.dylib
+
+# === Virtual envs ===
+.env
+.venv
+env/
+venv/
+ENV/
+
+# === Jupyter / IPython ===
+.ipynb_checkpoints/
+
+# === OS junk ===
+.DS_Store
+Thumbs.db
+
+# === Editors ===
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# === Logs & temp ===
+*.log
+*.tmp
+tmp/
+cache/
+artifacts/
+
+# === Secrets / env ===
+*.env
+.env.*
+compose/.env*
+!.env.example
+!compose/.env.example
+!compose/.env.paper.example
+
+# === Data & reports (ignore big artifacts) ===
+*.csv
+*.parquet
+*.feather
+*.xlsx
+*.json
+*.pdf
+*.png
+prices/
+out/
+reports/
+
+# Allowlist: tiny regression fixtures
+!regression/**
+EOF
+
