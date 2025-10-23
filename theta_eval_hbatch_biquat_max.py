@@ -85,12 +85,17 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
 
         lo = compare_idx - window
         hi = compare_idx
-        Xw = X_all[lo:hi, :]
-        yw = (closes[lo+horizon:hi+horizon] - closes[lo:hi]).astype(float)
-        m = min(len(Xw), len(yw))
-        Xw = Xw[:m, :]
-        yw = yw[:m]
 
+        # === CAUSAL TRAINING WINDOW ===
+        # Only include rows whose labels (t + horizon) are known by compare_idx - 1
+        hi_train = max(lo, hi - horizon)  # drop the last `horizon` rows to prevent lookahead
+        if hi_train <= lo:
+            continue  # not enough causal data
+
+        Xw = X_all[lo:hi_train, :]
+        yw = (closes[lo + horizon : hi_train + horizon] - closes[lo:hi_train]).astype(float)
+
+        m = Xw.shape[0]
         w = gaussian_weights(m, sigma)
         Xw_w = Xw * w[:,None]
         yw_w = yw * w
