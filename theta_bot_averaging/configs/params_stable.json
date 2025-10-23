@@ -1,0 +1,13 @@
+{
+  "window": 256,
+  "horizon": 4,
+  "minP": 24,
+  "maxP": 480,
+  "nP": 16,
+  "sigma": 0.8,
+  "lambda": 0.001,
+  "pred_ensemble": "avg",
+  "max_by": "transform",
+  "interval": "1h",
+  "limit": 2000
+}

@@ -1,0 +1,126 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{Technický popis modelu: Theta báze a predikce}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Základ: úplná theta báze z q-řad}
+
+Použijeme Jacobiho thety $\vartheta_j(z,\tau)$, $j \in \{0,1,2,3\}$ (s běžnými konvencemi $\vartheta_0 \equiv \vartheta_4$), s $q = e^{i\pi\tau}$, $\Im(\tau)>0$. Pro rozklad na reálné báze z komponent q-řad:
+
+\begin{align*}
+\vartheta_3(z,\tau) &= 1 + 2\sum_{n=1}^\infty q^{n^2}\cos(2n z),\\
+\vartheta_2(z,\tau) &= 2\sum_{n=0}^\infty q^{(n+\frac{1}{2})^2}\cos\big((2n+1)z\big),\\
+\vartheta_1(z,\tau) &= 2\sum_{n=0}^\infty (-1)^n q^{(n+\frac{1}{2})^2}\sin\big((2n+1)z\big),\\
+\vartheta_0(z,\tau) &= \vartheta_4(z,\tau) = 1 + 2\sum_{n=1}^\infty (-1)^n q^{n^2}\cos(2n z).
+\end{align*}
+
+Tyto nekonečné řady omezíme na $n \le N$ (resp. $2n+1 \le N'$) podle tlumení $|q|^{n^2}$. Získáme elementární komponenty:
+\begin{itemize}
+    \item pro $k \ge 1$: $\phi^{(3)}_{k}(t) = \cos(2k\, z(t))$, vážené $w^{(3)}_k = 2|q|^{k^2}$,
+    \item pro $k \ge 1$: $\phi^{(0)}_{k}(t) = (-1)^k \cos(2k\, z(t))$, váhy $w^{(0)}_k = 2|q|^{k^2}$,
+    \item pro $m \ge 0$: $\phi^{(2)}_{m}(t) = \cos\big((2m+1)\, z(t)\big)$, váhy $w^{(2)}_m = 2|q|^{(m+1/2)^2}$,
+    \item pro $m \ge 0$: $\psi^{(1)}_{m}(t) = (-1)^m \sin\big((2m+1)\, z(t)\big)$, váhy $w^{(1)}_m = 2|q|^{(m+1/2)^2}$,
+    \item plus volitelné konstanty z $\vartheta_{0,3}$: $\phi^{(3)}_0(t)=1$, $\phi^{(0)}_0(t)=1$.
+\end{itemize}
+
+Báze před ortogonalizací: spojíme všechny komponenty do vektoru
+$$
+\mathbf{b}(t) = \big[\;\phi^{(3)}_0,\, \phi^{(0)}_0,\, \{\phi^{(3)}_k\}_{k=1..N_3},\, \{\phi^{(0)}_k\}_{k=1..N_0},\, \{\phi^{(2)}_m\}_{m=0..N_2},\, \{\psi^{(1)}_m\}_{m=0..N_1}\;\big](t),
+$$
+každou komponentu škálujeme její vahou $w$ (nebo použijeme váhy v metrice pro ortogonalizaci).
+
+Parametr $z(t)$ definuje bi-kvaternionovou fázi času; minimální varianta:
+$$
+z(t) = \omega_t \, t + \alpha_\psi \,\psi(t) + \alpha_\phi \,\phi(t) + \alpha_\xi \,\xi(t),
+$$
+kde $\psi,\phi,\xi$ jsou doplňkové (vědomí/fázové) souřadnice; v „první iteraci“ může být jen $z(t)=\omega_t t$, ale pro plnost držíme obecnost.
+
+\section{Ortonormalizace (GS/QR) na konečném okně}
+Na rolovacím okně $\mathcal{W}=\{t_0-W+1,\ldots,t_0\}$ sestavíme matici
+$$
+B \in \mathbb{R}^{W\times D}, \quad B_{\ell,j} = b_j(t_\ell),
+$$
+kde $D$ je počet komponent. Použijeme váženou ortogonalizaci (váhy z q-řad, případně i váhy času – EMA):
+\begin{itemize}
+    \item Definuj metrickou matici $M=\mathrm{diag}(w_1,\ldots,w_D)$ (z q vah a/nebo regularizační škály).
+    \item Proveď vážený QR: např. QR dekompozici $B M^{1/2} = Q R$.
+    \item Ortobáze: $\tilde{B} = Q$. Koeficienty vůči původní bázi: $\Gamma = M^{-1/2} R$ (volitelné).
+\end{itemize}
+Dostaneme ortonormální komponenty $\tilde{b}_j(t)$ definované na daném okně.
+
+Alternativa: přímo Gram–Schmidt s inner-product $\langle u,v\rangle = \sum_{\ell} \lambda^{W-\ell} u_\ell v_\ell$ (EMA s faktorem $\lambda\uparrow 1$) a vahami q v definici $u,v$.
+
+\section{Projekce minulého signálu a extrapolace}
+Nechť $x(t)$ je cílová veličina (close, log-price, detrendovaný close apod.). Na okně $\mathcal{W}$:
+\begin{itemize}
+    \item \textbf{Projekce:}
+    $$
+    \hat{\boldsymbol{\beta}} = \tilde{B}^\dagger \, \mathbf{x}, \quad \text{(např. ridge: } \hat\beta = (\tilde{B}^\top\tilde{B} + \lambda I)^{-1}\tilde{B}^\top \mathbf{x}).
+    $$
+    \item \textbf{Extrapolace do budoucna $t_0+h$:} dopočítáme $\tilde{b}_j(t_0+h)$ z téže báze (pozor: bázi definujeme přes $z(t)$ a $q$, takže víme zavřít i „zítřejší“ hodnotu komponent):
+    $$
+    \hat{x}(t_0+h) = \sum_{j=1}^D \hat{\beta}_j \, \tilde{b}_j(t_0+h).
+    $$
+\end{itemize}
+To je přesně „součet složek dá budoucí signál“. Klíč: bázi nedefinujeme „data-driven“ (SVD), ale theoreticky z $\theta$-komponent, a SVD/QR slouží jen k ortogonalizaci na okně (bez míchání budoucnosti).
+
+\section{Biquaternionové souřadnice času}
+„Plná“ verze předpokládá, že $z(t)$ není jen $\omega t$, ale vícerozměrná fáze (např. vědomí $\psi$, sentiment $\phi$, latentní toroidální souřadnice $\xi$). Dvě pragmatické cesty:
+
+\begin{itemize}
+    \item[(A)] \textbf{Marginalizace přes $\psi$ (a spol.)} \\
+    Máme-li rozdělení $p(\psi)$ (např. normál s nulou a rozumnou var), predikci uděláme jako:
+    $$
+    \hat{x}(t_0+h) = \int \Big( \sum_j \hat\beta_j\, \tilde{b}_j\big(z(t_0{+}h;\psi)\big)\Big)\, p(\psi)\, d\psi,
+    $$
+    numericky Gauss–Hermite kvadraturou (pár uzlů stačí). Dostaneme průměrnou predikci přes neznámou vědomou fázi.
+
+    \item[(B)] \textbf{$\psi$ jako skrytý stav (Kalman/EKF)} \\
+    Modelujeme dynamiku $\psi_t$ (a případně $\omega_t$, \ldots) ve stavovém prostoru:
+    \begin{align*}
+    \text{stav: } \mathbf{s}_t &= (\psi_t, \omega_t, \ldots)^\top,\\
+    \mathbf{s}_{t+1} &= F \mathbf{s}_t + \mathbf{u}_t,\quad \mathbf{u}_t\sim\mathcal{N}(0,Q),\\
+    x_t &= \sum_j \beta_j\, \tilde{b}_j\big(z(t;\mathbf{s}_t)\big) + \varepsilon_t,\quad \varepsilon_t\sim\mathcal{N}(0,R).
+    \end{align*}
+    Protože $x_t$ závisí nelineárně na $\mathbf{s}_t$ přes $\cos(\cdot),\sin(\cdot)$, použijeme EKF/UKF.
+\end{itemize}
+
+\section{Volby parametrů a konvergence}
+\begin{itemize}
+    \item \textbf{Volba $q$ / $\tau$:} $\tau = i \sigma$, $|q| = e^{-\pi \sigma}$. Čím větší $\sigma$, tím rychlejší tlumení (menší $N$ stačí). Typicky $\sigma \in [0.3, 1.5]$.
+    \item \textbf{Počet komponent:} Vol adaptivně podle součtu vah: najdi nejmenší $N$, aby $\sum_{n>N} |q|^{n^2} \ll \varepsilon$ (např. $<10^{-6}$).
+    \item \textbf{Ortonormalizace:} Na každém okně dělej QR (stabilní) s vahami $\rightarrow$ vznikne ortobáze $\tilde{B}$.
+    \item \textbf{Regularizace projekce:} Malý ridge $\lambda$ (např. $10^{-4}$ až $10^{-2}$).
+    \item \textbf{Stabilita fáze:} U „rychlých“ trhů (SOL) zvětšit okno $W$ nebo tlumení ($\sigma\uparrow$), aby fáze „neustřelovala“.
+\end{itemize}
+
+\section{Minimalistická verze vzorců pro implementaci}
+\begin{enumerate}
+    \item Zvol $\tau=i\sigma \Rightarrow q=e^{-\pi\sigma}$.
+    \item Zvol $N_0,N_1,N_2,N_3$ (podle $|q|^{n^2}$ cut-off).
+    \item Pro okno $\mathcal{W}$ a zvolený $z(t)$ sestav $B$ s váženými sloupci.
+    \item QR/GS $\rightarrow \tilde{B}$ (ortonormální).
+    \item Projekce $\hat\beta = (\tilde{B}^\top\tilde{B}+\lambda I)^{-1}\tilde{B}^\top x$ (nebo rovnou $\hat\beta = \tilde{B}^\top x$, když je $\tilde{B}$ ortonormální).
+    \item Predikce $\hat{x}(t_0+h) = \sum_j \hat\beta_j\, \tilde{b}_j(t_0+h)$.
+    \item Pokud $\psi$ latentní $\rightarrow$ EKF: stav $(\psi,\omega,\ldots)$, výstup $x_t$ přes nelineární mapu $\tilde{b}(z(\cdot;\text{stav}))$.
+\end{enumerate}
+
+\section{Praktické defaulty (pro první běh)}
+\begin{itemize}
+    \item $\sigma = 0.8$ (tedy $q\approx e^{-2.513}\approx 0.081 \rightarrow$ rychle konverguje, $N\sim 5-8$).
+    \item Okno $W=256$, ridge $\lambda=10^{-3}$.
+    \item $z(t) = \omega t$, $\omega = 2\pi / P$ s $P \in [24, 48]$ barů (pomalá fáze); později přidat $\psi$ (latent), $\phi, \xi$ dle potřeby.
+\end{itemize}
+
+\end{document}
