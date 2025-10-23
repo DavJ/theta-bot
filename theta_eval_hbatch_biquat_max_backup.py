@@ -77,13 +77,14 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
 
     rows, preds, trues, lasts = [], [], [], []
 
-    for entry_idx in range(window, len(closes)-horizon):
+    for compare_idx in range(window, len(closes)-horizon):
+        entry_idx = compare_idx - 1
         last_price = closes[entry_idx]
-        future_price = closes[entry_idx + horizon]
+        future_price = closes[compare_idx + horizon - 1]
         true_delta = future_price - last_price
 
-        lo = entry_idx - window
-        hi = entry_idx
+        lo = compare_idx - window
+        hi = compare_idx
         Xw = X_all[lo:hi, :]
         yw = (closes[lo+horizon:hi+horizon] - closes[lo:hi]).astype(float)
         m = min(len(Xw), len(yw))
@@ -113,11 +114,10 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
             k = int(np.argmax(contrib_per_P))
             pred_delta = float(x_now[2*k:2*k+2] @ beta[2*k:2*k+2])
 
-        assert (entry_idx + horizon) < len(closes)
         rows.append({
             'time': str(times[entry_idx]),
             'entry_idx': int(entry_idx),
-            'compare_idx': int(entry_idx + horizon),
+            'compare_idx': int(compare_idx),
             'last_price': float(last_price),
             'pred_price': float(last_price + pred_delta),
             'future_price': float(future_price),
