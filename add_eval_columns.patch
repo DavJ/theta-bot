@@ -1,0 +1,78 @@
+*** a/theta_bot_averaging/theta_eval_hbatch_biquat_max.py
+--- b/theta_bot_averaging/theta_eval_hbatch_biquat_max.py
+***************
+*** 73,139 ****
+  def evaluate_symbol_csv(csv_path, interval, window, horizon, minP, maxP, nP, sigma, lam, pred_ensemble, max_by):
+      # ... zkráceno: načtení dat, konstrukce X, běh smyčky ...
+      rows = []
+      for entry_idx in range(lo, hi):
+          last_price   = float(closes[entry_idx])
+          future_price = float(closes[entry_idx + horizon])
+          true_delta   = float(future_price - last_price)
+  
+          # pred_delta
+          if pred_ensemble == 'avg':
+              pred_delta = float(x_now @ beta)
+          else:
+              k = int(np.argmax(contrib_per_P))
+              pred_delta = float(x_now[2*k:2*k+2] @ beta[2*k:2*k+2])
+  
+          assert (entry_idx + horizon) < len(closes)
+          rows.append({
+              'time': str(times[entry_idx]),
+              'entry_idx': int(entry_idx),
+              'compare_idx': int(entry_idx + horizon),
+              'last_price': float(last_price),
+              'pred_price': float(last_price + pred_delta),
+              'future_price': float(future_price),
+              'pred_delta': float(pred_delta),
+              'true_delta': float(true_delta),
+          })
+  
+      df = pd.DataFrame(rows)
+      # ... zkráceno: výpočet metrik a uložení CSV ...
+--- 73,156 ----
+  def evaluate_symbol_csv(csv_path, interval, window, horizon, minP, maxP, nP, sigma, lam, pred_ensemble, max_by):
+      # ... zkráceno: načtení dat, konstrukce X, běh smyčky ...
+      rows = []
+      for entry_idx in range(lo, hi):
+          last_price   = float(closes[entry_idx])
+          future_price = float(closes[entry_idx + horizon])
+          true_delta   = float(future_price - last_price)
+  
+          # pred_delta
+          if pred_ensemble == 'avg':
+              pred_delta = float(x_now @ beta)
+          else:
+              k = int(np.argmax(contrib_per_P))
+              pred_delta = float(x_now[2*k:2*k+2] @ beta[2*k:2*k+2])
+  
++         # === added: derived columns used by OOS/analytics (no look-ahead) ===
++         # směr predikce / reality
++         pred_dir = int(np.sign(pred_delta))
++         true_dir = int(np.sign(true_delta))
++         # považujme nulové změny za "miss" (robustní pro degenerate případy)
++         correct_pred_val = 1 if (pred_dir != 0 and pred_dir == true_dir) else 0
++         # buy&hold návratnost pro tutéž periodu (baseline)
++         hold_ret = (future_price - last_price) / last_price if last_price != 0.0 else 0.0
++         # === end added ===
++ 
+          assert (entry_idx + horizon) < len(closes)
+          rows.append({
+              'time': str(times[entry_idx]),
+              'entry_idx': int(entry_idx),
+              'compare_idx': int(entry_idx + horizon),
+              'last_price': float(last_price),
+              'pred_price': float(last_price + pred_delta),
+              'future_price': float(future_price),
+              'pred_delta': float(pred_delta),
+              'true_delta': float(true_delta),
++             'pred_dir': int(pred_dir),
++             'true_dir': int(true_dir),
++             'correct_pred': int(correct_pred_val),
++             'hold_ret': float(hold_ret),
+          })
+  
+      df = pd.DataFrame(rows)
+      # ... zkráceno: výpočet metrik a uložení CSV ...
+

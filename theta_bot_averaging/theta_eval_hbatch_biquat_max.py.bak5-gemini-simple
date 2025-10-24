@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse, json, os, sys, math, numpy as np, pandas as pd
-import numpy as np
 from dataclasses import dataclass
 
 def ridge(X, y, lam):
@@ -78,16 +77,46 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
 
     rows, preds, trues, lasts = [], [], [], []
 
-    for entry_idx in range(window, len(closes)-horizon):
+    # Musíme začít smyčku později, abychom měli dostatek dat pro první trénovací okno
+    # Potřebujeme 'window' bodů a nejnovější bod smí být 'entry_idx - horizon'
+    start_idx = window + horizon
+    if start_idx >= len(closes)-horizon:
+        raise RuntimeError(f"Not enough data for OOS evaluation. Need {window+horizon*2} rows, got {len(closes)}.")
+
+    for entry_idx in range(start_idx, len(closes)-horizon):
         last_price = closes[entry_idx]
         future_price = closes[entry_idx + horizon]
         true_delta = future_price - last_price
 
-        lo = entry_idx - window
-        hi = entry_idx
+        # --- OPRAVA LEAKU ---
+        # Trénovací data musí být známa v čase `entry_idx`.
+        # Cíl (y) pro čas 't' je `closes[t+horizon] - closes[t]`.
+        # Nejnovější cíl (y), který můžeme použít, musí být spočítán
+        # z cen, které známe v čase `entry_idx`.
+        # Nejnovější cena, kterou známe, je `closes[entry_idx]`.
+        # Tedy, nejnovější 't' musí být takové, aby `t+horizon <= entry_idx`.
+        # Z toho plyne, že nejnovější `t` je `entry_idx - horizon`.
+
+        # `hi` je první index *za* koncem trénovacího okna.
+        # Chceme trénovat na datech `t` od `lo` do `hi-1`.
+        # Poslední `t` je `entry_idx - horizon`.
+        hi = entry_idx - horizon + 1
+        lo = hi - window # t.j. entry_idx - horizon + 1 - window
+
+        # Zajistíme, abychom nešli pod nulu
+        if lo < 0:
+            lo = 0
+        # --- KONEC OPRAVY LEAKU ---
+        
         Xw = X_all[lo:hi, :]
         yw = (closes[lo+horizon:hi+horizon] - closes[lo:hi]).astype(float)
+        
         m = min(len(Xw), len(yw))
+        
+        # Pokud je okno příliš krátké (např. na začátku), přeskočíme
+        if m < 2: # Potřebujeme alespoň 2 body pro regresi
+            continue
+            
         Xw = Xw[:m, :]
         yw = yw[:m]
 
@@ -96,7 +125,8 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
         yw_w = yw * w
 
         beta = ridge(Xw_w, yw_w, lam)
-        x_now = X_all[entry_idx, :]
+        # Predikujeme s aktuálními features (t = entry_idx)
+        x_now = X_all[entry_idx, :] 
 
         # dominance per period (two features sin/cos):
         contrib_per_P = []
@@ -110,12 +140,14 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
 
         if pred_ensemble == 'avg':
             pred_delta = float(x_now @ beta)
-            pred_dir = int(np.sign(pred_delta))
-            true_dir = int(np.sign(true_delta))
-            correct_pred_val = 1 if pred_dir == true_dir else 0
         else:
             k = int(np.argmax(contrib_per_P))
             pred_delta = float(x_now[2*k:2*k+2] @ beta[2*k:2*k+2])
+
+        # Přidáno pro kompatibilitu s robustness_suite_v3_oos.py
+        pred_dir = int(np.sign(pred_delta))
+        true_dir = int(np.sign(true_delta))
+        correct_pred_val = 1 if pred_dir == true_dir else 0
 
         assert (entry_idx + horizon) < len(closes)
         rows.append({
@@ -126,7 +158,8 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
             'pred_price': float(last_price + pred_delta),
             'future_price': float(future_price),
             'pred_delta': float(pred_delta),
-            'true_delta': float(true_delta), 'pred_dir': int(pred_dir), 'true_dir': int(true_dir), 'correct_pred': int(correct_pred_val),
+            'true_delta': float(true_delta),
+            'correct_pred': int(correct_pred_val) # <-- PŘIDÁNO
         })
         preds.append(pred_delta); trues.append(true_delta); lasts.append(last_price)
 
@@ -134,14 +167,6 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
         raise RuntimeError("Not enough rows after window/horizon to evaluate.")
 
     out_df = pd.DataFrame(rows)
-    
-    cols_keep = ['time','entry_idx','compare_idx','last_price','pred_price','future_price','pred_delta','true_delta','pred_dir','true_dir','correct_pred']
-    try:
-        df_eval = df_eval[[c for c in cols_keep if c in df_eval.columns]]
-    except NameError:
-        df_eval = pd.DataFrame(rows)
-        df_eval = df_eval[[c for c in cols_keep if c in df_eval.columns]]
-    df_eval.to_csv(out_eval_csv, index=False)
     res = metrics(np.asarray(lasts), np.asarray(preds), np.asarray(trues))
     return out_df, res
 

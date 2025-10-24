@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse, json, os, sys, math, numpy as np, pandas as pd
-import numpy as np
 from dataclasses import dataclass
 
 def ridge(X, y, lam):
@@ -78,13 +77,14 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
 
     rows, preds, trues, lasts = [], [], [], []
 
-    for entry_idx in range(window, len(closes)-horizon):
+    for compare_idx in range(window, len(closes)-horizon):
+        entry_idx = compare_idx - 1
         last_price = closes[entry_idx]
-        future_price = closes[entry_idx + horizon]
+        future_price = closes[compare_idx + horizon - 1]
         true_delta = future_price - last_price
 
-        lo = entry_idx - window
-        hi = entry_idx
+        lo = compare_idx - window
+        hi = compare_idx
         Xw = X_all[lo:hi, :]
         yw = (closes[lo+horizon:hi+horizon] - closes[lo:hi]).astype(float)
         m = min(len(Xw), len(yw))
@@ -110,23 +110,30 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
 
         if pred_ensemble == 'avg':
             pred_delta = float(x_now @ beta)
-            pred_dir = int(np.sign(pred_delta))
-            true_dir = int(np.sign(true_delta))
-            correct_pred_val = 1 if pred_dir == true_dir else 0
         else:
             k = int(np.argmax(contrib_per_P))
             pred_delta = float(x_now[2*k:2*k+2] @ beta[2*k:2*k+2])
 
-        assert (entry_idx + horizon) < len(closes)
-        rows.append({
+        
+# === added (no look-ahead): extra analytics columns ===
+pred_dir = int(np.sign(pred_delta))
+true_dir = int(np.sign(true_delta))
+correct_pred_val = 1 if (pred_dir != 0 and pred_dir == true_dir) else 0
+hold_ret = (future_price - last_price) / last_price if last_price != 0.0 else 0.0
+# === end added ===
+rows.append({
             'time': str(times[entry_idx]),
             'entry_idx': int(entry_idx),
-            'compare_idx': int(entry_idx + horizon),
+            'compare_idx': int(compare_idx),
             'last_price': float(last_price),
             'pred_price': float(last_price + pred_delta),
             'future_price': float(future_price),
             'pred_delta': float(pred_delta),
-            'true_delta': float(true_delta), 'pred_dir': int(pred_dir), 'true_dir': int(true_dir), 'correct_pred': int(correct_pred_val),
+            'true_delta': float(true_delta),
+            'pred_dir': int(pred_dir),
+            'true_dir': int(true_dir),
+            'correct_pred': int(correct_pred_val),
+            'hold_ret': float(hold_ret),
         })
         preds.append(pred_delta); trues.append(true_delta); lasts.append(last_price)
 
@@ -134,14 +141,6 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
         raise RuntimeError("Not enough rows after window/horizon to evaluate.")
 
     out_df = pd.DataFrame(rows)
-    
-    cols_keep = ['time','entry_idx','compare_idx','last_price','pred_price','future_price','pred_delta','true_delta','pred_dir','true_dir','correct_pred']
-    try:
-        df_eval = df_eval[[c for c in cols_keep if c in df_eval.columns]]
-    except NameError:
-        df_eval = pd.DataFrame(rows)
-        df_eval = df_eval[[c for c in cols_keep if c in df_eval.columns]]
-    df_eval.to_csv(out_eval_csv, index=False)
     res = metrics(np.asarray(lasts), np.asarray(preds), np.asarray(trues))
     return out_df, res
 
