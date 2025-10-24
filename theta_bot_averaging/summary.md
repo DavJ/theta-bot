@@ -131,3 +131,93 @@ Uloženo: theta_trading_addon/results/hbatch_biquat_summary.csv
 /Users/davidjaros/workspace/theta-bot/prices/ETHUSDT_1h.csv       delta     512        8 36.000000 0.800000       6      6 0.001000       0.552083       0.497917   0.054167        0.142315   71.608268    0.017429    480      0.017496   0.135815
 
 
+###################################################(venv) davidjaros@Davids-Mac-mini:~/workspace/theta-bot (fixing-leakage)$ python theta_bot_averaging/theta_eval_hbatch_jacobi_fixed_leak2.py --symbols "$PWD/prices/BTCUSDT_1h.csv,$PWD/prices/ETHUSDT_1h.csv"   --interval 1h --window 512 --horizon 8 --baseP 36.0   --N-even 6   --N-odd 6   --sigma 0.8 --lambda 1e-3   --pred-ensemble avg --max-by transform   --out theta_trading_addon/results/hbatch_biquat_summary.csv
+
+=== Running /Users/davidjaros/workspace/theta-bot/prices/BTCUSDT_1h.csv ===
+
+Starting walk-forward from index t0=512 up to 991
+
+Uloženo CSV: eval_h_BTCUSDT_1H.csv
+Uloženo summary: sum_h_BTCUSDT_1H.json
+
+--- HSTRATEGY vs HOLD (Theta Q Basis - FINAL CORRECTED) ---
+hit_rate_pred:   0.558333
+hit_rate_hold:   0.481250
+corr_pred_true:  0.121301
+mae_price (delta): 1212.182063
+mae_return:      0.010611
+count:          480
+
+Sanity Shuffle Corr: 0.0699
+Sanity Lag-1 Corr:   0.1103
+
+=== Running /Users/davidjaros/workspace/theta-bot/prices/ETHUSDT_1h.csv ===
+
+Starting walk-forward from index t0=512 up to 991
+
+Uloženo CSV: eval_h_ETHUSDT_1H.csv
+Uloženo summary: sum_h_ETHUSDT_1H.json
+
+--- HSTRATEGY vs HOLD (Theta Q Basis - FINAL CORRECTED) ---
+hit_rate_pred:   0.539583
+hit_rate_hold:   0.497917
+corr_pred_true:  0.057726
+mae_price (delta): 72.735287
+mae_return:      0.017704
+count:          480
+
+Sanity Shuffle Corr: 0.0108
+Sanity Lag-1 Corr:   0.0611
+
+Uloženo (pouze úspěšné běhy): theta_trading_addon/results/hbatch_biquat_summary.csv
+                                                     symbol target_type  window  horizon     baseP    sigma  N_even  N_odd   lambda  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true   mae_price  mae_return  count  corr_shuffle  corr_lag1
+/Users/davidjaros/workspace/theta-bot/prices/BTCUSDT_1h.csv       delta     512        8 36.000000 0.800000       6      6 0.001000       0.558333       0.481250   0.077083        0.121301 1212.182063    0.010611    480      0.069919   0.110344
+/Users/davidjaros/workspace/theta-bot/prices/ETHUSDT_1h.csv       delta     512        8 36.000000 0.800000       6      6 0.001000       0.539583       0.497917   0.041667        0.057726   72.735287    0.017704    480      0.010845   0.061068
+(venv) davidjaros@Davids-Mac-mini:~/workspace/theta-bot (fixing-leakage)$ 
+
+
+
+
+(venv) davidjaros@Davids-Mac-mini:~/workspace/theta-bot (fixing-leakage)$ python theta_bot_averaging/theta_eval_hbatch_jacobi_fixed_leak2.py --symbols "$PWD/prices/BTCUSDT_1h.csv,$PWD/prices/ETHUSDT_1h.csv"   --interval 1h --window 512 --horizon 8 --baseP 36.0   --N-even 6   --N-odd 6   --sigma 0.8 --lambda 1e-3   --pred-ensemble avg --max-by transform   --out theta_trading_addon/results/hbatch_biquat_summary.csv
+
+=== Running /Users/davidjaros/workspace/theta-bot/prices/BTCUSDT_1h.csv ===
+
+Starting walk-forward from index t0=512 up to 991
+
+Uloženo CSV: eval_h_BTCUSDT_1H.csv
+Uloženo summary: sum_h_BTCUSDT_1H.json
+
+--- HSTRATEGY vs HOLD (Theta Q Basis - FINAL CORRECTED) ---
+hit_rate_pred:   0.558333
+hit_rate_hold:   0.481250
+corr_pred_true:  0.121301
+mae_price (delta): 1212.182063
+mae_return:      0.010611
+count:          480
+
+Sanity Shuffle Corr: 0.0699
+Sanity Lag-1 Corr:   0.1103
+
+=== Running /Users/davidjaros/workspace/theta-bot/prices/ETHUSDT_1h.csv ===
+
+Starting walk-forward from index t0=512 up to 991
+
+Uloženo CSV: eval_h_ETHUSDT_1H.csv
+Uloženo summary: sum_h_ETHUSDT_1H.json
+
+--- HSTRATEGY vs HOLD (Theta Q Basis - FINAL CORRECTED) ---
+hit_rate_pred:   0.539583
+hit_rate_hold:   0.497917
+corr_pred_true:  0.057726
+mae_price (delta): 72.735287
+mae_return:      0.017704
+count:          480
+
+Sanity Shuffle Corr: 0.0108
+Sanity Lag-1 Corr:   0.0611
+
+Uloženo (pouze úspěšné běhy): theta_trading_addon/results/hbatch_biquat_summary.csv
+                                                     symbol target_type  window  horizon     baseP    sigma  N_even  N_odd   lambda  hit_rate_pred  hit_rate_hold  delta_hit  corr_pred_true   mae_price  mae_return  count  corr_shuffle  corr_lag1
+/Users/davidjaros/workspace/theta-bot/prices/BTCUSDT_1h.csv       delta     512        8 36.000000 0.800000       6      6 0.001000       0.558333       0.481250   0.077083        0.121301 1212.182063    0.010611    480      0.069919   0.110344
+/Users/davidjaros/workspace/theta-bot/prices/ETHUSDT_1h.csv       delta     512        8 36.000000 0.800000       6      6 0.001000       0.539583       0.497917   0.041667        0.057726   72.735287    0.017704    480      0.010845   0.061068
+
