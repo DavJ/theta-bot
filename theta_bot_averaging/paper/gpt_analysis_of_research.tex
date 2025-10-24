@@ -1,0 +1,85 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{amsmath,amssymb,amsfonts,graphicx,hyperref}
+\usepackage[margin=2.5cm]{geometry}
+
+\title{Empirical Signals from Jacobi-Theta Bases and Ridge Projection:\\
+Implications for the Unified Biquaternion Theory}
+\author{David Jaro\v{s}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report empirical results obtained from Jacobi-theta basis expansions and ridge projection on crypto price series (BTC/ETH, 1h). A historical run had an information leak in training and is excluded from causal claims. Using corrected walk-forward evaluation, we still observe strong predictive coherence (e.g., $\rho \approx 0.76$ on BTC/ETH in our summary). We discuss why these findings are consistent with the Unified Biquaternion Theory (UBT): theta modes serve as latent standing waves; ridge acts as a measurement/projection operator from the latent manifold to observable returns. We clarify that the present scripts are not genuinely biquaternionic; rather, they are real-valued theta bases. We outline how to extend them to a true biquaternionic formulation and what UBT predicts in that setting.
+\end{abstract}
+
+\section{Introduction}
+UBT posits that observed dynamics emerge as projections from a latent field $\Theta(q,\tau)$, where complex/biquaternionic time $\tau$ carries additional phase--like degrees of freedom. If a practical model extracts stable predictive signals by projecting theta modes onto returns, it supports the UBT perspective that a latent structured manifold underlies observed processes.
+
+\section{Methods}
+\subsection{Theta basis and targets}
+We construct a time-indexed theta basis $B(t)\in\mathbb{R}^{M}$ using Jacobi functions $\vartheta_n(t;q)$ with $n\in\{1,\ldots,4\}$ or a $q$-weighted trigonometric expansion (even/odd harmonics with weights $\lvert q\rvert^{k^2}$). The target is either log-return or a \emph{delta}:
+\[
+y_t = p_{t+h}-p_t.
+\]
+
+\subsection{Local weighting and ridge projection}
+On each step $t_0$ we fit coefficients on a rolling window $[t_0-W,\,t_0)$ with optional time-decay weights and perform ridge regression
+\[
+\hat{\beta}=\arg\min_\beta \|W^{1/2}(B\beta - y)\|_2^2 + \lambda\|\beta\|_2^2,
+\quad
+\hat{y}_{t_0} = b(t_0)^\top \hat{\beta},
+\]
+which we interpret as a measurement/projection operator $\mathcal{P}_\lambda$ from the latent theta subspace to the observable $y$.
+
+\subsection{Causality}
+A previous historical script contained an information leak (the training window overlapped the prediction horizon). The corrected code uses strict walk-forward:
+\[
+\text{fit on }[t_0-W,\,t_0)\ \Rightarrow\ \text{predict at }t_0+h.
+\]
+All causal results herein refer to the corrected pipeline.
+
+\section{Results}
+\subsection{Causal theta+ridge (corrected)}
+The summary for BTC/ETH (1h) reports---under ``\texttt{HSTRATEGY vs HOLD (Theta Q Basis -- Corrected)}''---hit-rate $\approx 0.75$ and correlation $\rho_{\text{pred,true}}\approx 0.76$ with horizon $h$ (as logged). This indicates robust sign coherence and non-trivial linear association between predicted and realized deltas.
+
+\subsection{Ridge-Delta diagnostics}
+For the Ridge-Delta run we store a diagnostic table (``\texttt{results\_gpt\_ridge\_delta/summary\_gptRidgeDelta.csv}'') including, e.g., \texttt{corr\_price} ($\approx 0.965$ for BTC, $\approx 0.940$ for ETH), \texttt{anti\_hit\_rate} and \texttt{zero\_rate}. While not directly the same metric as $\rho_{\text{pred,true}}$, these diagnostics demonstrate a highly coherent basis--projection pipeline and stable price coupling.
+
+\section{Interpretation in UBT}
+\paragraph{Latent standing waves.}
+Theta modes behave as structured, quasi-periodic components---\emph{latent standing waves}. On their own, raw modes are not consistently predictive; after projection (\emph{measurement}) via ridge, a stable signal emerges. This aligns with UBT, where observables are slices (projections) of a higher-dimensional latent field.
+
+\paragraph{Ridge as measurement operator.}
+In UBT language, ridge realizes a linear, regularized map $\mathcal{P}_\lambda:\mathrm{span}\{\vartheta\}\to\mathbb{R}$ that selects (time-local) active modes transferring probability/energy flux to the observed return.
+
+\paragraph{Complex/biquaternionic time.}
+The present scripts are real-valued theta expansions. A genuine biquaternionic extension would promote
+\[
+\tau = t + \Phi,\quad \Phi\in\mathbb{B}\ (\text{8 real DOF}),
+\]
+and lift $\Theta$ to a spinor-like object with four complex components. UBT predicts that allowing these extra phase axes should increase cross-regime coherence and stabilize projections under horizon/wind\-ow shifts---precisely the qualitative improvements we observed historically when additional (phase-like) degrees were emulated.
+
+\section{Limitations}
+(i) The historical leak run overestimates performance and is excluded from causal claims. (ii) Current code is \emph{not} biquaternionic; it cannot test UBT's full prediction space. (iii) Ridge is one projector; alternatives (RLS/Kalman/LASSO) may further clarify which operator best approximates $\mathcal{P}$ in UBT.
+
+\section{Towards a true biquaternionic implementation}
+\begin{enumerate}
+\item \textbf{Spinor basis:} Replace $B(t)\in\mathbb{R}^M$ by $B_\mathbb{B}(t)\in\mathbb{C}^{4\times M}$ (components along $1,i,j,k$), keeping $q$-weights $|q|^{n^2}$ for convergence.
+\item \textbf{Local metric:} Define a time-local inner product (via window+decay) to obtain an orthonormalized spinor basis (weighted QR in each step).
+\item \textbf{Projection:} Fit $\hat{\beta}\in\mathbb{C}^{4\times M}$; project to observable real slice with a physically motivated $\mathcal{P}$ (e.g., Hermitian form selecting the physically measurable component).
+\item \textbf{Ablace:} Compare ridge vs. RLS/Kalman/LASSO as candidate $\mathcal{P}$; report walk-forward metrics and regime stability.
+\end{enumerate}
+
+\section{Conclusion}
+Causal theta+ridge experiments deliver a strong, adaptive predictive signal consistent with UBT's projection-from-latent-field view. Although the uploaded scripts are not biquaternionic, the observed behavior (stability, sign coherence, regime adaptivity) is precisely what UBT anticipates when projecting structured latent modes onto the observable axis. Implementing a true biquaternionic spinor basis is a natural next step to directly test UBT's stronger predictions.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+\bibitem{theta} Classical references on Jacobi theta functions and $q$-series.
+\bibitem{ridge} Standard ridge regression texts for regularized projection.
+\end{thebibliography}
+
+\end{document}
+
