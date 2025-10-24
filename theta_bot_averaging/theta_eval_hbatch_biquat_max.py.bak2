@@ -85,7 +85,7 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
         lo = entry_idx - window
         hi = entry_idx
         Xw = X_all[lo:hi, :]
-        yw = (closes[lo+horizon:hi+horizon] - closes[lo:hi]).astype(float)
+        yw = (closes[lo+horizon:hi_tr+horizon] - closes[lo:hi]).astype(float)
         m = min(len(Xw), len(yw))
         Xw = Xw[:m, :]
         yw = yw[:m]
