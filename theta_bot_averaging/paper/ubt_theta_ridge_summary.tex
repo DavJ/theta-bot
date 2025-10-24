@@ -1,0 +1,54 @@
+
+\documentclass{article}
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Interpretace výsledků Ridge regrese v rámci UBT}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Shrnutí vztahu Ridge regrese a Unified Biquaternion Theory (UBT)}
+
+Vaše výsledky naznačují několik důležitých poznatků:
+
+\begin{itemize}
+    \item \textbf{Latentní struktura není přímo prediktivní}: Theta komponenty samy o sobě (např. Jacobi theta funkce) mají velmi nízkou predikční sílu, pokud se jen extrapolují. Korelace s budoucím vývojem ceny jsou blízké nule.
+
+    \item \textbf{Nutnost filtrace nebo projekce}: Theta komponenty reprezentují latentní struktury trhu, nikoliv přímo signál. Abychom z nich získali užitečný prediktor, musíme určit, které složky jsou v daném okamžiku relevantní a potlačit ty, které jsou zašuměné nebo irelevantní.
+
+    \item \textbf{Role Ridge regrese}: Ridge regrese zde slouží jako filtr. Pomocí regularizované lineární regrese zjišťuje, které theta komponenty mají statistický vztah k budoucím cenám. Tím se z latentních „vln“ stává měřitelný prediktor.
+
+    \item \textbf{Závěr}: Ridge regrese implementuje „promítnutí“ latentní struktury do predikční roviny. Výsledky podporují hypotézu UBT, že trh se řídí skrytými symetriemi, které nejsou přímo pozorovatelné, ale lze je extrahovat učením z dat.
+\end{itemize}
+
+\section*{Alternativní filtry místo Ridge regrese}
+
+\begin{itemize}
+    \item \textbf{Lasso}: L1 regularizace. Zcela nuluje méně důležité váhy. Vhodná pro řídké modely.
+    \item \textbf{Elastic Net}: Kombinuje L1 a L2. Kompromis mezi Ridge a Lasso.
+    \item \textbf{Kalmanův filtr}: Dynamický filtr pro odhad časově proměnných vah. Ideální pro adaptivní systémy.
+    \item \textbf{State-Space Models}: Obecnější rámec než Kalman. Umožňuje modelovat komplexní dynamiku latentních stavů.
+    \item \textbf{PCR / PLS}: Regrese na hlavních komponentách (PCA) nebo korelovaných směrech (PLS) místo původních theta komponent.
+    \item \textbf{Nelineární modely}: SVR, Kernel Ridge, Gaussian Processes, malé neuronové sítě. Vhodné pokud vztah není lineární.
+\end{itemize}
+
+\section*{Volba filtru}
+
+Žádný filtr není univerzálně správný. Výběr závisí na:
+
+\begin{itemize}
+    \item Předpokládané struktuře vztahu mezi latentními theta komponentami a tržní realitou.
+    \item Ochotě zaplatit výpočetní náročnost a riziko přeučení.
+    \item Potřebě interpretovatelnosti vs. výkonu.
+\end{itemize}
+
+Ridge regrese je robustní výchozí bod. Další experimenty (např. Kalman, Lasso, nelineární metody) by mohly přinést vyšší prediktivitu.
+
+\end{document}

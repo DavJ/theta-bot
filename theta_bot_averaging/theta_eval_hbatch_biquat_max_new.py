@@ -77,15 +77,15 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
 
     rows, preds, trues, lasts = [], [], [], []
 
-    for compare_idx in range(window, len(closes)-horizon)[horizon::]:
-        last_price = closes[compare_idx - 1]
-        future_price = closes[compare_idx + horizon - 1]
+    for entry_idx in range(window, len(closes)-horizon)[horizon::]:
+        last_price = closes[entry_idx]
+        future_price = closes[entry_idx + horizon]
         true_delta = future_price - last_price
 
-        lo = compare_idx - window
-        hi = compare_idx
+        lo = entry_idx - window
+        hi = entry_idx
         Xw = X_all[lo:hi, :]
-        yw = (closes[lo:hi] - closes[lo-horizon:hi-horizon]).astype(float) # fix leakage
+        yw = (closes[lo:hi] - closes[lo-horizon:hi-horizon]).astype(float)
         m = min(len(Xw), len(yw))
         Xw = Xw[:m, :]
         yw = yw[:m]
@@ -95,7 +95,7 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
         yw_w = yw * w
 
         beta = ridge(Xw_w, yw_w, lam)
-        x_now = X_all[compare_idx - 1, :]
+        x_now = X_all[entry_idx, :]
 
         # dominance per period (two features sin/cos):
         contrib_per_P = []
@@ -113,10 +113,11 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
             k = int(np.argmax(contrib_per_P))
             pred_delta = float(x_now[2*k:2*k+2] @ beta[2*k:2*k+2])
 
+        assert (entry_idx + horizon) < len(closes)
         rows.append({
-            'time': str(times[compare_idx-1]),
-            'entry_idx': int(compare_idx-1),
-            'compare_idx': int(compare_idx),
+            'time': str(times[entry_idx]),
+            'entry_idx': int(entry_idx),
+            'compare_idx': int(entry_idx + horizon),
             'last_price': float(last_price),
             'pred_price': float(last_price + pred_delta),
             'future_price': float(future_price),
@@ -181,7 +182,7 @@ def run_batch(symbols_str, **kw):
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument('--symbols', default="./prices/BTCUSDT_1h.csv,./prices/ETHUSDT_1h.csv", help='Comma-separated CSV paths')
+    p.add_argument('--symbols', default="$PWD/prices/BTCUSDT_1h.csv,$PWD/prices/ETHUSDT_1h.csv", required=True, help='Comma-separated CSV paths')
     p.add_argument('--csv-time-col', default=None, dest='csv_time_col', help='Time column name (default: time)')
     p.add_argument('--csv-close-col', default=None, dest='csv_close_col', help='Close column name (default: close)')
     p.add_argument('--interval', default='1h')
@@ -196,7 +197,7 @@ def parse_args():
     p.add_argument('--phase', choices=['simple','complex','biquat'], default='biquat')
     p.add_argument('--pred-ensemble', choices=['avg','max'], default='avg', help='avg (all Ps) or max (dominant P)')
     p.add_argument('--max-by', choices=['transform','contrib'], default='transform', help='criterion for --pred-ensemble max')
-    p.add_argument('--out', help='Summary CSV path', default='theta_trading_addon/results/hbatch_biquat_summary.csv')
+    p.add_argument('--out', required=True, help='Summary CSV path')
     return p.parse_args()
 
 def main():
