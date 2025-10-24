@@ -1,0 +1,27 @@
+Python Script for Financial Time Series Prediction using Theta Functions
+Přehled řešení
+
+Tento skript v Pythonu provádí predikci finanční časové řady (např. závěrečných cen) pomocí Jacobiho theta funkcí. Postupuje dle zadaných kroků: nejprve vygeneruje hodnoty Jacobiho theta funkcí θ₁ až θ₄ pro vstupní časovou řadu, poté tyto nelineární složky ortonormalizuje metodou Gram–Schmidt, a následně je využije jako bázi pro predikční model. Skript implementuje dvě varianty modelu: A) přímá extrapolace složek (lineární kombinací bázových funkcí) a B) Kalmanův filtr pro sledování dynamiky složek. V obou případech je zajištěna striktní kauzalita – model v čase t používá pouze data dostupná do času t (žádný únik informací do budoucnosti).
+
+Vstup: Očekáván je CSV soubor s časovou řadou cen (např. sloupec 'close') a případně časovým sloupcem (čas se využije pouze pro řazení, samotná predikce probíhá na indexech).
+Výstup: Skript uloží CSV s následujícími sloupci pro každý predikovaný bod: predicted_price (predikovaná cena), actual_future_price (skutečná budoucí cena), delta (rozdíl predikované a skutečné ceny) a correct_pred (binární metrika správnosti predikce směru pohybu). Dále skript po dokončení vypíše přehledové metriky: Pearsonovu korelaci mezi predikcí a skutečností (corr_pred_true), podíl správně predikovaných směrů (hit_rate_pred) a střední absolutní chybu (MAE).
+
+Generování Jacobiho theta funkcí (θ₁ až θ₄)
+
+Jacobiho theta funkce jsou kvaziperiodické funkce definované nekonečnými Fourierovými řadami
+mpmath.org
+. V tomto skriptu využíváme knihovnu mpmath, která poskytuje funkci jtheta(n, z, q) pro výpočet hodnot $\vartheta_n(z,q)$ – zde $n=1,2,3,4$ označuje jednu ze čtyř Jacobiho theta funkcí, $z$ je argument (čas) a $q$ je tzv. nome (komplexní parametr s $|q|<1$). Skript nastavuje hodnotu q = 0.5 (je možné ji upravit pro experimenty). Pro každý časový bod vstupní řady se spočítají hodnoty $\vartheta_1$ až $\vartheta_4$. Tyto čtyři časové průběhy slouží jako nelineární báze reprezentace původního signálu.
+
+Ortonormalizace bázových složek (Gram–Schmidt)
+
+Vygenerované theta složky nemusí být navzájem ortogonální. Proto skript provádí Gram–Schmidtovu ortonormalizaci: postupně vezme každý bázový vektor a odečte od něj projekce na již ortonormalizované vektory, následně jej normuje na délku 1. Tím získáme ortogonální (navzájem kolmé) složky s jednotkovou normou. Tyto ortonormalizované báze (řekněme $u_1(t), \dots, u_4(t)$) pak tvoří základ predikčního modelu. Ortonormalizace je implementována numericky a zlepšuje stabilitu modelu, zejména pro použití v Kalmanově filtru.
+
+Predikční model – dvě varianty
+
+Varianta A (Přímá extrapolace): V každém kroku vezmeme historická data (pouze do aktuálního času t) a pomocí lineární regrese (metodou nejmenších čtverců) je aproximujeme lineární kombinací ortonormalizovaných bází. Získané koeficienty pak použijeme k přímé extrapolaci – spočítáme predikci ceny v čase t+1 jako kombinaci hodnot bázových funkcí v čase t+1. Proces probíhá iterativně pro každý časový krok, přičemž vždy používáme jen minulá data (každá predikce t+1 je založena na datech do t).
+
+Varianta B (Kalmanův filtr): V této variantě tvoří koeficienty bázových složek stavový vektor $x(t)$, který se v čase mění. Uvažujeme jednoduchý stavový model: $x(t+1) = x(t) + w(t)$, kde $w(t)$ je procesní šum (modelujeme pomalou driftující změnu koeficientů). Pozorovaná veličina (cena) je dána $y(t) = H(t),x(t) + v(t)$, kde $H(t)$ je řádkový vektor hodnot ortonormovaných bází $[u_1(t), \dots, u_4(t)]$ a $v(t)$ je šum měření. Kalmanův filtr v každém kroku zaktualizuje odhad stavu $x(t)$ na základě nové skutečné ceny (update) a pak provede predikci stavu do dalšího času (predict). Predikovaná cena v čase t+1 se pak vypočte jako $H(t+1),x_{\text{pred}}(t+1)$. Parametry filtru (kovariance procesního šumu Q a měřicího šumu R) jsou nastaveny na konstanty (lze doladit). Díky velké počáteční kovarianci $P_0$ filtr přisuzuje zpočátku měřením velkou váhu, čímž se rychle adaptuje na data. I tato metoda je kauzální – odhad stavu v čase t+1 vychází pouze z informací do času t.
+
+Struktura skriptu a výstupy
+
+Skript je rozdělen do logických celků: načtení dat, generování theta bází, ortonormalizace, predikce (dle zvolené varianty) a uložení výsledků. Kód je doplněn komentáři pro snadnou orientaci a připraven na případné další experimenty (např. změnu parametru q, ladění šumu filtru či záměnu bázových funkcí). Po zpracování vstupního souboru skript uloží výstupní CSV s predikcemi a vypíše souhrnné metriky pro vyhodnocení úspěšnosti modelu.

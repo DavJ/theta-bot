@@ -1,0 +1,63 @@
+
+\documentclass[12pt]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{physics}
+\usepackage{hyperref}
+\geometry{margin=1in}
+
+\title{Rozšířený čas v komplexních bikvaternionech a ortogonalita v~$\theta$-bázi}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Motivace}
+Ve standardním rámci prediktivních modelů založených na $\theta$-funkcích se čas obvykle chápe jako komplexní proměnná $\tau = t + i\phi$, kde $\phi$ odpovídá fázovému posunu. Tento přístup však nepostihuje dostatečně vnitřní symetrie a latentní struktury trhu. V rámci \emph{Unified Biquaternion Theory} (UBT) navrhujeme model, kde je čas rozšířen na \emph{komplexní bikvaternion}.
+
+\section{Definice bikvaternionového času}
+Bikvaternion je prvek z $\mathbb{B} = \mathbb{H} \otimes \mathbb{C}$, kde $\mathbb{H}$ jsou Hamiltonovy kvaterniony a $\mathbb{C}$ komplexní čísla. Zavedeme čas jako
+\begin{equation}
+\tau = t + \Phi, \quad \Phi \in \mathbb{B},
+\end{equation}
+kde $t \in \mathbb{R}$ je fyzikální čas a $\Phi$ je komplexní bikvaternion (latentní složka). Explicitně:
+\begin{equation}
+\Phi = a + b\mathbf{i} + c\mathbf{j} + d\mathbf{k}, \quad a,b,c,d \in \mathbb{C},
+\end{equation}
+tedy $\Phi$ má 8 reálných stupňů volnosti.
+
+\section{Algebraická struktura}
+Komplexní bikvaterniony tvoří algebra nekomutativních prvků s následujícími relacemi:
+\begin{align*}
+\mathbf{i}^2 = \mathbf{j}^2 = \mathbf{k}^2 &= -1,\\
+\mathbf{i}\mathbf{j} = \mathbf{k},\quad \mathbf{j}\mathbf{k} = \mathbf{i},\quad \mathbf{k}\mathbf{i} &= \mathbf{j}.
+\end{align*}
+Každý koeficient může být komplexní, což umožňuje reprezentovat nejen amplitudu a fázi, ale i orientaci v~rozšířeném vnitřním prostoru.
+
+\section{Dopad na $\theta$-funkce}
+Původní $\theta$-funkce (např. Jacobiho) jsou definovány jako analytické funkce komplexní proměnné $\tau \in \mathbb{C}$. V našem případě se $\tau$ stává prvkem $\mathbb{B}$, což znamená, že $\theta$-funkce musí být rozšířeny na funkce nad $\mathbb{B}$, případně vektorové nebo spinorové zobecnění.
+
+Zde vznikají nové otázky:
+\begin{itemize}
+    \item Lze definovat analytické nebo harmonické funkce nad $\mathbb{B}$?
+    \item Jaký smysl má spektrální rozklad v takovém prostoru?
+\end{itemize}
+
+\section{Otázka ortogonality}
+Ve stávajícím frameworku nejsou theta složky ortogonální. To komplikuje interpretaci regresních vah a zvyšuje riziko kolinearity.
+
+V prostoru $\mathbb{B}$ lze hledat ortonormální bázi pomocí vhodné metriky (např. Hermitovské nebo kvaternionické vnitřní součiny). Jednou z možností je využít \textbf{Grand-Smithovu ortogonalizaci}, která konstruuje ortonormální bázi v nekomutativních prostorech.
+
+\section{Další kroky}
+\begin{enumerate}
+    \item Zformulovat zobecněnou $\theta$-funkci na prostoru $\mathbb{B}$.
+    \item Provést Grand-Smith ortonormalizaci stávajících theta složek.
+    \item Vyhodnotit prediktivitu a stabilitu nové báze.
+\end{enumerate}
+
+\section*{Závěr}
+Přechod k bikvaternionovému času $\tau = t + \Phi$ umožňuje modelovat skryté symetrie trhu bohatším způsobem. Ortogonální báze (např. pomocí Grand-Smithovy metody) by mohla zlepšit stabilitu modelů a redukovat kolinearitu. Tato formulace vytváří nový prostor pro experimentální validaci UBT v oblasti predikce trhů.
+
+\end{document}

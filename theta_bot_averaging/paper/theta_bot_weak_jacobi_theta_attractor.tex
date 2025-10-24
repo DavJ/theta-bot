@@ -1,0 +1,113 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb, geometry}
+\geometry{margin=2.5cm}
+
+\title{Empirical Evidence of Theta-Field Predictivity within the Unified Biquaternion Theory}
+\author{Ing.~David~Jaroš}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Abstract}
+Recent experiments with Jacobi theta-based feature representations of market data
+show a consistent but weak predictive signal when regressions are performed
+on future price deltas.  
+This paper interprets the results in the framework of the \emph{Unified Biquaternion Theory} (UBT)
+and the \emph{Complex Consciousness Theory} (CCT), linking empirical findings
+with the theoretical model of complex time and distributed consciousness.
+We further outline implications for algorithmic trading systems and propose
+directions for future development.
+
+\section{Empirical Findings}
+Across multiple causally clean experiments (ridge regression on theta bases),
+correlations between predicted and realized deltas remain in the range
+$R \approx 0.1$--$0.2$, with hit rates between 50--56\%.
+The signal is statistically significant yet weak, indicating
+that the theta decomposition captures latent periodic or toroidal
+structures of market dynamics.
+
+\section{Interpretation within UBT}
+In UBT, every physical or informational system is a projection
+of a higher-dimensional biquaternionic field:
+\[
+\Theta(q,\tau), \qquad \tau = t + i\psi,
+\]
+where the scalar part of $\tau$ corresponds to classical time
+and the imaginary vector part $\psi$ encodes the phase or conscious direction.
+
+The theta functions $\theta_k(\tau)$ represent toroidal harmonics
+of this field.  
+A market is thus modeled as a superposition of many such $\psi$-states,
+each corresponding to an individual agent’s or process’s conscious trajectory.
+The observable price series is an average over these projections.
+
+\section{Why the Predictive Signal Is Weak}
+The weak but persistent correlation arises because:
+\begin{itemize}
+  \item Individual theta components carry strong local coherence,
+        but they are \emph{not orthogonal} and interfere destructively
+        when aggregated across many conscious trajectories.
+  \item The market average thus contains only the residual coherent part
+        of the global phase---a weak, chaotic attractor.
+  \item Ridge or Kalman filters act as projectors that isolate this coherent subspace.
+\end{itemize}
+In the language of CCT, the market behaves as a partially conscious system:
+many $\psi$-vectors exist, but only their small synchronized fraction leaves
+an imprint in physical time.
+
+\section{Implications for Trading Agents}
+For algorithmic applications, the key insight is that
+theta-based representations contain real predictive information
+only after an appropriate projection is learned.
+Thus, a trading bot should:
+\begin{enumerate}
+  \item maintain an adaptive projection operator (e.g., Ridge or Kalman filter),
+  \item restrict fitting to causal past data (walk-forward mode),
+  \item use confidence weighting (e.g., $z$-score thresholding)
+        to trade only when the projected coherence is strong.
+\end{enumerate}
+This corresponds, in UBT terms, to tuning the bot’s internal
+\emph{conscious phase alignment} with the market’s collective $\psi$-field.
+
+\section{Future Development}
+\subsection*{Orthonormal Theta Basis}
+To eliminate destructive interference, construct an orthonormal set
+of theta components via a Gram--Schmidt process
+over $\{\theta_0,\ldots,\theta_4\}$ evaluated along the real axis.
+Analytic orthogonalization is preferable, but numerical vectors may suffice.
+
+\subsection*{Biquaternionic Phase Expansion}
+Extend the phase $\psi$ from a scalar to a full biquaternion vector:
+\[
+\tau = t + \mathbf{i}\psi_1 + \mathbf{j}\psi_2 + \mathbf{k}\psi_3,
+\]
+allowing multiple imaginary axes.
+This increases the dimensionality of the latent space and may capture
+multi-agent coherence patterns.
+
+\subsection*{Advanced Filters}
+Compare Ridge with alternative projectors:
+Lasso, ElasticNet, and state-space Kalman filters for time-varying coefficients.
+Ensure causal structure and validate using shuffle and out-of-sample tests.
+
+\subsection*{Energy and Coherence Metrics}
+Define an energy functional
+\[
+E_\Theta = \|\Theta\|^2_{\text{coh}} =
+\sum_k w_k \langle \theta_k, \theta_k \rangle_{\text{coh}},
+\]
+to quantify the degree of market coherence.  
+Higher $E_\Theta$ implies stronger alignment of conscious phases
+and potentially higher predictive power.
+
+\section{Conclusion}
+The experiments confirm that Jacobi theta components contain
+a measurable yet modest predictive edge, consistent with UBT’s
+interpretation of markets as projections of a complex-time toroidal field.
+Future work will focus on orthogonalization, dynamic filters, and
+biquaternionic phase modeling to enhance coherence extraction
+and enable a fully adaptive theta-based trading agent.
+
+\end{document}
+

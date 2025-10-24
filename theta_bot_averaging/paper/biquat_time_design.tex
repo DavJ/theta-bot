@@ -1,0 +1,43 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\title{Predikce v Bikvaternionovém Čase a Theta Rozkladech}
+\author{Výzkumná Poznámka}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Motivace}
+
+Ve stávajícím přístupu k predikci tržních časových řad se ukázalo, že rozklad pomocí theta funkcí přináší zajímavé výsledky. Nicméně přímá extrapolace těchto složek selhává, zatímco regrese (např. Ridge) přináší vysokou prediktivitu. V rámci Unified Biquaternion Theory (UBT) navrhujeme přesnější formulaci komplexního času a jeho strukturálního rozkladu.
+
+\section{Bikvaternionový Čas}
+
+Zavádíme rozšířený pojem času:
+\[
+\tau = t + \phi_1 \mathbf{i} + \phi_2 \mathbf{j} + \phi_3 \mathbf{k}
+\]
+kde reálný čas $t$ tvoří skalární složku a fáze $\phi_1, \phi_2, \phi_3$ představují bikvaternionový fázový prostor. Tento model vychází z hypotézy, že struktura trhu není pouze funkcí skalárního času, ale i latentních kvaternionových komponent.
+
+\section{Bikvaternionový Rozklad}
+
+Namísto standardní (neortogonální) theta báze navrhujeme použít ortonormální bázi definovanou na kvaternionovém časovém prostoru. Tato báze může být odvozena numericky nebo konstrukčně (např. Grand--Smith ortonormalizací).
+
+\section{Predikční Mechanismy}
+
+\subsection{Extrapolace}
+
+Založena na pokračování fázové evoluce každé theta složky. Vhodná v případě, že trh vykazuje stabilní periodickou strukturu. Extrapolace může využívat Taylorův rozvoj, fázový drift nebo jinou aproximaci.
+
+\subsection{Filtrace a Regrese}
+
+Cílem je určit, které složky nesou informaci o budoucnosti. Použitelné přístupy: Ridge regrese, Lasso, Elastic Net, Kalmanův filtr, nebo filtry stavového prostoru. Tyto metody fungují jako selektivní projekce latentních struktur.
+
+\section{Závěr}
+
+Spojením ortonormální bikvaternionové báze a pokročilého filtračního mechanismu vzniká predikční model schopný extrahovat hlubší tržní symetrie. Experimentální ověření bude probíhat s použitím jak extrapolace, tak Ridge a Kalman filtrace.
+
+\end{document}
+
