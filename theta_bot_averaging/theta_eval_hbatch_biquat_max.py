@@ -77,16 +77,15 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
 
     rows, preds, trues, lasts = [], [], [], []
 
-    for compare_idx in range(window, len(closes)-horizon):
-        entry_idx = compare_idx - 1
-        last_price = closes[entry_idx]
+    for compare_idx in range(window, len(closes)-horizon)[horizon::]:
+        last_price = closes[compare_idx - 1]
         future_price = closes[compare_idx + horizon - 1]
         true_delta = future_price - last_price
 
         lo = compare_idx - window
         hi = compare_idx
         Xw = X_all[lo:hi, :]
-        yw = (closes[lo+horizon:hi+horizon] - closes[lo:hi]).astype(float)
+        yw = (closes[lo:hi] - closes[lo-horizon:hi-horizon]).astype(float) # fix leakage
         m = min(len(Xw), len(yw))
         Xw = Xw[:m, :]
         yw = yw[:m]
@@ -96,7 +95,7 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
         yw_w = yw * w
 
         beta = ridge(Xw_w, yw_w, lam)
-        x_now = X_all[entry_idx, :]
+        x_now = X_all[compare_idx - 1, :]
 
         # dominance per period (two features sin/cos):
         contrib_per_P = []
@@ -115,8 +114,8 @@ def evaluate_symbol_csv(path, window, horizon, minP, maxP, nP, sigma, lam, pred_
             pred_delta = float(x_now[2*k:2*k+2] @ beta[2*k:2*k+2])
 
         rows.append({
-            'time': str(times[entry_idx]),
-            'entry_idx': int(entry_idx),
+            'time': str(times[compare_idx-1]),
+            'entry_idx': int(compare_idx-1),
             'compare_idx': int(compare_idx),
             'last_price': float(last_price),
             'pred_price': float(last_price + pred_delta),
