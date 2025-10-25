@@ -1,0 +1,126 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb}
+
+\begin{document}
+
+\section*{Hodnocení správnosti a fyzikální konzistence vůči UBT/CCT}
+
+\subsection*{Co je implementováno správně}
+
+\paragraph{Theta funkce ($\theta_1$–$\theta_4$).}
+V souboru \texttt{theta\_eval\_quaternion\_ridge\_v2.py} jsou Jacobiho theta funkce implementovány korektně. Například pro reálnou část $\theta_1$ platí
+\[
+  \theta_1(z,q) = 2 \sum_{n=0}^\infty (-1)^n\, q^{\left(n + \tfrac12\right)^2} \, \sin\bigl((2n+1)\,z\bigr)
+  = 2\, q^{1/4} \sum_{n=0}^\infty (-1)^n\, q^{n(n+1)} \, \sin\bigl((2n+1)\,z\bigr).
+\]
+Analogicky $\theta_2$, $\theta_3$ a $\theta_4$ odpovídají standardním reálným řadám.
+
+\paragraph{Nome $q$ a imaginární čas.}
+Ve variantě \texttt{theta\_biquat\_predict\_diag.py} se volí
+\[
+  q = \exp(-\pi\sigma), 
+  \quad z = \omega\,t, 
+  \quad \omega = \tfrac{2\pi}{P},
+\]
+což odpovídá interpretaci $\tau = i\sigma$ (čistě imaginární komplexní čas). Tato volba vytváří fyzikálně konzistentní most mezi CCT/UBT a numerickou implementací.
+
+\paragraph{Ortogonální/ortonormální báze.}
+Existují dvě implementace:
+\begin{itemize}
+  \item \texttt{theta\_biquat\_predict.py} využívá \texttt{mpmath.jtheta} a Gram–Schmidtovu ortonormalizaci.
+  \item \texttt{theta\_biquat\_predict\_diag.py} staví $q$‑řady (sudé/liché) s ořezáním malých členů a pracuje s vahami $|q|^{k/2}$.
+\end{itemize}
+Obě metody dávají numericky stabilní regresi/filtr.
+
+\paragraph{Stavový model (Kalman).}
+Ve \texttt{theta\_biquat\_predict.py} je Kalmanův filtr pro pomalu se měnící koeficienty theta báze. Pozorovací vektor $H_t$ je řádek ortonormální báze, což umožňuje modelovat „pomalu klouzající“ váhy theta komponent (drift–difuze na vahách).
+
+\paragraph{Ridge + váhování okna (EMA).}
+Soubor \texttt{theta\_eval\_quaternion\_ridge\_v2.py} implementuje klouzavé okno, standardizaci, exponenciální váhování (EMA – novější pozorování mají vyšší váhu) a ridge regresi s penalizací $\lambda I$. K dispozici je i volitelná block‑normalizace 4dim bloků (na frekvenci) na jednotkovou L2‑normu, která chrání proti explozím amplitud a zaručuje „rovné hřiště“ pro jednotlivé quaternionové bloky.
+
+\subsection*{Kde současná „kvaternioničnost“ neodpovídá UBT}
+
+Aktuálně je „quaternion“ reprezentován jen jako 4‑sloupcový vektor $[\theta_3,\,\theta_4,\,\theta_2,\,\theta_1]$ na každé frekvenci. Následné zpracování je však pouze skalární lineární regresí přes tyto sloupce. Chybí tedy:
+
+\begin{itemize}
+  \item \textbf{Hamiltonova algebra.} Neprobíhá žádné násobení kvaternionů (Hamiltonův součin) ani rotace v prostoru $\mathbb{H}$, a model tak nehlídá vazby mezi složkami $(a,b,c,d)$.
+  \item \textbf{Komplexní (bi‑)kvaterniony.} V UBT by složky měly být obecně komplexní (biquaternion), tj. 8 reálných dimenzí na frekvenci; zde jsou pouze reálné. Interpretace $q = \exp(-\pi\sigma)$ je konzistentní s čistě imaginárním $\tau$, ale fáze $\psi$ (vědomí) se zatím explicitně nepromítá.
+  \item \textbf{Vazby mezi komponentami.} Regrese dává nezávislé váhy pro každý sloupec, a může tedy porušovat vnitřní symetrie a Cauchy–Riemannovské vztahy mezi dvojicemi theta funkcí (např. $\theta_1\leftrightarrow \theta_2$, $\theta_3\leftrightarrow \theta_4$ při fázových posunech).
+\end{itemize}
+
+\subsection*{Důsledky pro empirický signál}
+
+Kvůli absenci kvaternionické struktury (není prosazena v regresi/filtru) se signál „ředí“ do libovolných lineárních kombinací. To vysvětluje, proč lze pozorovat slabý, ale existující signál: theta báze sama o sobě nese strukturu, ale bez kvaternionové vazby se část informace ztrácí.
+
+\subsection*{Doporučené úpravy}
+
+\paragraph{Sdílené váhy v rámci 4‑dim bloku (kvaternion‑tie).}
+Parametrizuj váhy na frekvenci jako jeden kvaternion
+\[
+  \beta_f = \beta_{0,f} + i\,\beta_{1,f} + j\,\beta_{2,f} + k\,\beta_{3,f}
+\]
+a reguluj je společně:
+\[
+  \sum_f \|\beta_f\|_2^2
+  \quad \text{(namísto) } 
+  \sum_d \beta_d^2.
+\]
+Volitelně lze přidat ortogonální rotaci v rámci bloku (jedna ortonormální matice $4\times 4$ na frekvenci), která zachovává metrickou strukturu. Implementačně: seskup čtyři sloupce a řeš „blokový“ ridge (například re‑parametrizuj $\beta_f = s_f \cdot u_f$, kde $u_f$ je jednotkový kvaternion).
+
+\paragraph{Quaternion ridge / komplexní ridge.}
+Proveď ekvivalent komplexní regrese přes $\mathbb{C}$ se sdílením mezi páry $(\theta_3 + i\theta_4)$ a $(\theta_2 + i\theta_1)$. Prakticky: poskládej komplexní featury
+\[
+  X_c = \bigl[\theta_3 + i\,\theta_4,\;\theta_2 + i\,\theta_1,\;\ldots\bigr]
+\]
+a použij komplexní ridge (např. Wirtingerův přístup). Tím vnutíš fázovou koherenci uvnitř bloku.
+
+\paragraph{Kalman na kvaternionových vahách.}
+V \texttt{kalman\_filter\_prediction} nech stav $x_t$ reprezentovaný po frekvencích 4‑dimenzionálními vektory a přidej malou re‑ortho projekci v každé iteraci: buď udržuj jednotkový směr a odděleně škálování (amplitudu) pro stabilnější a fyzikálnější řešení, nebo penalizuj „shear“ mezi složkami (například přidej do matice $Q$ diagonál s menší difuzí pro směrové změny).
+
+\paragraph{$\Psi$‑fáze (vědomí) jako latentní modulace.}
+Přidej do $z=\omega t$ latentní fázovou složku $\psi_t$:
+\[
+  z = \omega\,t + \psi_t,
+\]
+kde $\psi_t$ je stav v Kalmanu s malou difuzí. Alternativně nech $q_t = \exp(-\pi \sigma_t)$ pomalu se měnící jako stavový prvek – tím zapojíš komplexní čas $\tau = t + i\,\psi$ přímo do báze.
+
+\subsection*{Invariance testy (rychlá validace UBT konzistence)}
+
+Zaveď unit testy, které kontrolují, že se metriky nezhorší při:
+\begin{itemize}
+  \item permutaci $(\theta_1,\theta_2)\leftrightarrow(\theta_2,\theta_1)$ se správnou fázovou kompenzací,
+  \item rotaci $z \mapsto z + \frac{\pi}{2}$ (tedy $\theta_3 \leftrightarrow \theta_4$, $\theta_1 \leftrightarrow \theta_2$),
+  \item re‑škálování bloku po block‑normalizaci.
+\end{itemize}
+Pokud metriky skáčou, porušuje se strukturální vazba a je co opravovat.
+
+\subsection*{Menší technické poznámky k v2}
+
+\begin{itemize}
+  \item Standardizace po okně je v pořádku; pokud $\sigma = 0$, nastav ji na 1 (již implementováno).
+  \item EMA váhy: definované tak, že novější mají vyšší váhu (správně).
+  \item Block‑norm aktuálně bere průměrnou L2 normu přes řádky; lze zvážit robustnější variantu (např. mediány) pro menší citlivost.
+  \item V metodice metrik (v \texttt{evaluate}) zatím počítáš hit/anti/zero a korelaci kumulativní ceny; přidej permutation test (shuffle $y$ v okně) a konfidenční intervaly pomocí bootstrapu, abys ověřil, zda zlepšení překonává náhodu.
+\end{itemize}
+
+\subsection*{Závěr}
+
+Tvůj kód správně staví theta bázi a umí ji učit (ridge/Kalman), ale „quaternion“ je zatím pouze 4‑kanálový vektor bez algebraických omezení. Jakmile prosadíš kvaternionovou (nebo komplexní) strukturu do učení (výše popsané body), měl by se signál zesílit a být stabilnější out‑of‑sample (OOS), což je přesně to, co potřebuješ pro empirický test UBT/CCT.
+
+\subsection*{Doporučený mini‑patch (rychle ověřitelný)}
+
+V \texttt{build\_feature\_matrix\_quat} vytvoř komplexní dvojice
+\[
+  \phi_1 = \theta_3 + i\,\theta_4,
+  \qquad
+  \phi_2 = \theta_2 + i\,\theta_1,
+\]
+a uč komplexní ridge (případně reálný ridge na $[\Re \phi,\; \Im \phi]$ s blokovou penalizací L2 sdílenou pro dvojici). V Kalmanu nech stav 
+\[
+  [\Re \phi_1,\; \Im \phi_1,\; \Re \phi_2,\; \Im \phi_2]
+\]
+na frekvenci a přidej malou difuzi pouze na amplitudu, s menší difuzí na fázi.
+
+\end{document}
+
