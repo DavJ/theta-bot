@@ -1,3 +1,5 @@
+NOTE: these scripts seems to be non-quaternionic
+
 python theta_bot_averaging/theta_eval_hbatch_jacobi_fixed_leak.py --symbols "$PWD/prices/BTCUSDT_1h.csv,$PWD/prices/ETHUSDT_1h.csv"   --interval 1h --window 512 --horizon 8 --baseP 36.0   --N-even 6   --N-odd 6   --sigma 0.8 --lambda 1e-3   --pred-ensemble avg --max-by transform   --out theta_trading_addon/results/hbatch_biquat_summary.csv
 
 === Running /Users/davidjaros/workspace/theta-bot/prices/BTCUSDT_1h.csv ===
