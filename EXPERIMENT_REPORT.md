@@ -395,11 +395,17 @@ The implementation provides a solid foundation for empirical validation of the C
 
 ### Dependencies
 ```
-numpy>=1.20.0
-pandas>=1.3.0
-scipy>=1.7.0
-matplotlib>=3.4.0
+numpy>=1.20.0,<3.0.0
+pandas>=1.3.0,<3.0.0
+scipy>=1.7.0,<2.0.0
+matplotlib>=3.4.0,<4.0.0
 ```
+
+Tested with:
+- numpy==2.3.4
+- pandas==2.3.3
+- scipy==1.16.3
+- matplotlib==3.10.7
 
 ### Computational Complexity
 - Basis generation: O(N²·M) where N=n_modes, M=total samples
