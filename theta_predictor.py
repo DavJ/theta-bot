@@ -115,11 +115,17 @@ def walk_forward_predict(prices, window, horizon, q=0.5, n_terms=16, n_freqs=8,
     for t in range(window, n - horizon):
         # Training window: [t-window : t)
         train_prices = prices[t - window : t]
-        train_deltas = deltas[t - window : t - 1]  # Target is delta at next step
         
         # Generate features for training window
         X_train = generate_theta_features_1d(window, q=q, n_terms=n_terms, n_freqs=n_freqs)
-        y_train = train_deltas
+        
+        # y_train: predict deltas within the window
+        # Use features at time i to predict price[i+1] - price[i]
+        window_deltas = np.diff(train_prices)  # Length: window - 1
+        
+        # Use only the first window-1 features to match
+        X_train = X_train[:-1, :]  # Now has window-1 rows
+        y_train = window_deltas
         
         # Standardize features
         X_mean = X_train.mean(axis=0)
@@ -138,9 +144,9 @@ def walk_forward_predict(prices, window, horizon, q=0.5, n_terms=16, n_freqs=8,
             continue
         
         # Generate features for prediction point (at time t)
-        # We need to predict t + horizon, so we use features from the extended series
-        X_pred_full = generate_theta_features_1d(t + 1, q=q, n_terms=n_terms, n_freqs=n_freqs)
-        X_pred = X_pred_full[t, :].reshape(1, -1)
+        # Use the last feature from the training window
+        X_pred_full = generate_theta_features_1d(window, q=q, n_terms=n_terms, n_freqs=n_freqs)
+        X_pred = X_pred_full[-1, :].reshape(1, -1)
         
         # Standardize using training statistics
         X_pred_std = (X_pred - X_mean) / X_std

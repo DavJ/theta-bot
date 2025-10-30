@@ -146,18 +146,19 @@ def complex_gram_schmidt(basis):
     n_samples, n_basis = basis.shape
     
     # Compute overlap matrix before orthonormalization
-    # O_ij = <Θ_i, Θ_j> = (Θ_i)† · Θ_j
+    # O_ij = <Θ_i, Θ_j> = (Θ_i)† · Θ_j / n_samples (normalized inner product)
     overlap_before = (basis.conj().T @ basis) / n_samples
     
     # Use QR decomposition for stable orthonormalization
-    # Q is orthonormal, R is upper triangular
+    # Q is orthonormal in the standard inner product (not normalized)
     Q, R = qr(basis, mode='economic')
     
-    # Normalize to unit norm
-    norms = np.linalg.norm(Q, axis=0)
-    ortho_basis = Q / norms
+    # Q from QR is already orthonormal in the sense that Q†Q = I
+    # So we use Q directly as the orthonormal basis
+    ortho_basis = Q
     
     # Compute overlap matrix after orthonormalization
+    # Should be identity matrix
     overlap_after = (ortho_basis.conj().T @ ortho_basis) / n_samples
     
     return ortho_basis, overlap_before, overlap_after
@@ -258,12 +259,15 @@ def compute_orthogonality_metrics(overlap_before, overlap_after):
         Dictionary of orthogonality metrics
     """
     n = overlap_after.shape[0]
-    identity = np.eye(n)
     
-    # Check if Re(O) ≈ I
-    re_diff = np.abs(overlap_after.real - identity)
-    max_re_diff = np.max(re_diff)
-    mean_re_diff = np.mean(re_diff)
+    # For normalized inner product, identity should be scaled
+    # Q†Q = n_samples * I for normalized inner product
+    # So we need to check if diagonal elements are constant
+    diag_vals = np.diag(overlap_after).real
+    expected_diag = diag_vals[0]  # Should all be the same
+    
+    # Check if Re(O) has constant diagonal
+    re_diag_std = np.std(diag_vals)
     
     # Check if Im(O) ≈ 0
     max_im = np.max(np.abs(overlap_after.imag))
@@ -278,14 +282,15 @@ def compute_orthogonality_metrics(overlap_before, overlap_after):
     mean_off_diag_before = np.mean(off_diag_before)
     max_off_diag_before = np.max(off_diag_before)
     
-    # Off-diagonal elements after orthonormalization
+    # Off-diagonal elements after orthonormalization (relative to diagonal)
     off_diag_after = np.abs(overlap_after[mask])
     mean_off_diag_after = np.mean(off_diag_after)
     max_off_diag_after = np.max(off_diag_after)
+    relative_off_diag = max_off_diag_after / expected_diag if expected_diag > 0 else 0
     
     metrics = {
-        'max_real_deviation_from_identity': float(max_re_diff),
-        'mean_real_deviation_from_identity': float(mean_re_diff),
+        'diagonal_value': float(expected_diag),
+        'diagonal_std': float(re_diag_std),
         'max_imaginary_component': float(max_im),
         'mean_imaginary_component': float(mean_im),
         'hermitian_symmetry_error': float(hermitian_diff),
@@ -293,7 +298,8 @@ def compute_orthogonality_metrics(overlap_before, overlap_after):
         'off_diagonal_max_before': float(max_off_diag_before),
         'off_diagonal_mean_after': float(mean_off_diag_after),
         'off_diagonal_max_after': float(max_off_diag_after),
-        'is_orthonormal': bool(max_re_diff < 1e-6 and max_im < 1e-6)
+        'relative_off_diagonal': float(relative_off_diag),
+        'is_orthonormal': bool(re_diag_std < 1e-6 and max_im < 1e-6 and relative_off_diag < 1e-6)
     }
     
     return metrics
@@ -403,10 +409,13 @@ def main():
     # Print validation summary
     if metrics['is_orthonormal']:
         print("✓ Basis is successfully orthonormalized")
+        print(f"  Diagonal value: {metrics['diagonal_value']:.6f}")
+        print(f"  Relative off-diagonal: {metrics['relative_off_diagonal']:.2e}")
     else:
         print("⚠ Warning: Basis may not be fully orthonormal")
-        print(f"  Max real deviation: {metrics['max_real_deviation_from_identity']:.2e}")
+        print(f"  Diagonal std: {metrics['diagonal_std']:.2e}")
         print(f"  Max imaginary component: {metrics['max_imaginary_component']:.2e}")
+        print(f"  Relative off-diagonal: {metrics['relative_off_diagonal']:.2e}")
 
 
 if __name__ == '__main__':
