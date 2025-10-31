@@ -110,6 +110,7 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 - **quick_start.py** - One-command testing pipeline
 - **test_biquat_corrected.py** - Test corrected biquaternion implementation
 - **test_biquat_binance_real.py** - Comprehensive test on real Binance data with multiple pairs
+- **tools/eval_metrics.py** - Evaluation script for computing performance metrics (earnings, correlation, hit rate)
 
 ## Documentation
 
@@ -117,6 +118,7 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 - **[IMPLEMENTATION_SUMMARY.txt](IMPLEMENTATION_SUMMARY.txt)** - Implementation details and validation results
 - **[EXPERIMENT_REPORT.md](EXPERIMENT_REPORT.md)** - Detailed synthetic data test results
 - **[CTT_README.md](CTT_README.md)** - Technical documentation and theory
+- **[TEST_BINANCE_METRICS.md](TEST_BINANCE_METRICS.md)** - Evaluation metrics documentation (earnings, correlation, hit rate)
 
 ## Requirements
 
