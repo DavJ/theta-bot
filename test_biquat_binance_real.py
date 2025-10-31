@@ -140,7 +140,10 @@ def generate_realistic_market_data(symbol, n_samples=2000, base_price=None, outp
     if 'PLN' in symbol:
         base_price *= 4
     
-    np.random.seed(hash(symbol) % 10000)
+    # Use deterministic seeding based on symbol (stable across runs)
+    import hashlib
+    seed_value = int(hashlib.md5(symbol.encode()).hexdigest()[:8], 16) % (2**31)
+    np.random.seed(seed_value)
     t = np.arange(n_samples)
     
     # Trend with drift
@@ -334,7 +337,10 @@ def generate_html_report(all_results, output_path='test_output/comprehensive_rep
     total_tests = len(all_results)
     num_pairs = len(set(r['pair'] for r in all_results if 'pair' in r))
     num_horizons = len(set(r.get('horizon', 1) for r in all_results))
-    avg_hit_rate = np.mean([r.get('hit_rate', np.nan) for r in all_results if not np.isnan(r.get('hit_rate', np.nan))])
+    
+    # Calculate average hit rate with proper handling of NaN values
+    valid_hit_rates = [r.get('hit_rate', np.nan) for r in all_results if not np.isnan(r.get('hit_rate', np.nan))]
+    avg_hit_rate = np.mean(valid_hit_rates) if valid_hit_rates else 0.0
     
     html = f"""
 <!DOCTYPE html>
@@ -638,6 +644,9 @@ def generate_html_report(all_results, output_path='test_output/comprehensive_rep
 def generate_markdown_report(all_results, output_path):
     """Generate a Markdown version of the report."""
     
+    # Calculate average hit rate with proper handling of NaN values
+    valid_hit_rates = [r.get('hit_rate', np.nan) for r in all_results if not np.isnan(r.get('hit_rate', np.nan))]
+    
     md = f"""# Theta Bot Biquaternion - Comprehensive Test Report
 
 **Test Date:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -652,7 +661,7 @@ All tests use strict walk-forward validation. The model only uses data from [t-w
 - **Total Tests Run:** {len(all_results)}
 - **Trading Pairs Tested:** {len(set(r['pair'] for r in all_results if 'pair' in r))}
 - **Test Horizons:** {len(set(r.get('horizon', 1) for r in all_results))}
-- **Average Hit Rate:** {np.mean([r.get('hit_rate', np.nan) for r in all_results if not np.isnan(r.get('hit_rate', np.nan))]):.4f}
+- **Average Hit Rate:** {np.mean(valid_hit_rates) if valid_hit_rates else 0.0:.4f}
 
 """
     
