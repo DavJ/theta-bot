@@ -1,12 +1,170 @@
-# Patch: run_theta_benchmark.py (theta params + 1D/2D/3D)
+# Theta Bot - Complex-Time Theta Transform Trading Engine
 
-Applied changes:
-- 
-- ".join(changes)
+A predictive trading engine based on Complex Consciousness Theory (CCT) and Unified Biquaternion Theory (UBT), using Jacobi theta functions for market prediction.
 
-Usage:
-- Unzip into project root:
-  unzip ~/Downloads/run_theta_theta_params_patch.zip -d .
+## Status
 
-Then run your usual:
-  ./benchmark.sh
+✅ **Implementation Complete** - Model fully implemented and mathematically validated  
+🔬 **Testing Infrastructure Ready** - Tools for real market data testing now available  
+⏳ **Awaiting Real Data Validation** - Model tested on synthetic data only, real market data testing needed before production
+
+## Quick Start
+
+### For Production Testing (Real Market Data)
+
+**⚠️ IMPORTANT:** The model has been tested on synthetic data only. Before deploying for real trading, you must complete the production preparation steps.
+
+See **[PRODUCTION_PREPARATION.md](PRODUCTION_PREPARATION.md)** for complete guidance.
+
+Quick test with one command:
+
+```bash
+# Install dependencies
+pip install numpy pandas scipy matplotlib requests
+
+# Test with real data (downloads BTCUSDT automatically)
+python quick_start.py --symbol BTCUSDT --interval 1h --limit 2000
+```
+
+Or use existing CSV data:
+
+```bash
+python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
+```
+
+### Manual Testing Steps
+
+1. **Download real market data:**
+   ```bash
+   python download_market_data.py --symbol BTCUSDT --interval 1h --limit 2000
+   ```
+
+2. **Validate data quality:**
+   ```bash
+   python validate_real_data.py --csv real_data/BTCUSDT_1h.csv
+   ```
+
+3. **Run predictions:**
+   ```bash
+   python theta_predictor.py --csv real_data/BTCUSDT_1h.csv --window 512
+   ```
+
+4. **Run control tests:**
+   ```bash
+   python theta_horizon_scan_updated.py --csv real_data/BTCUSDT_1h.csv --test-controls
+   ```
+
+5. **Optimize hyperparameters:**
+   ```bash
+   python optimize_hyperparameters.py --csv real_data/BTCUSDT_1h.csv
+   ```
+
+## Performance on Synthetic Data
+
+| Metric | h=1 | h=4 | h=8 |
+|--------|-----|-----|-----|
+| Correlation | 0.492 | 0.193 | -0.053 |
+| Hit Rate | 65.6% | 56.4% | 46.1% |
+| Sharpe Ratio | 14.24 | 6.70 | -0.82 |
+| p-value | <10⁻⁸⁹ | 0.042 | n.s. |
+
+**Note:** Real market data will likely show lower performance. Correlation r > 0.05 and hit rate > 52% is meaningful for real markets.
+
+## Core Components
+
+- **theta_basis_4d.py** - 4D orthonormalized Jacobi theta basis generation
+- **theta_transform.py** - Forward and inverse theta transforms
+- **theta_predictor.py** - Walk-forward prediction with no lookahead bias
+- **theta_horizon_scan_updated.py** - Resonance scanning and control tests
+- **generate_test_data.py** - Synthetic data generation for testing
+
+## Production Preparation Tools
+
+- **download_market_data.py** - Download real market data from Binance
+- **validate_real_data.py** - Comprehensive data validation and quality checks
+- **optimize_hyperparameters.py** - Grid search for optimal parameters
+- **production_readiness_check.py** - Automated end-to-end validation
+- **quick_start.py** - One-command testing pipeline
+
+## Documentation
+
+- **[PRODUCTION_PREPARATION.md](PRODUCTION_PREPARATION.md)** - Complete guide for preparing bot for production (START HERE!)
+- **[IMPLEMENTATION_SUMMARY.txt](IMPLEMENTATION_SUMMARY.txt)** - Implementation details and validation results
+- **[EXPERIMENT_REPORT.md](EXPERIMENT_REPORT.md)** - Detailed synthetic data test results
+- **[CTT_README.md](CTT_README.md)** - Technical documentation and theory
+
+## Requirements
+
+```
+numpy>=1.20.0
+pandas>=1.3.0
+scipy>=1.7.0
+matplotlib>=3.4.0
+requests (optional, for downloading data)
+```
+
+## Architecture
+
+The system implements complex-time dynamics: τ = t + iψ
+
+Where:
+- t = chronological time
+- ψ = hidden phase component (psychological time)
+
+Using Jacobi theta functions:
+```
+Θ(q, τ, φ) = Σ e^{iπn²τ} e^{2πinqφ}
+```
+
+This creates a modularly invariant, quasi-periodic structure for capturing temporal market patterns.
+
+## Validation Status
+
+✅ Mathematical Properties:
+- Orthonormality: error < 10⁻¹⁵ (machine precision)
+- Hermitian symmetry: error < 10⁻¹⁸
+- Energy conservation: validated
+- Eigenvalue spectrum: properly normalized
+
+✅ Code Quality:
+- Code review: Passed
+- CodeQL security scan: 0 vulnerabilities
+- Error handling: Robust
+- Documentation: Comprehensive
+
+⏳ Production Testing:
+- Real market data testing: **IN PROGRESS**
+- Control tests: **PENDING**
+- Hyperparameter optimization: **PENDING**
+- Paper trading: **NOT STARTED**
+
+## Next Steps
+
+1. ✅ Complete implementation
+2. ✅ Validate on synthetic data
+3. 🔄 **Test on real market data** (current phase)
+4. ⏳ Run control tests (permutation, noise)
+5. ⏳ Optimize hyperparameters for real data
+6. ⏳ Paper trading validation
+7. ⏳ Live deployment with risk management
+
+## Warning
+
+⚠️ **This is research software.** Always:
+- Test thoroughly with paper trading first
+- Use proper risk management
+- Monitor performance continuously
+- Be prepared to disable if performance degrades
+
+Past performance (especially on synthetic data) does not guarantee future results.
+
+## License
+
+See repository license file.
+
+## References
+
+- Complex Consciousness Theory (CCT)
+- Unified Biquaternion Theory (UBT)
+- Jacobi Theta Functions
+- Modular Forms and Market Dynamics
