@@ -117,7 +117,6 @@ def find_dataset_files(repo_root):
             
             # Quick check: does it have a 'close' column?
             try:
-                import pandas as pd
                 df_test = pd.read_csv(csv_file, nrows=1)
                 if 'close' not in df_test.columns:
                     continue
@@ -460,7 +459,7 @@ def main():
     
     print(f"Evaluation Script Started")
     print(f"Start Capital: ${args.start_capital:.2f}")
-    print(f"Taker Fee: {args.taker_fee:.3f}% per side")
+    print(f"Taker Fee: {args.taker_fee * 100:.3f}% per side")
     print()
     
     results = []
@@ -555,7 +554,7 @@ def main():
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             f.write(f"**Configuration:**\n")
             f.write(f"- Start Capital: ${args.start_capital:.2f}\n")
-            f.write(f"- Taker Fee: {args.taker_fee:.3f}% per side\n")
+            f.write(f"- Taker Fee: {args.taker_fee * 100:.3f}% per side\n")
             f.write(f"- Interval: {args.interval}\n")
             f.write(f"- Limit: {args.limit} klines\n\n")
             f.write("## Results\n\n")

@@ -1,10 +1,10 @@
 # Evaluation Summary
 
-Generated: 2025-10-31 22:51:08
+Generated: 2025-10-31 23:00:57
 
 **Configuration:**
 - Start Capital: $1000.00
-- Taker Fee: 0.001% per side
+- Taker Fee: 0.100% per side
 - Interval: 1h
 - Limit: 1000 klines
 
