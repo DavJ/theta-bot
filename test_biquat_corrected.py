@@ -202,8 +202,12 @@ def main():
         )
     else:
         print("\nNo real data found. Skipping real data test.")
-        print("To test on real data, download it first:")
-        print("  python download_market_data.py --symbol BTCUSDT --interval 1h --limit 2000")
+        print("To test on real data, download market data first.")
+        print("Check if download_market_data.py exists:")
+        if os.path.exists('download_market_data.py'):
+            print("  python download_market_data.py --symbol BTCUSDT --interval 1h --limit 2000")
+        else:
+            print("  Or manually download CSV data and place it in one of the checked locations")
         results_real = None
     
     # Test 3: Multiple horizons on synthetic data

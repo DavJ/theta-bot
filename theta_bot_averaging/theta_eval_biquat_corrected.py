@@ -151,7 +151,20 @@ def fit_block_ridge(X: np.ndarray,
         # Add λI to each block on the diagonal
         reg_matrix[start:end, start:end] = lam * np.eye(block_size)
     
-    beta = np.linalg.solve(XtX + reg_matrix, X.T @ y)
+    # Solve with stability check
+    A = XtX + reg_matrix
+    try:
+        # Check condition number for stability
+        cond = np.linalg.cond(A)
+        if cond > 1e12:
+            print(f"Warning: Matrix poorly conditioned (cond={cond:.2e}), using lstsq fallback")
+            beta = np.linalg.lstsq(A, X.T @ y, rcond=None)[0]
+        else:
+            beta = np.linalg.solve(A, X.T @ y)
+    except np.linalg.LinAlgError:
+        print("Warning: Matrix singular, using lstsq fallback")
+        beta = np.linalg.lstsq(A, X.T @ y, rcond=None)[0]
+    
     return beta
 
 
@@ -159,7 +172,9 @@ def standardize_fit(X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """Compute standardization parameters."""
     mu = X.mean(axis=0)
     sigma = X.std(axis=0)
-    sigma[sigma == 0] = 1.0  # Avoid division by zero
+    # Use small epsilon for constant features to preserve scaling
+    epsilon = 1e-8
+    sigma[sigma < epsilon] = 1.0
     return mu, sigma
 
 
@@ -178,7 +193,9 @@ def hit_rate(y_true: np.ndarray, y_hat: np.ndarray) -> float:
     s_true = np.sign(y_true)
     s_hat = np.sign(y_hat)
     mask = (s_true != 0)
-    if mask.sum() == 0:
+    n_valid = mask.sum()
+    if n_valid == 0:
+        print(f"Warning: No valid predictions for hit rate (all y_true are zero)")
         return np.nan
     return float((s_true[mask] == s_hat[mask]).mean())
 
