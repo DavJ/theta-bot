@@ -105,7 +105,7 @@ def find_dataset_files(repo_root):
         if not data_dir.exists():
             continue
         
-        for csv_file in data_dir.glob('*.csv'):  # Only direct children, not recursive
+        for csv_file in data_dir.glob('*.csv'):  # Non-recursive, direct files only
             # Avoid processing the same file twice
             if str(csv_file) in seen_files:
                 continue
@@ -276,10 +276,10 @@ def simulate_trading(df, fee_rate=0.0, start_capital=1000.0):
     
     total_pnl = capital - start_capital
     
-    # Compute average monthly PnL
+    # Compute average monthly PnL (using 30-day month approximation)
     if len(df) > 0 and 'timestamp' in df.columns:
         time_span_days = (df.iloc[-1]['timestamp'] - df.iloc[0]['timestamp']).total_seconds() / 86400
-        months = time_span_days / 30.0
+        months = time_span_days / 30.0  # Approximate: 30 days per month
         avg_monthly_pnl = total_pnl / months if months > 0 else 0
     else:
         avg_monthly_pnl = 0
@@ -449,7 +449,7 @@ def main():
     parser = argparse.ArgumentParser(description='Evaluate metrics on Binance data')
     parser.add_argument('--repo-root', default='.', help='Repository root directory')
     parser.add_argument('--start-capital', type=float, default=1000.0, help='Starting capital in USDT')
-    parser.add_argument('--taker-fee', type=float, default=0.001, help='Taker fee rate (e.g., 0.001 for 0.1%%)')
+    parser.add_argument('--taker-fee', type=float, default=0.001, help='Taker fee rate (e.g., 0.001 for 0.1%)')
     parser.add_argument('--pairs', nargs='+', default=['BTCUSDT', 'ETHUSDT'], help='Binance pairs to evaluate')
     parser.add_argument('--interval', default='1h', help='Kline interval')
     parser.add_argument('--limit', type=int, default=1000, help='Number of klines to fetch')
