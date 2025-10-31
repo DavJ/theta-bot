@@ -168,3 +168,16 @@ See repository license file.
 - Unified Biquaternion Theory (UBT)
 - Jacobi Theta Functions
 - Modular Forms and Market Dynamics
+
+### Viewing the Theta Function Evaluation (Atlas Evaluation)  
+  
+A new evaluation document has been added in `theta_bot_averaging/paper/atlas_evaluation.tex`. This LaTeX paper demonstrates the correctness and physical consistency of the implemented Jacobi theta functions (\theta_1–\theta_4) and the choice of nome \(q\) and imaginary time.  
+  
+To view the evaluation, compile the LaTeX file with a TeX engine such as `pdflatex`:  
+  
+```bash  
+cd theta_bot_averaging/paper  
+pdflatex atlas_evaluation.tex  
+```  
+  
+After compilation, open the resulting `atlas_evaluation.pdf` in your preferred PDF viewer to read the detailed analysis.
