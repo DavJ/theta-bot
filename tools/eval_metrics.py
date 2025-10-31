@@ -449,7 +449,7 @@ def main():
     parser = argparse.ArgumentParser(description='Evaluate metrics on Binance data')
     parser.add_argument('--repo-root', default='.', help='Repository root directory')
     parser.add_argument('--start-capital', type=float, default=1000.0, help='Starting capital in USDT')
-    parser.add_argument('--taker-fee', type=float, default=0.001, help='Taker fee rate (e.g., 0.001 for 0.1%)')
+    parser.add_argument('--taker-fee', type=float, default=0.001, help='Taker fee rate (e.g., 0.001 for 0.1%%)')
     parser.add_argument('--pairs', nargs='+', default=['BTCUSDT', 'ETHUSDT'], help='Binance pairs to evaluate')
     parser.add_argument('--interval', default='1h', help='Kline interval')
     parser.add_argument('--limit', type=int, default=1000, help='Number of klines to fetch')
