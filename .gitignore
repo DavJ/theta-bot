@@ -61,6 +61,7 @@ out/
 reports/
 demo_output/
 test_output/
+!test_output/eval_summary.md
 real_data/
 validation_output/
 optimization_output/
