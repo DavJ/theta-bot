@@ -44,17 +44,40 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
    python validate_real_data.py --csv real_data/BTCUSDT_1h.csv
    ```
 
-3. **Run predictions:**
+3. **Run comprehensive tests on multiple pairs (including PLN):**
+   ```bash
+   # Full test with all pairs (USDT and PLN)
+   python test_biquat_binance_real.py
+   
+   # Quick test mode (fewer pairs and horizons)
+   python test_biquat_binance_real.py --quick
+   
+   # Skip download and use existing data
+   python test_biquat_binance_real.py --skip-download
+   ```
+   
+   This generates comprehensive HTML and Markdown reports in `test_output/`:
+   - `comprehensive_report.html` - Interactive HTML report
+   - `comprehensive_report.md` - Markdown summary
+   
+   **Features:**
+   - Tests multiple trading pairs: BTC, ETH, BNB, SOL, ADA (with USDT and PLN)
+   - Multiple test horizons (1h, 4h, 8h, 24h)
+   - Strict walk-forward validation (NO data leaks)
+   - Comprehensive performance metrics and visualizations
+   - Data leak verification checks
+
+4. **Run predictions:**
    ```bash
    python theta_predictor.py --csv real_data/BTCUSDT_1h.csv --window 512
    ```
 
-4. **Run control tests:**
+5. **Run control tests:**
    ```bash
    python theta_horizon_scan_updated.py --csv real_data/BTCUSDT_1h.csv --test-controls
    ```
 
-5. **Optimize hyperparameters:**
+6. **Optimize hyperparameters:**
    ```bash
    python optimize_hyperparameters.py --csv real_data/BTCUSDT_1h.csv
    ```
@@ -85,6 +108,8 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 - **optimize_hyperparameters.py** - Grid search for optimal parameters
 - **production_readiness_check.py** - Automated end-to-end validation
 - **quick_start.py** - One-command testing pipeline
+- **test_biquat_corrected.py** - Test corrected biquaternion implementation
+- **test_biquat_binance_real.py** - Comprehensive test on real Binance data with multiple pairs
 
 ## Documentation
 
