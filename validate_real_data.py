@@ -130,52 +130,58 @@ def test_stationarity(df):
     results = {}
     prices = df['close'].dropna()
     
-    # Test on price level
-    print("\nADF test on price level:")
+    # Try to import ADF test once
     try:
         from scipy.stats import adfuller
-        adf_result = adfuller(prices, autolag='AIC')
-        results['adf_price_statistic'] = float(adf_result[0])
-        results['adf_price_pvalue'] = float(adf_result[1])
-        
-        print(f"  ADF Statistic: {adf_result[0]:.4f}")
-        print(f"  p-value: {adf_result[1]:.4f}")
-        
-        if adf_result[1] < 0.05:
-            print("  ✓ Price series is stationary (p < 0.05)")
-        else:
-            print("  ⚠ Price series is non-stationary (p ≥ 0.05)")
+        has_adfuller = True
     except ImportError:
-        print("  ⚠ statsmodels not installed, skipping ADF test")
-        results['adf_price_statistic'] = None
-        results['adf_price_pvalue'] = None
-    except Exception as e:
-        print(f"  ⚠ ADF test failed: {e}")
+        has_adfuller = False
+        print("  ⚠ statsmodels not installed, skipping ADF tests")
+    
+    # Test on price level
+    print("\nADF test on price level:")
+    if has_adfuller:
+        try:
+            adf_result = adfuller(prices, autolag='AIC')
+            results['adf_price_statistic'] = float(adf_result[0])
+            results['adf_price_pvalue'] = float(adf_result[1])
+            
+            print(f"  ADF Statistic: {adf_result[0]:.4f}")
+            print(f"  p-value: {adf_result[1]:.4f}")
+            
+            if adf_result[1] < 0.05:
+                print("  ✓ Price series is stationary (p < 0.05)")
+            else:
+                print("  ⚠ Price series is non-stationary (p ≥ 0.05)")
+        except Exception as e:
+            print(f"  ⚠ ADF test failed: {e}")
+            results['adf_price_statistic'] = None
+            results['adf_price_pvalue'] = None
+    else:
         results['adf_price_statistic'] = None
         results['adf_price_pvalue'] = None
     
     # Test on returns (first difference)
     returns = prices.pct_change().dropna()
     print("\nADF test on returns:")
-    try:
-        from scipy.stats import adfuller
-        adf_result = adfuller(returns, autolag='AIC')
-        results['adf_returns_statistic'] = float(adf_result[0])
-        results['adf_returns_pvalue'] = float(adf_result[1])
-        
-        print(f"  ADF Statistic: {adf_result[0]:.4f}")
-        print(f"  p-value: {adf_result[1]:.4f}")
-        
-        if adf_result[1] < 0.05:
-            print("  ✓ Returns are stationary (p < 0.05)")
-        else:
-            print("  ⚠ Returns are non-stationary (p ≥ 0.05)")
-    except ImportError:
-        print("  ⚠ statsmodels not installed, skipping ADF test")
-        results['adf_returns_statistic'] = None
-        results['adf_returns_pvalue'] = None
-    except Exception as e:
-        print(f"  ⚠ ADF test failed: {e}")
+    if has_adfuller:
+        try:
+            adf_result = adfuller(returns, autolag='AIC')
+            results['adf_returns_statistic'] = float(adf_result[0])
+            results['adf_returns_pvalue'] = float(adf_result[1])
+            
+            print(f"  ADF Statistic: {adf_result[0]:.4f}")
+            print(f"  p-value: {adf_result[1]:.4f}")
+            
+            if adf_result[1] < 0.05:
+                print("  ✓ Returns are stationary (p < 0.05)")
+            else:
+                print("  ⚠ Returns are non-stationary (p ≥ 0.05)")
+        except Exception as e:
+            print(f"  ⚠ ADF test failed: {e}")
+            results['adf_returns_statistic'] = None
+            results['adf_returns_pvalue'] = None
+    else:
         results['adf_returns_statistic'] = None
         results['adf_returns_pvalue'] = None
     
@@ -303,8 +309,6 @@ def run_permutation_test(df, n_permutations=100, window=512, horizon=1):
                 target_change = perm_prices[t+horizon] - perm_prices[t]
                 
                 # Simple ridge regression
-                from scipy.linalg import ridge_regression
-                
                 # Prepare targets for training window
                 train_targets = []
                 for j in range(horizon, window):
@@ -314,13 +318,15 @@ def run_permutation_test(df, n_permutations=100, window=512, horizon=1):
                     train_targets = np.array(train_targets)
                     train_features_for_targets = train_features[:-horizon]
                     
-                    # Fit model
+                    # Fit model using closed-form ridge regression
                     try:
-                        coeffs = ridge_regression(
-                            train_features_for_targets,
-                            train_targets,
-                            alpha=1.0
-                        )
+                        X = train_features_for_targets
+                        y = train_targets
+                        
+                        # Closed-form: (X^T X + λI)^{-1} X^T y
+                        XtX = X.T @ X
+                        ridge_term = 1.0 * np.eye(XtX.shape[0])
+                        coeffs = np.linalg.solve(XtX + ridge_term, X.T @ y)
                         
                         # Predict
                         current_features = generate_features(

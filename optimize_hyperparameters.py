@@ -122,10 +122,14 @@ def walk_forward_predict(prices, window, horizon, q, n_terms, n_freqs, ridge_lam
             X = train_features_for_targets
             y = train_targets
             
-            # Closed-form ridge solution: (X^T X + λI)^{-1} X^T y
-            XtX = X.T @ X
-            ridge_term = ridge_lambda * np.eye(XtX.shape[0])
-            coeffs = np.linalg.solve(XtX + ridge_term, X.T @ y)
+            # Use lstsq for better numerical stability
+            # This is equivalent to ridge regression when X is augmented
+            # Add regularization by augmenting X and y
+            n_features = X.shape[1]
+            X_aug = np.vstack([X, np.sqrt(ridge_lambda) * np.eye(n_features)])
+            y_aug = np.concatenate([y, np.zeros(n_features)])
+            
+            coeffs, _, _, _ = np.linalg.lstsq(X_aug, y_aug, rcond=None)
             
             # Current features for prediction
             current_features = generate_theta_features(window, q, n_terms, n_freqs)[-1]
