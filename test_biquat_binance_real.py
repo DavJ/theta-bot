@@ -250,7 +250,8 @@ def download_binance_data(symbol, interval='1h', limit=2000, output_dir='real_da
             if len(df) >= limit * 0.9:  # At least 90% of requested data
                 print(f"  ✓ Found existing REAL Binance data: {output_path} ({len(df)} samples)")
                 return output_path, True
-        except:
+        except (pd.errors.ParserError, ValueError, IOError) as e:
+            # CSV reading error, skip this file
             pass
     
     # Check if mock data already exists
@@ -260,7 +261,8 @@ def download_binance_data(symbol, interval='1h', limit=2000, output_dir='real_da
             if len(df) >= limit * 0.9:
                 print(f"  ⚠ Found existing MOCK data: {mock_output_path} ({len(df)} samples)")
                 return mock_output_path, False
-        except:
+        except (pd.errors.ParserError, ValueError, IOError) as e:
+            # CSV reading error, skip this file
             pass
     
     # Use download_market_data.py script
@@ -544,7 +546,8 @@ def generate_html_report(all_results, output_path='test_output/comprehensive_rep
             To test with real data, ensure internet access and re-run the tests.
         </div>
         """
-    elif not any_real_binance:
+    elif any_real_binance and not all(r.get('is_real_binance', False) for r in all_results):
+        # Mixed data sources: some real, some mock
         html += """
         <div class="warning-box">
             <strong>⚠️ WARNING: Mixed data sources</strong><br>
@@ -839,7 +842,8 @@ This likely indicates:
 To test with real data, ensure internet access and re-run the tests.
 
 """
-    elif not any_real_binance:
+    elif any_real_binance and not all(r.get('is_real_binance', False) for r in all_results):
+        # Mixed data sources: some real, some mock
         md += """## ⚠️ WARNING: Mixed Data Sources
 
 Some tests use mock data instead of real Binance data.
