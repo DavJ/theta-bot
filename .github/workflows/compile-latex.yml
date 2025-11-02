@@ -1,0 +1,45 @@
+name: Compile LaTeX Papers
+
+on:
+  push:
+    branches: [ main, copilot/** ]
+    paths:
+      - 'papers/*.tex'
+      - '.github/workflows/compile-latex.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'papers/*.tex'
+  workflow_dispatch:
+
+jobs:
+  compile-latex:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Compile LaTeX documents
+      uses: xu-cheng/latex-action@v2
+      with:
+        root_file: |
+          papers/hyperspace_wave_detection.tex
+          papers/retroactive_signaling_theory.tex
+        working_directory: ./
+        latexmk_use_lualatex: false
+        latexmk_use_xelatex: false
+        args: -pdf -interaction=nonstopmode -file-line-error
+    
+    - name: Upload PDF artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: compiled-papers
+        path: |
+          papers/*.pdf
+        retention-days: 90
+    
+    - name: List generated files
+      run: |
+        echo "Generated PDF files:"
+        ls -lh papers/*.pdf || echo "No PDF files found"
