@@ -17,15 +17,7 @@ import numpy as np
 import pandas as pd
 import os
 import sys
-from theta_predictor import (
-    generate_theta_features_1d,
-    generate_theta_features_biquat,
-    project_to_complex,
-    compute_drift_term,
-    fit_drift_parameters,
-    detect_regimes_pca,
-    walk_forward_predict
-)
+import theta_predictor as tp
 
 
 def test_biquaternion_features():
@@ -41,7 +33,7 @@ def test_biquaternion_features():
     psi = 0.1
     
     # Generate biquaternion features
-    features = generate_theta_features_biquat(n_samples, q=q, n_terms=n_terms, 
+    features = tp.generate_theta_features_biquat(n_samples, q=q, n_terms=n_terms, 
                                              n_freqs=n_freqs, psi=psi)
     
     print(f"Generated biquaternion features:")
@@ -63,7 +55,7 @@ def test_biquaternion_features():
     
     # Test complex projection (for first 4 components)
     biquat_sample = features[0, :4].reshape(1, 4)
-    complex_proj = project_to_complex(biquat_sample)
+    complex_proj = tp.project_to_complex(biquat_sample)
     print(f"  Complex projection: {complex_proj}")
     print(f"  ✓ Complex projection works")
     
@@ -84,7 +76,7 @@ def test_drift_term():
     
     # Compute drift term
     beta0, beta1 = 0.1, 0.5
-    drift = compute_drift_term(prices, beta0=beta0, beta1=beta1, ema_span=16)
+    drift = tp.compute_drift_term(prices, beta0=beta0, beta1=beta1, ema_span=16)
     
     print(f"Drift term computed:")
     print(f"  Shape: {drift.shape}")
@@ -98,7 +90,7 @@ def test_drift_term():
     
     # Test drift parameter fitting
     predictions = np.random.randn(n-1) * 0.1
-    beta0_fit, beta1_fit = fit_drift_parameters(prices, predictions, ema_span=16)
+    beta0_fit, beta1_fit = tp.fit_drift_parameters(prices, predictions, ema_span=16)
     print(f"\nDrift parameter fitting:")
     print(f"  Fitted β₀: {beta0_fit:.4f}")
     print(f"  Fitted β₁: {beta1_fit:.4f}")
@@ -125,7 +117,7 @@ def test_pca_regimes():
     features = np.vstack([regime1, regime2])
     
     # Detect regimes
-    pca_coords, regimes, pca_model = detect_regimes_pca(features, n_components=2, n_clusters=2)
+    pca_coords, regimes, pca_model = tp.detect_regimes_pca(features, n_components=2, n_clusters=2)
     
     print(f"PCA regime detection:")
     print(f"  PCA coordinates shape: {pca_coords.shape}")
@@ -155,7 +147,7 @@ def test_backward_compatibility():
     prices = 100 + np.cumsum(np.random.randn(n) * 0.5)
     
     # Run without v9 features (should work like v8)
-    result_v8 = walk_forward_predict(
+    result_v8 = tp.walk_forward_predict(
         prices=prices,
         window=256,
         horizon=1,
@@ -173,7 +165,7 @@ def test_backward_compatibility():
     print(f"  ✓ Runs without v9 features")
     
     # Run with v9 features
-    result_v9 = walk_forward_predict(
+    result_v9 = tp.walk_forward_predict(
         prices=prices,
         window=256,
         horizon=1,
@@ -211,7 +203,7 @@ def test_walk_forward_causality():
     window = 256
     horizon = 4
     
-    result = walk_forward_predict(
+    result = tp.walk_forward_predict(
         prices=prices,
         window=window,
         horizon=horizon,

@@ -249,7 +249,7 @@ def fit_drift_parameters(prices, predictions, ema_span=16):
         try:
             params = np.linalg.lstsq(X, y_residual, rcond=None)[0]
             return float(params[0]), float(params[1])
-        except:
+        except (np.linalg.LinAlgError, ValueError):
             return 0.0, 0.0
     
     return 0.0, 0.0
@@ -295,7 +295,7 @@ def detect_regimes_pca(theta_features, n_components=2, n_clusters=2):
     try:
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
         regimes = kmeans.fit_predict(pca_coords)
-    except:
+    except (ValueError, RuntimeError):
         regimes = np.zeros(len(theta_features), dtype=int)
     
     return pca_coords, regimes, pca
