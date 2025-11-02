@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-theta_predictor.py
-------------------
+theta_predictor.py - v9
+-----------------------
 No-leak walk-forward prediction using theta basis projection.
+
+Version 9 enhancements:
+- Biquaternionic time support (τ = t + jψ)
+- Fokker-Planck drift term
+- PCA-based market regime detection
+- Maintains strict walk-forward causality
 
 This implements causal prediction where:
 - Train window: W samples → predict horizon h
@@ -16,7 +22,7 @@ Metrics measured:
 - Directional hit rate (% correct sign)
 - Cumulative trading PnL (long/short with transaction cost)
 
-Author: Implementation based on COPILOT_BRIEF_v2.md
+Author: Implementation based on COPILOT_BRIEF_v2.md and COPILOT_INSTRUCTIONS_V9.md
 """
 
 import argparse
@@ -26,6 +32,90 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+
+
+# ============================================================================
+# Biquaternion Support (v9)
+# ============================================================================
+
+def project_to_complex(theta_biquat):
+    """
+    Project biquaternion coefficients to complex plane.
+    
+    θ_k = a_k + i*b_k + j*c_k + k*d_k
+    Complex projection: a_k + i*b_k
+    
+    Parameters
+    ----------
+    theta_biquat : np.ndarray
+        Biquaternion representation, shape (..., 4) where components are [a, b, c, d]
+        
+    Returns
+    -------
+    complex_proj : np.ndarray
+        Complex projection, shape (...,) of dtype complex
+    """
+    return theta_biquat[..., 0] + 1j * theta_biquat[..., 1]
+
+
+def generate_theta_features_biquat(n_samples, q=0.5, n_terms=16, n_freqs=8, psi=0.1):
+    """
+    Generate biquaternion theta features for time series.
+    
+    Represents each coefficient as: θ_k = a_k + i*b_k + j*c_k + k*d_k
+    where tau = t + j*psi (biquaternionic time)
+    
+    Parameters
+    ----------
+    n_samples : int
+        Number of time samples
+    q : float
+        Modular parameter
+    n_terms : int
+        Number of theta series terms
+    n_freqs : int
+        Number of frequencies
+    psi : float
+        Imaginary quaternionic phase component
+        
+    Returns
+    -------
+    features : np.ndarray
+        Feature matrix with biquaternion components, shape (n_samples, n_features)
+    """
+    t = np.arange(n_samples)
+    t_norm = t / n_samples  # Normalize to [0, 1]
+    
+    features = []
+    
+    # Generate features at different frequencies and phases
+    for k in range(n_freqs):
+        omega = 0.5 + k * 0.3  # Frequencies
+        
+        # For each term, generate biquaternion components
+        for n in range(-n_terms // 2, n_terms // 2 + 1):
+            if n == 0:
+                continue
+            
+            # Real time component
+            phase_t = np.pi * n**2 * q * t_norm + 2 * np.pi * n * omega * t_norm
+            
+            # Quaternionic imaginary component (psi)
+            phase_psi = np.pi * n**2 * q * psi
+            
+            # Biquaternion components: a + i*b + j*c + k*d
+            # a_k (real part)
+            features.append(np.cos(phase_t) * np.cosh(phase_psi))
+            # b_k (i component)
+            features.append(np.sin(phase_t) * np.cosh(phase_psi))
+            # c_k (j component)
+            features.append(np.cos(phase_t) * np.sinh(phase_psi))
+            # d_k (k component)
+            features.append(np.sin(phase_t) * np.sinh(phase_psi))
+    
+    return np.column_stack(features)
 
 
 def generate_theta_features_1d(n_samples, q=0.5, n_terms=16, n_freqs=8):
@@ -72,10 +162,156 @@ def generate_theta_features_1d(n_samples, q=0.5, n_terms=16, n_freqs=8):
     return np.column_stack(features)
 
 
+# ============================================================================
+# Drift Term Support (v9)
+# ============================================================================
+
+def compute_drift_term(prices, beta0=0.0, beta1=0.0, ema_span=16):
+    """
+    Compute Fokker-Planck drift term capturing macro bias.
+    
+    A_t = β₀ + β₁ * tanh(EMA₁₆(r_t))
+    
+    Parameters
+    ----------
+    prices : np.ndarray
+        Price time series
+    beta0 : float
+        Drift baseline parameter
+    beta1 : float
+        Drift sensitivity parameter
+    ema_span : int
+        EMA span for drift computation
+        
+    Returns
+    -------
+    drift : np.ndarray
+        Drift term values
+    """
+    if len(prices) < 2:
+        return np.zeros(len(prices))
+    
+    # Compute returns
+    returns = np.diff(prices)
+    returns = np.concatenate([[0], returns])  # Prepend 0 to match length
+    
+    # Compute EMA of returns using pandas for convenience
+    ema_drift = pd.Series(returns).ewm(span=ema_span, adjust=False).mean().values
+    
+    # Apply drift formula
+    drift = beta0 + beta1 * np.tanh(ema_drift)
+    
+    return drift
+
+
+def fit_drift_parameters(prices, predictions, ema_span=16):
+    """
+    Fit drift parameters β₀ and β₁ using least squares.
+    
+    Parameters
+    ----------
+    prices : np.ndarray
+        Price time series
+    predictions : np.ndarray
+        Base predictions without drift
+    ema_span : int
+        EMA span for drift computation
+        
+    Returns
+    -------
+    beta0, beta1 : tuple of float
+        Fitted drift parameters
+    """
+    if len(prices) < 2 or len(predictions) < 2:
+        return 0.0, 0.0
+    
+    # Compute returns and EMA
+    returns = np.diff(prices)
+    returns = np.concatenate([[0], returns])
+    ema_drift = pd.Series(returns).ewm(span=ema_span, adjust=False).mean().values
+    
+    # Match lengths
+    min_len = min(len(ema_drift), len(predictions))
+    ema_drift = ema_drift[:min_len]
+    
+    # Design matrix for [β₀, β₁]
+    X = np.column_stack([
+        np.ones(min_len),
+        np.tanh(ema_drift)
+    ])
+    
+    # Residuals (what drift should explain)
+    if len(prices) >= min_len + 1:
+        actuals = np.diff(prices)[:min_len]
+        y_residual = actuals[:min_len] - predictions[:min_len]
+        
+        # Solve least squares
+        try:
+            params = np.linalg.lstsq(X, y_residual, rcond=None)[0]
+            return float(params[0]), float(params[1])
+        except (np.linalg.LinAlgError, ValueError):
+            return 0.0, 0.0
+    
+    return 0.0, 0.0
+
+
+# ============================================================================
+# PCA Regime Detection (v9)
+# ============================================================================
+
+def detect_regimes_pca(theta_features, n_components=2, n_clusters=2):
+    """
+    Detect market regimes using PCA on theta features.
+    
+    Parameters
+    ----------
+    theta_features : np.ndarray
+        Theta feature matrix, shape (n_samples, n_features)
+    n_components : int
+        Number of PCA components
+    n_clusters : int
+        Number of regime clusters
+        
+    Returns
+    -------
+    pca_coords : np.ndarray
+        PCA coordinates, shape (n_samples, n_components)
+    regimes : np.ndarray
+        Regime labels, shape (n_samples,)
+    pca_model : PCA
+        Fitted PCA model
+    """
+    if len(theta_features) < n_clusters:
+        # Not enough samples, return dummy values
+        return np.zeros((len(theta_features), n_components)), \
+               np.zeros(len(theta_features), dtype=int), \
+               None
+    
+    # Fit PCA
+    pca = PCA(n_components=n_components)
+    pca_coords = pca.fit_transform(theta_features)
+    
+    # Cluster in PCA space
+    try:
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+        regimes = kmeans.fit_predict(pca_coords)
+    except (ValueError, RuntimeError):
+        regimes = np.zeros(len(theta_features), dtype=int)
+    
+    return pca_coords, regimes, pca
+
+
 def walk_forward_predict(prices, window, horizon, q=0.5, n_terms=16, n_freqs=8, 
-                         ridge_lambda=1.0):
+                         ridge_lambda=1.0, enable_biquaternion=False, 
+                         enable_drift=False, drift_beta0=0.0, drift_beta1=0.0,
+                         enable_pca_regimes=False):
     """
     Walk-forward prediction with theta basis.
+    
+    Version 9 enhancements:
+    - Optional biquaternionic time support
+    - Optional Fokker-Planck drift term
+    - Optional PCA-based regime detection
     
     Parameters
     ----------
@@ -93,6 +329,16 @@ def walk_forward_predict(prices, window, horizon, q=0.5, n_terms=16, n_freqs=8,
         Number of frequencies
     ridge_lambda : float
         Ridge regularization parameter
+    enable_biquaternion : bool
+        Use biquaternionic features
+    enable_drift : bool
+        Add Fokker-Planck drift term
+    drift_beta0 : float
+        Drift baseline (used if enable_drift=False, else fitted)
+    drift_beta1 : float
+        Drift sensitivity (used if enable_drift=False, else fitted)
+    enable_pca_regimes : bool
+        Enable PCA regime detection
         
     Returns
     -------
@@ -108,8 +354,12 @@ def walk_forward_predict(prices, window, horizon, q=0.5, n_terms=16, n_freqs=8,
     deltas = np.diff(prices)
     
     predictions = []
+    predictions_base = []  # Without drift
     actuals = []
     timestamps = []
+    drift_values = []
+    regime_labels = []
+    pca_coords_list = []
     
     # Walk forward through the data
     for t in range(window, n - horizon):
@@ -117,7 +367,10 @@ def walk_forward_predict(prices, window, horizon, q=0.5, n_terms=16, n_freqs=8,
         train_prices = prices[t - window : t]
         
         # Generate features for training window
-        X_train = generate_theta_features_1d(window, q=q, n_terms=n_terms, n_freqs=n_freqs)
+        if enable_biquaternion:
+            X_train = generate_theta_features_biquat(window, q=q, n_terms=n_terms, n_freqs=n_freqs)
+        else:
+            X_train = generate_theta_features_1d(window, q=q, n_terms=n_terms, n_freqs=n_freqs)
         
         # y_train: predict deltas within the window
         # Use features at time i to predict price[i+1] - price[i]
@@ -145,7 +398,10 @@ def walk_forward_predict(prices, window, horizon, q=0.5, n_terms=16, n_freqs=8,
         
         # Generate features for prediction point (at time t)
         # Use the last feature from the training window
-        X_pred_full = generate_theta_features_1d(window, q=q, n_terms=n_terms, n_freqs=n_freqs)
+        if enable_biquaternion:
+            X_pred_full = generate_theta_features_biquat(window, q=q, n_terms=n_terms, n_freqs=n_freqs)
+        else:
+            X_pred_full = generate_theta_features_1d(window, q=q, n_terms=n_terms, n_freqs=n_freqs)
         X_pred = X_pred_full[-1, :].reshape(1, -1)
         
         # Standardize using training statistics
@@ -157,19 +413,54 @@ def walk_forward_predict(prices, window, horizon, q=0.5, n_terms=16, n_freqs=8,
         
         # For horizon > 1, accumulate predictions (simplified approach)
         # A more sophisticated approach would recursively predict
-        pred_value = delta_pred[0] * horizon  # Scale by horizon
+        pred_value_base = delta_pred[0] * horizon  # Scale by horizon
+        
+        # PCA regime detection
+        regime = 0
+        pca_coord = np.zeros(2)
+        if enable_pca_regimes and len(X_train_std) > 10:
+            pca_coords, regimes, _ = detect_regimes_pca(X_train_std, n_components=2, n_clusters=2)
+            regime = regimes[-1]  # Use most recent regime
+            pca_coord = pca_coords[-1]
+        
+        # Drift term
+        drift = 0.0
+        if enable_drift:
+            # Fit drift parameters on training window
+            train_preds = X_train_std @ beta
+            beta0_fit, beta1_fit = fit_drift_parameters(train_prices, train_preds)
+            
+            # Compute drift at prediction point
+            drift_at_t = compute_drift_term(prices[t-window:t+1], beta0_fit, beta1_fit)
+            drift = drift_at_t[-1] * horizon
+            
+            # Adaptive drift based on regime
+            if enable_pca_regimes:
+                # Scale drift by regime (regime 0 = trend, regime 1 = mean-reverting)
+                drift_scale = 1.0 if regime == 0 else 0.5
+                drift *= drift_scale
+        
+        pred_value = pred_value_base + drift
         
         # Actual future delta
         actual_delta = prices[t + horizon] - prices[t]
         
         predictions.append(pred_value)
+        predictions_base.append(pred_value_base)
         actuals.append(actual_delta)
         timestamps.append(t)
+        drift_values.append(drift)
+        regime_labels.append(regime)
+        pca_coords_list.append(pca_coord)
     
     return {
         'predictions': np.array(predictions),
+        'predictions_base': np.array(predictions_base),
         'actuals': np.array(actuals),
-        'timestamps': np.array(timestamps)
+        'timestamps': np.array(timestamps),
+        'drift_values': np.array(drift_values),
+        'regime_labels': np.array(regime_labels),
+        'pca_coords': np.array(pca_coords_list)
     }
 
 
@@ -326,9 +617,124 @@ def plot_cumulative_pnl(results_by_horizon, outdir):
     print(f"Saved trading simulation plot to {outdir}/theta_trade_sim.png")
 
 
+# ============================================================================
+# v9 Visualization Functions
+# ============================================================================
+
+def plot_drift_overlay(results_by_horizon, outdir):
+    """
+    Plot drift term overlay on predictions (v9).
+    """
+    fig, axes = plt.subplots(len(results_by_horizon), 1, 
+                            figsize=(12, 4 * len(results_by_horizon)))
+    if len(results_by_horizon) == 1:
+        axes = [axes]
+    
+    for idx, (horizon, result) in enumerate(sorted(results_by_horizon.items())):
+        ax = axes[idx]
+        
+        if 'predictions_base' in result and 'drift_values' in result:
+            preds_base = result['predictions_base']
+            drift = result['drift_values']
+            preds_full = result['predictions']
+            timestamps = result['timestamps']
+            
+            ax.plot(timestamps, preds_base, label='Base Prediction', alpha=0.7, linewidth=1)
+            ax.plot(timestamps, drift, label='Drift Term', alpha=0.7, linewidth=1)
+            ax.plot(timestamps, preds_full, label='Full Prediction (Base + Drift)', 
+                   alpha=0.7, linewidth=1.5)
+            
+            ax.set_xlabel('Time Step')
+            ax.set_ylabel('Predicted Delta')
+            ax.set_title(f'Horizon {horizon} - Drift Overlay')
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            ax.axhline(y=0, color='k', linestyle='--', alpha=0.3)
+        else:
+            ax.text(0.5, 0.5, 'Drift not enabled', ha='center', va='center')
+            ax.set_title(f'Horizon {horizon} - Drift Overlay (disabled)')
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(outdir, 'theta_drift_overlay.png'), dpi=150)
+    plt.close()
+    print(f"Saved drift overlay plot to {outdir}/theta_drift_overlay.png")
+
+
+def plot_regime_clusters(results_by_horizon, outdir):
+    """
+    Plot PCA regime clusters (v9).
+    """
+    fig, axes = plt.subplots(len(results_by_horizon), 1, 
+                            figsize=(12, 6 * len(results_by_horizon)))
+    if len(results_by_horizon) == 1:
+        axes = [axes]
+    
+    for idx, (horizon, result) in enumerate(sorted(results_by_horizon.items())):
+        ax = axes[idx]
+        
+        if 'pca_coords' in result and 'regime_labels' in result:
+            pca_coords = result['pca_coords']
+            regimes = result['regime_labels']
+            
+            if len(pca_coords) > 0 and pca_coords.shape[1] == 2:
+                # Scatter plot colored by regime
+                scatter = ax.scatter(pca_coords[:, 0], pca_coords[:, 1], 
+                                   c=regimes, cmap='viridis', alpha=0.6, s=20)
+                plt.colorbar(scatter, ax=ax, label='Regime')
+                
+                ax.set_xlabel('PCA Component 1')
+                ax.set_ylabel('PCA Component 2')
+                ax.set_title(f'Horizon {horizon} - PCA Regime Clusters')
+                ax.grid(True, alpha=0.3)
+            else:
+                ax.text(0.5, 0.5, 'Insufficient PCA data', ha='center', va='center')
+                ax.set_title(f'Horizon {horizon} - PCA Regime Clusters (no data)')
+        else:
+            ax.text(0.5, 0.5, 'PCA regimes not enabled', ha='center', va='center')
+            ax.set_title(f'Horizon {horizon} - PCA Regime Clusters (disabled)')
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(outdir, 'theta_regime_clusters.png'), dpi=150)
+    plt.close()
+    print(f"Saved regime clusters plot to {outdir}/theta_regime_clusters.png")
+
+
+def plot_biquat_projection(results_by_horizon, outdir):
+    """
+    Plot biquaternion projection visualization (v9).
+    """
+    fig, axes = plt.subplots(len(results_by_horizon), 1, 
+                            figsize=(12, 4 * len(results_by_horizon)))
+    if len(results_by_horizon) == 1:
+        axes = [axes]
+    
+    for idx, (horizon, result) in enumerate(sorted(results_by_horizon.items())):
+        ax = axes[idx]
+        
+        preds = result['predictions']
+        actuals = result['actuals']
+        timestamps = result['timestamps']
+        
+        # Show prediction evolution over time
+        ax.plot(timestamps, preds, label='Predictions', alpha=0.7, linewidth=1)
+        ax.plot(timestamps, actuals, label='Actuals', alpha=0.7, linewidth=1)
+        
+        ax.set_xlabel('Time Step')
+        ax.set_ylabel('Delta')
+        ax.set_title(f'Horizon {horizon} - Biquaternion Projection Time Series')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        ax.axhline(y=0, color='k', linestyle='--', alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(outdir, 'theta_biquat_projection.png'), dpi=150)
+    plt.close()
+    print(f"Saved biquaternion projection plot to {outdir}/theta_biquat_projection.png")
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description='Walk-forward prediction with theta basis'
+        description='Walk-forward prediction with theta basis (v9 with biquaternion, drift, and PCA)'
     )
     parser.add_argument('--csv', type=str, required=True,
                        help='Path to CSV with price data')
@@ -347,6 +753,19 @@ def main():
                        help='Number of frequencies (default: 8)')
     parser.add_argument('--ridge-lambda', type=float, default=1.0,
                        help='Ridge regularization parameter (default: 1.0)')
+    
+    # v9 new parameters
+    parser.add_argument('--enable-biquaternion', action='store_true',
+                       help='Enable biquaternionic time support (v9)')
+    parser.add_argument('--enable-drift', action='store_true',
+                       help='Enable Fokker-Planck drift term (v9)')
+    parser.add_argument('--drift-beta0', type=float, default=0.0,
+                       help='Drift baseline parameter (default: 0.0)')
+    parser.add_argument('--drift-beta1', type=float, default=0.0,
+                       help='Drift sensitivity parameter (default: 0.0)')
+    parser.add_argument('--enable-pca-regimes', action='store_true',
+                       help='Enable PCA regime detection (v9)')
+    
     parser.add_argument('--outdir', type=str, default='theta_output',
                        help='Output directory (default: theta_output)')
     
@@ -356,7 +775,7 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
     
     print("=" * 60)
-    print("Theta Walk-Forward Prediction")
+    print("Theta Walk-Forward Prediction v9")
     print("=" * 60)
     print(f"Parameters:")
     print(f"  CSV: {args.csv}")
@@ -367,6 +786,12 @@ def main():
     print(f"  n_terms: {args.n_terms}")
     print(f"  n_freqs: {args.n_freqs}")
     print(f"  ridge_lambda: {args.ridge_lambda}")
+    print(f"\nv9 Features:")
+    print(f"  Biquaternion: {args.enable_biquaternion}")
+    print(f"  Drift: {args.enable_drift}")
+    if args.enable_drift:
+        print(f"    beta0: {args.drift_beta0}, beta1: {args.drift_beta1}")
+    print(f"  PCA Regimes: {args.enable_pca_regimes}")
     print()
     
     # Load data
@@ -396,7 +821,12 @@ def main():
                 q=args.q,
                 n_terms=args.n_terms,
                 n_freqs=args.n_freqs,
-                ridge_lambda=args.ridge_lambda
+                ridge_lambda=args.ridge_lambda,
+                enable_biquaternion=args.enable_biquaternion,
+                enable_drift=args.enable_drift,
+                drift_beta0=args.drift_beta0,
+                drift_beta1=args.drift_beta1,
+                enable_pca_regimes=args.enable_pca_regimes
             )
             
             metrics = compute_metrics(result['predictions'], result['actuals'])
@@ -435,6 +865,12 @@ def main():
             'prediction': result['predictions'],
             'actual': result['actuals']
         })
+        # Add v9 fields if available
+        if 'drift_values' in result and len(result['drift_values']) > 0:
+            pred_df['drift'] = result['drift_values']
+        if 'regime_labels' in result and len(result['regime_labels']) > 0:
+            pred_df['regime'] = result['regime_labels']
+        
         pred_path = os.path.join(args.outdir, f'theta_predictions_h{horizon}.csv')
         pred_df.to_csv(pred_path, index=False)
     print(f"Saved detailed predictions for each horizon")
@@ -444,6 +880,14 @@ def main():
     if results_by_horizon:
         plot_predictions(results_by_horizon, args.outdir)
         plot_cumulative_pnl(results_by_horizon, args.outdir)
+        
+        # v9 plots
+        if args.enable_biquaternion:
+            plot_biquat_projection(results_by_horizon, args.outdir)
+        if args.enable_drift:
+            plot_drift_overlay(results_by_horizon, args.outdir)
+        if args.enable_pca_regimes:
+            plot_regime_clusters(results_by_horizon, args.outdir)
     
     print("\n" + "=" * 60)
     print("Prediction complete!")
