@@ -150,6 +150,7 @@ python analyze_sdr_data.py pluto_hyperspace_data.bin --samp-rate 4e6
 - **[CTT_README.md](CTT_README.md)** - Technical documentation and theory
 - **[TEST_BINANCE_METRICS.md](TEST_BINANCE_METRICS.md)** - Evaluation metrics documentation (earnings, correlation, hit rate)
 - **[HYPERSPACE_WAVE_DETECTOR_DESIGN.md](HYPERSPACE_WAVE_DETECTOR_DESIGN.md)** - Hyperspace wave detection device design and theory
+- **[papers/](papers/)** - LaTeX papers on hyperspace detection and complex-time physics (auto-compiled to PDF)
 
 ## Requirements
 
