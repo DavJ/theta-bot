@@ -95,11 +95,41 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 
 ## Core Components
 
+### Trading System
+
 - **theta_basis_4d.py** - 4D orthonormalized Jacobi theta basis generation
 - **theta_transform.py** - Forward and inverse theta transforms
 - **theta_predictor.py** - Walk-forward prediction with no lookahead bias
 - **theta_horizon_scan_updated.py** - Resonance scanning and control tests
 - **generate_test_data.py** - Synthetic data generation for testing
+
+### Hyperspace Wave Detection (Theoretical Physics Extension)
+
+- **hyperspace_wave_detector.py** - Device to detect and prove existence of hyperspace waves
+- **test_hyperspace_detector.py** - Validation tests for hyperspace detection
+- **[HYPERSPACE_WAVE_DETECTOR_DESIGN.md](HYPERSPACE_WAVE_DETECTOR_DESIGN.md)** - Complete design specification
+- **[HYPERSPACE_HARDWARE_IMPLEMENTATION.md](HYPERSPACE_HARDWARE_IMPLEMENTATION.md)** - Circuit designs, PCB layouts, antenna specs
+- **sdr/** - Software Defined Radio implementation (budget-friendly)
+
+The hyperspace wave detector extends the complex-time framework (τ = t + iψ) to wave propagation theory. It can distinguish hyperspace waves (which propagate through imaginary time) from conventional electromagnetic waves through psi-signature extraction and coherence analysis.
+
+**Quick Start Options:**
+
+```bash
+# Option 1: Simulation (free)
+python hyperspace_wave_detector.py
+python test_hyperspace_detector.py
+
+# Option 2: Real hardware with PlutoSDR ($170)
+cd sdr/
+python hyperspace_detector_pluto.py
+python analyze_sdr_data.py pluto_hyperspace_data.bin --samp-rate 4e6
+```
+
+**Hardware Options:**
+- **Simulation**: Free, works immediately
+- **PlutoSDR**: $170, plug-and-play, recommended for real experiments
+- **Custom build**: $550+, requires PCB fabrication and assembly
 
 ## Production Preparation Tools
 
@@ -119,6 +149,8 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 - **[EXPERIMENT_REPORT.md](EXPERIMENT_REPORT.md)** - Detailed synthetic data test results
 - **[CTT_README.md](CTT_README.md)** - Technical documentation and theory
 - **[TEST_BINANCE_METRICS.md](TEST_BINANCE_METRICS.md)** - Evaluation metrics documentation (earnings, correlation, hit rate)
+- **[HYPERSPACE_WAVE_DETECTOR_DESIGN.md](HYPERSPACE_WAVE_DETECTOR_DESIGN.md)** - Hyperspace wave detection device design and theory
+- **[papers/](papers/)** - LaTeX papers on hyperspace detection and complex-time physics (auto-compiled to PDF)
 
 ## Requirements
 
