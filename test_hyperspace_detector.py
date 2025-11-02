@@ -13,6 +13,9 @@ Validates that the detector can:
 import numpy as np
 import sys
 
+# Test constants (match main implementation)
+COHERENCE_FLOOR = 0.01  # Division-by-zero guard for coherence ratios
+
 
 def test_transmitter_generation():
     """Test that transmitter generates correct signal form."""
@@ -110,7 +113,7 @@ def test_hyperspace_vs_em_distinction():
     _, em_coherence = rx.extract_psi_signature(em_signal, t)
     
     # Hyperspace should have much higher coherence
-    ratio = hs_coherence / (em_coherence + 0.01)
+    ratio = hs_coherence / (em_coherence + COHERENCE_FLOOR)
     
     assert hs_coherence > em_coherence, "Hyperspace should have higher coherence than EM"
     assert ratio > 2.0, f"Coherence ratio {ratio:.2f} too low for distinction"
@@ -148,7 +151,7 @@ def test_hyperspace_vs_noise_distinction():
     _, noise_coherence = rx.extract_psi_signature(noise, t)
     
     # Hyperspace should have much higher coherence
-    ratio = hs_coherence / (noise_coherence + 0.01)
+    ratio = hs_coherence / (noise_coherence + COHERENCE_FLOOR)
     
     assert hs_coherence > noise_coherence, "Hyperspace should have higher coherence than noise"
     assert ratio > 5.0, f"Coherence ratio {ratio:.2f} too low for distinction"

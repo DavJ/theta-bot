@@ -25,7 +25,13 @@ Device Components:
 
 import numpy as np
 from typing import Tuple, Optional
-import warnings
+
+# Detection thresholds
+AMPLITUDE_FLOOR = 1e-10  # Minimum amplitude for log calculation
+COHERENCE_FLOOR = 0.01  # Division-by-zero guard for coherence ratios
+PSI_COHERENCE_THRESHOLD = 0.65  # Minimum R² for hyperspace detection
+EM_RATIO_THRESHOLD = 5.0  # Minimum ratio vs EM waves
+NOISE_RATIO_THRESHOLD = 5.0  # Minimum ratio vs noise
 
 
 class HyperspaceWaveTransmitter:
@@ -162,7 +168,7 @@ class HyperspaceWaveReceiver:
         
         # Fit exponential decay/growth model: A(t) ∝ exp(-α·psi(t))
         # For true hyperspace waves, this should fit well
-        log_amp = np.log(amplitude + 1e-10)
+        log_amp = np.log(amplitude + AMPLITUDE_FLOOR)
         
         # Linear regression in log space
         t_mean = np.mean(t)
@@ -291,18 +297,18 @@ class HyperspaceWaveDetector:
         
         # Calculate proof metrics
         # A true hyperspace wave should have:
-        # 1. High psi-coherence (>0.8)
-        # 2. Much higher coherence than EM control
-        # 3. Much higher coherence than noise
+        # 1. High psi-coherence (>0.65)
+        # 2. Much higher coherence than EM control (>5x)
+        # 3. Much higher coherence than noise (>5x)
         
-        coherence_ratio_em = (hyperspace_coherence / (em_coherence + 0.01))
-        coherence_ratio_noise = (hyperspace_coherence / (noise_coherence + 0.01))
+        coherence_ratio_em = (hyperspace_coherence / (em_coherence + COHERENCE_FLOOR))
+        coherence_ratio_noise = (hyperspace_coherence / (noise_coherence + COHERENCE_FLOOR))
         
         # Detection criterion: all three conditions must be met
         detected = (
-            hyperspace_coherence > 0.65 and
-            coherence_ratio_em > 5.0 and
-            coherence_ratio_noise > 5.0
+            hyperspace_coherence > PSI_COHERENCE_THRESHOLD and
+            coherence_ratio_em > EM_RATIO_THRESHOLD and
+            coherence_ratio_noise > NOISE_RATIO_THRESHOLD
         )
         
         results = {
