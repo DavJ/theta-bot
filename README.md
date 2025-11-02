@@ -95,11 +95,29 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 
 ## Core Components
 
+### Trading System
+
 - **theta_basis_4d.py** - 4D orthonormalized Jacobi theta basis generation
 - **theta_transform.py** - Forward and inverse theta transforms
 - **theta_predictor.py** - Walk-forward prediction with no lookahead bias
 - **theta_horizon_scan_updated.py** - Resonance scanning and control tests
 - **generate_test_data.py** - Synthetic data generation for testing
+
+### Hyperspace Wave Detection (Theoretical Physics Extension)
+
+- **hyperspace_wave_detector.py** - Device to detect and prove existence of hyperspace waves
+- **test_hyperspace_detector.py** - Validation tests for hyperspace detection
+- **[HYPERSPACE_WAVE_DETECTOR_DESIGN.md](HYPERSPACE_WAVE_DETECTOR_DESIGN.md)** - Complete design specification
+
+The hyperspace wave detector extends the complex-time framework (τ = t + iψ) to wave propagation theory. It can distinguish hyperspace waves (which propagate through imaginary time) from conventional electromagnetic waves through psi-signature extraction and coherence analysis.
+
+```bash
+# Run hyperspace wave detection demo
+python hyperspace_wave_detector.py
+
+# Run validation tests
+python test_hyperspace_detector.py
+```
 
 ## Production Preparation Tools
 
@@ -119,6 +137,7 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 - **[EXPERIMENT_REPORT.md](EXPERIMENT_REPORT.md)** - Detailed synthetic data test results
 - **[CTT_README.md](CTT_README.md)** - Technical documentation and theory
 - **[TEST_BINANCE_METRICS.md](TEST_BINANCE_METRICS.md)** - Evaluation metrics documentation (earnings, correlation, hit rate)
+- **[HYPERSPACE_WAVE_DETECTOR_DESIGN.md](HYPERSPACE_WAVE_DETECTOR_DESIGN.md)** - Hyperspace wave detection device design and theory
 
 ## Requirements
 
