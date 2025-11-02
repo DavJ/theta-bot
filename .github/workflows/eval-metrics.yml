@@ -32,6 +32,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install pandas numpy requests
     
+    - name: Run unit tests
+      run: |
+        python3 test_eval_metrics.py
+    
     - name: Generate test data (mock mode)
       if: ${{ !inputs.use_live_data || github.event_name == 'pull_request' }}
       run: |
