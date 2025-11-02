@@ -454,6 +454,7 @@ def main():
     parser.add_argument('--interval', default='1h', help='Kline interval')
     parser.add_argument('--limit', type=int, default=1000, help='Number of klines to fetch')
     parser.add_argument('--output-dir', default='test_output', help='Output directory for summary')
+    parser.add_argument('--no-network', action='store_true', help='Skip Binance API calls, use only local files')
     
     args = parser.parse_args()
     
@@ -500,37 +501,40 @@ def main():
             })
     
     # Evaluate Binance pairs
-    print("Fetching data from Binance API...")
-    for pair in args.pairs:
-        print(f"Evaluating {pair}...")
-        
-        # Evaluate with no fees
-        metrics_no_fee = evaluate_binance_pair(pair, interval=args.interval, 
-                                               limit=args.limit, fee_mode='no_fees',
-                                               taker_fee=args.taker_fee, 
-                                               start_capital=args.start_capital)
-        if metrics_no_fee:
-            results.append({
-                'dataset': f'{pair}_{args.interval}_binance',
-                'dataset_type': 'binance_live',
-                'pair': pair,
-                'fee_mode': 'no_fees',
-                **metrics_no_fee
-            })
-        
-        # Evaluate with taker fees
-        metrics_with_fee = evaluate_binance_pair(pair, interval=args.interval, 
-                                                 limit=args.limit, fee_mode='taker_fee',
-                                                 taker_fee=args.taker_fee, 
-                                                 start_capital=args.start_capital)
-        if metrics_with_fee:
-            results.append({
-                'dataset': f'{pair}_{args.interval}_binance',
-                'dataset_type': 'binance_live',
-                'pair': pair,
-                'fee_mode': 'taker_fee',
-                **metrics_with_fee
-            })
+    if not args.no_network:
+        print("Fetching data from Binance API...")
+        for pair in args.pairs:
+            print(f"Evaluating {pair}...")
+            
+            # Evaluate with no fees
+            metrics_no_fee = evaluate_binance_pair(pair, interval=args.interval, 
+                                                   limit=args.limit, fee_mode='no_fees',
+                                                   taker_fee=args.taker_fee, 
+                                                   start_capital=args.start_capital)
+            if metrics_no_fee:
+                results.append({
+                    'dataset': f'{pair}_{args.interval}_binance',
+                    'dataset_type': 'binance_live',
+                    'pair': pair,
+                    'fee_mode': 'no_fees',
+                    **metrics_no_fee
+                })
+            
+            # Evaluate with taker fees
+            metrics_with_fee = evaluate_binance_pair(pair, interval=args.interval, 
+                                                     limit=args.limit, fee_mode='taker_fee',
+                                                     taker_fee=args.taker_fee, 
+                                                     start_capital=args.start_capital)
+            if metrics_with_fee:
+                results.append({
+                    'dataset': f'{pair}_{args.interval}_binance',
+                    'dataset_type': 'binance_live',
+                    'pair': pair,
+                    'fee_mode': 'taker_fee',
+                    **metrics_with_fee
+                })
+    else:
+        print("Skipping Binance API calls (--no-network flag set)")
     
     # Format and output results
     print()

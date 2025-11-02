@@ -1,0 +1,124 @@
+name: Evaluation Metrics
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      use_live_data:
+        description: 'Fetch live data from Binance (requires network)'
+        required: false
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - 'tools/eval_metrics.py'
+      - 'download_binance_data.py'
+      - '.github/workflows/eval-metrics.yml'
+
+jobs:
+  run-eval-metrics:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas numpy requests
+    
+    - name: Run unit tests
+      run: |
+        python3 test_eval_metrics.py
+    
+    - name: Generate test data (mock mode)
+      if: ${{ !inputs.use_live_data || github.event_name == 'pull_request' }}
+      run: |
+        # Create synthetic test data for evaluation without network access
+        mkdir -p real_data
+        python3 -c "
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+
+# Generate synthetic price data
+np.random.seed(42)
+n = 500
+timestamps = pd.date_range(start='2024-01-01', periods=n, freq='1H')
+
+# Generate random walk price data
+price_start = 50000.0
+returns = np.random.normal(0.0001, 0.02, n)
+prices = price_start * np.exp(np.cumsum(returns))
+
+df = pd.DataFrame({
+    'timestamp': timestamps,
+    'open': prices * (1 + np.random.uniform(-0.001, 0.001, n)),
+    'high': prices * (1 + np.random.uniform(0, 0.01, n)),
+    'low': prices * (1 + np.random.uniform(-0.01, 0, n)),
+    'close': prices,
+    'volume': np.random.uniform(100, 1000, n)
+})
+
+# Add simple momentum predictions
+df['predicted_return'] = df['close'].pct_change().shift(1)
+
+# Save test data
+df.to_csv('real_data/BTCUSDT_test.csv', index=False)
+print(f'Generated test data: {len(df)} rows')
+print(f'Date range: {df[\"timestamp\"].min()} to {df[\"timestamp\"].max()}')
+"
+    
+    - name: Download live data (optional)
+      if: ${{ inputs.use_live_data && github.event_name != 'pull_request' }}
+      run: |
+        python3 download_binance_data.py --symbols BTCUSDT ETHUSDT --interval 1h --days 7
+    
+    - name: Run evaluation metrics
+      run: |
+        # Run eval_metrics.py with appropriate flags
+        if [ "${{ inputs.use_live_data }}" == "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+          # Use live data from Binance API
+          python3 tools/eval_metrics.py --repo-root . --start-capital 1000 --taker-fee 0.001 --pairs BTCUSDT ETHUSDT
+        else
+          # Use mock data only (no network access)
+          python3 tools/eval_metrics.py --repo-root . --start-capital 1000 --taker-fee 0.001 --no-network
+        fi
+    
+    - name: Display evaluation summary
+      run: |
+        if [ -f test_output/eval_summary.md ]; then
+          echo "=== Evaluation Summary ==="
+          cat test_output/eval_summary.md
+        else
+          echo "Warning: eval_summary.md not generated"
+        fi
+    
+    - name: Upload evaluation summary
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: eval-summary
+        path: test_output/eval_summary.md
+        retention-days: 30
+    
+    - name: Check for evaluation errors
+      run: |
+        # Verify that eval_summary.md was created
+        if [ ! -f test_output/eval_summary.md ]; then
+          echo "Error: eval_summary.md was not generated"
+          exit 1
+        fi
+        
+        # Check file is not empty
+        if [ ! -s test_output/eval_summary.md ]; then
+          echo "Error: eval_summary.md is empty"
+          exit 1
+        fi
+        
+        echo "✓ Evaluation metrics completed successfully"
