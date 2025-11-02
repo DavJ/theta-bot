@@ -54,6 +54,12 @@ LAMBDA_PARAM = 0.5
 PHASE_SCALE = 1.0
 DATA_LIMIT = 2000  # Number of candles to download
 
+# Error pattern constants for robust error detection
+ERROR_PATTERNS = {
+    'symbol_not_found': ['not found', 'invalid'],
+    'network_issue': ['resolve', 'connection', 'timeout', 'unreachable'],
+}
+
 
 def print_section(title, char='='):
     """Print a formatted section header."""
@@ -116,7 +122,24 @@ def generate_realistic_market_data(symbol, n_samples=2000, base_price=None, outp
     Generate realistic market-like data when Binance is unavailable.
     This simulates real market behavior for testing purposes.
     
-    WARNING: This is NOT real Binance data - it's simulated for testing only.
+    Warning:
+        This is NOT real Binance data - it's simulated for testing only.
+    
+    Parameters
+    ----------
+    symbol : str
+        Trading pair symbol
+    n_samples : int
+        Number of samples to generate
+    base_price : float, optional
+        Base price for the asset
+    output_dir : str
+        Directory to save the generated data
+    
+    Returns
+    -------
+    str
+        Path to the generated CSV file
     """
     print(f"  ⚠ WARNING: Generating MOCK data for {symbol} (NOT real Binance data)")
     
@@ -192,7 +215,27 @@ def generate_realistic_market_data(symbol, n_samples=2000, base_price=None, outp
 def download_binance_data(symbol, interval='1h', limit=2000, output_dir='real_data', use_mock_if_fail=True):
     """
     Download real market data from Binance.
-    Returns tuple: (path to CSV file, is_real_binance_data)
+    
+    Parameters
+    ----------
+    symbol : str
+        Trading pair symbol (e.g., 'BTCUSDT')
+    interval : str
+        Timeframe interval (e.g., '1h', '4h')
+    limit : int
+        Number of candles to download
+    output_dir : str
+        Directory to save the data
+    use_mock_if_fail : bool
+        Whether to generate mock data if download fails
+    
+    Returns
+    -------
+    tuple[str, bool]
+        Tuple of (path to CSV file, is_real_binance_data).
+        Returns (path, True) if real Binance data was downloaded.
+        Returns (path, False) if mock data was generated.
+        Returns (None, False) if both failed and use_mock_if_fail is False.
     """
     print(f"\n  Downloading {symbol} {interval} data...")
     
@@ -239,9 +282,12 @@ def download_binance_data(symbol, interval='1h', limit=2000, output_dir='real_da
             return output_path, True
         else:
             print(f"  ✗ Failed to download {symbol}")
-            if "not found" in result.stderr.lower() or "invalid" in result.stderr.lower():
+            
+            # Check for specific error patterns
+            stderr_lower = result.stderr.lower()
+            if any(pattern in stderr_lower for pattern in ERROR_PATTERNS['symbol_not_found']):
                 print(f"    (Symbol {symbol} may not be available on Binance)")
-            elif "resolve" in result.stderr.lower() or "connection" in result.stderr.lower():
+            elif any(pattern in stderr_lower for pattern in ERROR_PATTERNS['network_issue']):
                 print(f"    (Network connection issue - no internet access)")
             
             # Generate mock data if download failed
