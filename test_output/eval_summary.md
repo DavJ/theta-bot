@@ -1,6 +1,6 @@
 # Evaluation Summary
 
-Generated: 2025-10-31 23:05:53
+Generated: 2025-11-01 00:33:50
 
 **Configuration:**
 - Start Capital: $1000.00
@@ -12,8 +12,10 @@ Generated: 2025-10-31 23:05:53
 
 | dataset | dataset_type | pair | fee_mode | total_pnl_usdt | end_capital_usdt | avg_monthly_pnl_usdt | corr_pred_true | hit_rate |
 |---------|--------------|------|----------|----------------|------------------|----------------------|----------------|----------|
-| synthetic_prices.csv                     | synthetic    | SYNTH-PAIR | no_fees    |        4692.97 |          5692.97 |              1690.31 |         0.5213 |   0.6797 |
-| synthetic_prices.csv                     | synthetic    | SYNTH-PAIR | taker_fee  |        2001.86 |          3001.86 |               721.03 |         0.5213 |   0.6797 |
+| BTCUSDT_1h_binance                       | binance_live | BTCUSDT  | no_fees    |         -39.03 |           960.97 |               -28.13 |         0.0247 |   0.5271 |
+| BTCUSDT_1h_binance                       | binance_live | BTCUSDT  | taker_fee  |        -400.59 |           599.41 |              -288.72 |         0.0247 |   0.5271 |
+| ETHUSDT_1h_binance                       | binance_live | ETHUSDT  | no_fees    |        -146.84 |           853.16 |              -105.83 |         0.0293 |   0.5080 |
+| ETHUSDT_1h_binance                       | binance_live | ETHUSDT  | taker_fee  |        -478.37 |           521.63 |              -344.77 |         0.0293 |   0.5080 |
 
 ## Metric Definitions
 
