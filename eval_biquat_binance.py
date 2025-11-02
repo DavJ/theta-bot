@@ -179,7 +179,6 @@ def simulate_trading(df, predictions_col='prediction', fee_rate=0.001, start_cap
     if position > 0:
         final_price = df.iloc[-1]['close']
         capital = position * final_price * (1 - fee_rate)
-        position = 0
     
     total_pnl = capital - start_capital
     
