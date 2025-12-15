@@ -48,6 +48,9 @@ def run_backtest(
 
     equity = (1 + net_returns).cumprod()
     metrics = compute_metrics(net_returns, equity)
+    trades_abs = position.diff().abs().fillna(0.0)
+    metrics["trade_count"] = int(trades_abs.sum())
+    metrics["turnover"] = float(trades_abs.sum() / len(position)) if len(position) else 0.0
 
     trades = pd.DataFrame(
         {

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Dict, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -41,10 +41,10 @@ class BaselineModel:
         self.random_state = random_state
         self.max_iter = max_iter
 
+        self.class_mean_returns: Dict[int, float] = {-1: 0.0, 0: 0.0, 1: 0.0}
         self.scaler = StandardScaler()
         if mode == "logit":
             self.model = LogisticRegression(
-                multi_class="multinomial",
                 max_iter=max_iter,
                 n_jobs=None,
                 random_state=random_state,
@@ -61,7 +61,7 @@ class BaselineModel:
         else:
             raise ValueError(f"Unsupported mode: {mode}")
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
+    def fit(self, X: pd.DataFrame, y: pd.Series, future_return: Optional[pd.Series] = None) -> None:
         self.scaler.fit(X.values)
         Xs = self.scaler.transform(X.values)
         if len(np.unique(y.values)) < 2:
@@ -70,6 +70,14 @@ class BaselineModel:
             self.model.fit(Xs, y.values)
         else:
             self.model.fit(Xs, y.values)
+
+        if future_return is not None:
+            aligned = future_return.reindex(y.index)
+            df = pd.DataFrame({"label": y, "future_return": aligned}).dropna(subset=["future_return"])
+            means = df.groupby("label")["future_return"].mean()
+            self.class_mean_returns = {-1: 0.0, 0: 0.0, 1: 0.0}
+            for cls, val in means.items():
+                self.class_mean_returns[int(cls)] = float(val)
 
     def predict(self, X: pd.DataFrame) -> PredictedOutput:
         Xs = self.scaler.transform(X.values)
@@ -81,7 +89,12 @@ class BaselineModel:
         # Ensure columns for -1, 0, 1 exist
         p_pos = proba_df.get(1, pd.Series(0, index=X.index))
         p_neg = proba_df.get(-1, pd.Series(0, index=X.index))
-        expected_return = p_pos - p_neg
+        p_neutral = proba_df.get(0, pd.Series(0, index=X.index))
+        expected_return = (
+            p_pos * self.class_mean_returns.get(1, 0.0)
+            + p_neg * self.class_mean_returns.get(-1, 0.0)
+            + p_neutral * self.class_mean_returns.get(0, 0.0)
+        )
 
         predicted_return = expected_return
         signal = predicted_return.copy()
