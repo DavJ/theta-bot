@@ -65,7 +65,7 @@ def run_walkforward(config_path: str) -> Dict:
             positive_threshold=thr,
             negative_threshold=-thr,
         )
-        model.fit(X_train, y_train, future_return=future_returns.loc[X_train.index])
+        model.fit(X_train, y_train, future_return=future_returns.iloc[train_idx])
         preds = model.predict(X_test)
         fold_df = pd.DataFrame(
             {

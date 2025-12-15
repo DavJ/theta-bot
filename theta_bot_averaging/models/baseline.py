@@ -41,7 +41,7 @@ class BaselineModel:
         self.random_state = random_state
         self.max_iter = max_iter
 
-        self.class_mean_returns: Dict[int, float] = {-1: 0.0, 0: 0.0, 1: 0.0}
+        self.class_mean_returns: Dict[int, float] = self._default_class_mean_returns()
         self.scaler = StandardScaler()
         if mode == "logit":
             self.model = LogisticRegression(
@@ -75,7 +75,7 @@ class BaselineModel:
             aligned = future_return.reindex(y.index)
             df = pd.DataFrame({"label": y, "future_return": aligned}).dropna(subset=["future_return"])
             means = df.groupby("label")["future_return"].mean()
-            self.class_mean_returns = {-1: 0.0, 0: 0.0, 1: 0.0}
+            self.class_mean_returns = self._default_class_mean_returns()
             for cls, val in means.items():
                 self.class_mean_returns[int(cls)] = float(val)
 
@@ -107,3 +107,7 @@ class BaselineModel:
             signal=signal,
             probabilities=proba_df,
         )
+
+    @staticmethod
+    def _default_class_mean_returns() -> Dict[int, float]:
+        return {-1: 0.0, 0: 0.0, 1: 0.0}
