@@ -8,7 +8,7 @@ import pandas as pd
 
 class PurgedTimeSeriesSplit:
     """
-    Time-series split with optional purge and embargo to avoid leakage.
+    Time-series split with optional purge and (currently ignored) embargo to avoid leakage.
     """
 
     def __init__(self, n_splits: int = 5, purge: int = 0, embargo: int = 0):
@@ -28,14 +28,8 @@ class PurgedTimeSeriesSplit:
         for fold_size in fold_sizes:
             start, stop = current, current + fold_size
             test_indices = indices[start:stop]
-            train_pre_end = max(start - self.purge, 0)
-            train_pre = indices[:train_pre_end]
-
-            embargo_start = stop
-            embargo_end = min(stop + self.embargo, n_samples)
-            train_post = indices[embargo_end:]
-
-            train_indices = np.concatenate([train_pre, train_post])
+            train_end = max(start - self.purge, 0)
+            train_indices = indices[:train_end]
 
             current = stop
             yield train_indices, test_indices

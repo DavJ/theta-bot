@@ -42,7 +42,10 @@ def run_walkforward(config_path: str) -> Dict:
     df = load_dataset(cfg.data_path)
     df_targets = build_targets(df, horizon=cfg.horizon, threshold_bps=cfg.threshold_bps)
     features = build_features(df_targets)
-    features, targets = features.align(df_targets["label"], join="inner")
+    data = pd.concat([features, df_targets[["label", "future_return"]]], axis=1).dropna()
+    features = data[features.columns]
+    targets = data["label"]
+    future_returns = data["future_return"]
 
     splitter = PurgedTimeSeriesSplit(
         n_splits=cfg.n_splits, purge=cfg.purge, embargo=cfg.embargo
@@ -50,19 +53,25 @@ def run_walkforward(config_path: str) -> Dict:
     all_metrics = []
     predictions = []
 
+    thr = cfg.threshold_bps / 10_000.0
+
     for train_idx, test_idx in splitter.split(features.index):
         if len(train_idx) == 0 or len(test_idx) == 0:
             continue
         X_train, y_train = features.iloc[train_idx], targets.iloc[train_idx]
         X_test = features.iloc[test_idx]
-        model = BaselineModel(mode=cfg.model_type)
-        model.fit(X_train, y_train)
+        model = BaselineModel(
+            mode=cfg.model_type,
+            positive_threshold=thr,
+            negative_threshold=-thr,
+        )
+        model.fit(X_train, y_train, future_return=future_returns.iloc[train_idx])
         preds = model.predict(X_test)
         fold_df = pd.DataFrame(
             {
                 "predicted_return": preds.predicted_return,
                 "signal": preds.signal,
-                "future_return": df_targets.iloc[test_idx]["future_return"],
+                "future_return": future_returns.iloc[test_idx],
             }
         )
         if fold_df["predicted_return"].isna().any():

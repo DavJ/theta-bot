@@ -9,7 +9,5 @@ def test_purged_split_removes_overlap():
     for train_idx, test_idx in splitter.split(X):
         # No overlap
         assert set(train_idx).isdisjoint(set(test_idx))
-        embargo_start = test_idx.max() + 1
-        embargo_end = embargo_start + splitter.embargo
-        for t in train_idx:
-            assert t < test_idx.min() or t >= embargo_end
+        if len(train_idx) > 0:
+            assert train_idx.max() < test_idx.min()
