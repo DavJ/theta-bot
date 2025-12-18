@@ -139,6 +139,7 @@ def evaluate_dual_stream(
     mellin_omega_max: float = 1.0,
     torch_epochs: int = 50,
     torch_batch_size: int = 32,
+    torch_lr: float = 1e-3,
     fee_rate: float = 0.0004,
     fast_mode: bool = False,
 ) -> Tuple[pd.DataFrame, Dict, List[Dict]]:
@@ -206,6 +207,7 @@ def evaluate_dual_stream(
             negative_threshold=-thr,
             epochs=epochs,
             batch_size=torch_batch_size,
+            lr=torch_lr,
         )
         model.fit(X_theta_train, X_mellin_train, y_train, future_return=future_return_train)
         preds = model.predict(X_theta_test, X_mellin_test, test_index)
@@ -298,19 +300,22 @@ def generate_report(
 
 ## Configuration
 
+- **Mode:** {config.get('mode', 'default').upper()}
 - **Horizon:** {config['horizon']} bar(s)
 - **Threshold:** {config['threshold_bps']:.1f} bps
 - **Walk-Forward Splits:** {config['n_splits']}
 - **Fee Rate:** {config['fee_rate']:.4f}
 
 ### Dual-Stream Parameters
-- **Theta Window:** {config['theta_window']}
+- **Theta Window:** {config['theta_window']}{' (optimized)' if config.get('mode') == 'optimized' else ''}
 - **Theta q:** {config['theta_q']}
-- **Theta Terms:** {config['theta_terms']}
-- **Mellin k:** {config['mellin_k']}
+- **Theta Terms:** {config['theta_terms']}{' (optimized)' if config.get('mode') == 'optimized' else ''}
+- **Mellin k:** {config['mellin_k']}{' (optimized)' if config.get('mode') == 'optimized' else ''}
 - **Mellin alpha:** {config['mellin_alpha']}
 - **Mellin omega_max:** {config['mellin_omega_max']}
 - **Training Epochs:** {config['torch_epochs']}
+- **Batch Size:** {config['torch_batch_size']}{' (optimized)' if config.get('mode') == 'optimized' else ''}
+- **Learning Rate:** {config['torch_lr']}{' (optimized)' if config.get('mode') == 'optimized' else ''}
 
 ## Results Comparison
 
@@ -377,6 +382,11 @@ def main():
         help="Fast mode: fewer folds, fewer epochs, less data",
     )
     parser.add_argument(
+        "--optimized",
+        action="store_true",
+        help="Use optimized hyperparameters (theta_window=72, terms=12, mellin_k=20, batch=64, lr=5e-4)",
+    )
+    parser.add_argument(
         "--data-path",
         type=str,
         default="data/BTCUSDT_1H_sample.csv.gz",
@@ -390,29 +400,59 @@ def main():
     )
     args = parser.parse_args()
     
-    # Configuration
-    config = {
-        "horizon": 1,
-        "threshold_bps": 10.0,
-        "n_splits": 3 if args.fast else 5,
-        "fee_rate": 0.0004,
-        # Dual-stream params
-        "theta_window": 48,
-        "theta_q": 0.9,
-        "theta_terms": 8,
-        "mellin_k": 16,
-        "mellin_alpha": 0.5,
-        "mellin_omega_max": 1.0,
-        "torch_epochs": 5 if args.fast else 50,
-        "torch_batch_size": 32,
-    }
+    # Configuration - use optimized parameters if requested
+    if args.optimized:
+        # Optimized parameters from DUAL_STREAM_EVALUATION_REPORT.md
+        config = {
+            "horizon": 1,
+            "threshold_bps": 10.0,
+            "n_splits": 3 if args.fast else 5,
+            "fee_rate": 0.0004,
+            # Optimized dual-stream params
+            "theta_window": 72,  # Capture longer cycles
+            "theta_q": 0.9,
+            "theta_terms": 12,  # Model complex patterns
+            "mellin_k": 20,  # Better frequency resolution
+            "mellin_alpha": 0.5,
+            "mellin_omega_max": 1.0,
+            "torch_epochs": 5 if args.fast else 50,
+            "torch_batch_size": 64,  # Larger batch for stability
+            "torch_lr": 5e-4,  # Lower LR for stability
+        }
+    else:
+        # Default configuration
+        config = {
+            "horizon": 1,
+            "threshold_bps": 10.0,
+            "n_splits": 3 if args.fast else 5,
+            "fee_rate": 0.0004,
+            # Dual-stream params
+            "theta_window": 48,
+            "theta_q": 0.9,
+            "theta_terms": 8,
+            "mellin_k": 16,
+            "mellin_alpha": 0.5,
+            "mellin_omega_max": 1.0,
+            "torch_epochs": 5 if args.fast else 50,
+            "torch_batch_size": 32,
+            "torch_lr": 1e-3,
+        }
+    config["mode"] = "optimized" if args.optimized else "default"
     
     print("=" * 70)
     print("DUAL-STREAM REAL DATA EVALUATION")
     print("=" * 70)
-    print(f"Mode: {'FAST' if args.fast else 'FULL'}")
+    print(f"Mode: {'FAST' if args.fast else 'FULL'} {'(OPTIMIZED)' if args.optimized else ''}")
     print(f"Data: {args.data_path}")
     print(f"Report: {args.output}")
+    if args.optimized:
+        print("\nUsing Optimized Hyperparameters:")
+        print(f"  - Theta Window: {config['theta_window']} (vs 48 default)")
+        print(f"  - Theta Terms: {config['theta_terms']} (vs 8 default)")
+        print(f"  - Mellin k: {config['mellin_k']} (vs 16 default)")
+        print(f"  - Batch Size: {config['torch_batch_size']} (vs 32 default)")
+        print(f"  - Learning Rate: {config['torch_lr']} (vs 1e-3 default)")
+    
     
     # Load data
     data_path = Path(args.data_path)
@@ -448,6 +488,7 @@ def main():
         mellin_omega_max=config["mellin_omega_max"],
         torch_epochs=config["torch_epochs"],
         torch_batch_size=config["torch_batch_size"],
+        torch_lr=config["torch_lr"],
         fee_rate=config["fee_rate"],
         fast_mode=args.fast,
     )
