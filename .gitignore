@@ -71,3 +71,4 @@ quick_test/
 # Allowlist: tiny regression fixtures
 !regression/**
 test_data/
+test_output/

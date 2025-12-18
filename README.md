@@ -133,6 +133,12 @@ python theta_predictor.py --csv data.csv --window 512
 
 The v9 model restores the weak but real predictive edge observed in earlier biquaternionic implementations while maintaining strict walk-forward causality and no data leakage.
 
+**Evaluation Status:**  
+✅ Initial predictivity evaluation completed - see **[V9_EVALUATION_SUMMARY.md](V9_EVALUATION_SUMMARY.md)** for detailed findings.
+- Evaluation tools: `evaluate_v9_predictivity_simple.py` and `evaluate_v9_predictivity.py`
+- Results show mixed performance on mock data
+- Further testing on real market data recommended
+
 ## Production Preparation Tools
 
 - **download_market_data.py** - Download real market data from Binance
@@ -143,10 +149,13 @@ The v9 model restores the weak but real predictive edge observed in earlier biqu
 - **test_biquat_corrected.py** - Test corrected biquaternion implementation
 - **test_biquat_binance_real.py** - Comprehensive test on real Binance data with multiple pairs
 - **tools/eval_metrics.py** - Evaluation script for computing performance metrics (earnings, correlation, hit rate)
+- **evaluate_v9_predictivity_simple.py** - V9 vs V8 predictivity comparison (recommended)
+- **evaluate_v9_predictivity.py** - Comprehensive v9 feature analysis
 
 ## Documentation
 
 - **[PRODUCTION_PREPARATION.md](PRODUCTION_PREPARATION.md)** - Complete guide for preparing bot for production (START HERE!)
+- **[V9_EVALUATION_SUMMARY.md](V9_EVALUATION_SUMMARY.md)** - Evaluation of v9 algorithm predictivity
 - **[IMPLEMENTATION_SUMMARY.txt](IMPLEMENTATION_SUMMARY.txt)** - Implementation details and validation results
 - **[EXPERIMENT_REPORT.md](EXPERIMENT_REPORT.md)** - Detailed synthetic data test results
 - **[CTT_README.md](CTT_README.md)** - Technical documentation and theory
