@@ -1,3 +1,7 @@
+import pytest
+
+pytest.skip("Legacy script, not a pytest test (requires external CSV)", allow_module_level=True)
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

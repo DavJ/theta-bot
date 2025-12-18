@@ -1,7 +1,11 @@
+import pytest
+
+pytest.skip("Legacy script, not a pytest test (requires external CSV and mpmath)", allow_module_level=True)
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from theta_transform import theta_basis, orthonormalize, theta_transform, theta_inverse
+from theta_bot_averaging.theta_transform import theta_basis, orthonormalize, theta_transform, theta_inverse
 
 # Načti reálná data
 data = pd.read_csv("eval_h_BTCUSDT_1H.csv")
