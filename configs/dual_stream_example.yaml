@@ -1,0 +1,24 @@
+data_path: "real_data/BTCUSDT_1h.csv"
+horizon: 1
+threshold_bps: 10
+model_type: "dual_stream"
+fee_rate: 0.0004
+slippage_bps: 1.0
+spread_bps: 0.5
+n_splits: 5
+purge: 1
+embargo: 1
+output_dir: "runs"
+
+# Dual-stream specific parameters
+theta_window: 48      # Rolling window size for theta basis (48 hours)
+theta_q: 0.9          # Theta basis decay parameter (0 < q < 1)
+theta_terms: 8        # Number of theta coefficients to compute
+mellin_k: 16          # Number of Mellin frequency samples
+mellin_alpha: 0.5     # Mellin transform real parameter
+mellin_omega_max: 1.0 # Mellin transform max frequency
+
+# PyTorch training parameters (if torch available)
+torch_epochs: 50      # Number of training epochs
+torch_batch_size: 32  # Training batch size
+torch_lr: 0.001       # Learning rate (1e-3)
