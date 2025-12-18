@@ -1,6 +1,6 @@
 # Dual-Stream Real Data Evaluation Report
 
-**Generated:** 2025-12-18 22:19:34 UTC
+**Generated:** 2025-12-18 22:37:48 UTC
 
 ## Dataset Summary
 
@@ -12,6 +12,7 @@
 
 ## Configuration
 
+- **Mode:** DEFAULT
 - **Horizon:** 1 bar(s)
 - **Threshold:** 10.0 bps
 - **Walk-Forward Splits:** 3
@@ -25,6 +26,8 @@
 - **Mellin alpha:** 0.5
 - **Mellin omega_max:** 1.0
 - **Training Epochs:** 5
+- **Batch Size:** 32
+- **Learning Rate:** 0.001
 
 ## Results Comparison
 
