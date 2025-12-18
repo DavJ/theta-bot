@@ -177,6 +177,38 @@ Using Jacobi theta functions:
 
 This creates a modularly invariant, quasi-periodic structure for capturing temporal market patterns.
 
+### Dual-Stream Theta + Mellin Model
+
+A new advanced model architecture that combines two complementary representations:
+
+**Architecture:**
+- **Theta Stream**: Rolling window theta basis projections processed via GRU for temporal dynamics
+- **Mellin Stream**: Mellin transform features capturing scale-invariant frequency characteristics
+- **Gating Fusion**: Learned gating mechanism to adaptively combine both streams
+- **PyTorch Backend**: Optional PyTorch implementation with automatic fallback to sklearn baseline
+
+**Usage with Walk-forward Validation:**
+```bash
+# Run with dual-stream model (requires walk-forward pipeline)
+cd theta_bot_averaging
+python -m theta_bot_averaging.validation.walkforward configs/dual_stream_example.yaml
+```
+
+**Configuration Parameters:**
+- `model_type: "dual_stream"` - Enable dual-stream architecture
+- `theta_window: 48` - Rolling window for theta basis (48 hours recommended)
+- `theta_q: 0.9` - Theta basis decay parameter
+- `theta_terms: 8` - Number of theta coefficients
+- `mellin_k: 16` - Mellin frequency samples
+- `torch_epochs: 50` - Training epochs (if PyTorch available)
+
+**Key Features:**
+- **No Lookahead**: Strict causal feature extraction (validated by tests)
+- **Graceful Fallback**: Uses BaselineModel when PyTorch unavailable
+- **Tested**: Comprehensive test suite for shapes, causality, and end-to-end integration
+
+See `configs/dual_stream_example.yaml` for a complete configuration example.
+
 ## Validation Status
 
 ✅ Mathematical Properties:
