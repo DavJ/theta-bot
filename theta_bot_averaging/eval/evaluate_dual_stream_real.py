@@ -14,7 +14,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -76,6 +75,7 @@ def evaluate_baseline(
     targets = data["label"]
     future_returns = data["future_return"]
     
+    # Convert basis points to decimal (1 bps = 0.0001, so 10 bps = 0.001)
     thr = threshold_bps / 10_000.0
     splitter = PurgedTimeSeriesSplit(n_splits=n_splits, purge=0, embargo=0)
     
@@ -179,6 +179,7 @@ def evaluate_dual_stream(
     targets = df_targets.loc[index, "label"].values
     future_returns = df_targets.loc[index, "future_return"].values
     
+    # Convert basis points to decimal (1 bps = 0.0001, so 10 bps = 0.001)
     thr = threshold_bps / 10_000.0
     splitter = PurgedTimeSeriesSplit(n_splits=n_splits, purge=0, embargo=0)
     

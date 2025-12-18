@@ -133,8 +133,11 @@ def test_data_file_format():
     
     # Check OHLC consistency (basic sanity check)
     assert (df["high"] >= df["low"]).all(), "High must be >= Low"
-    assert (df["high"] >= df["close"]).all(), "High must be >= Close"
-    assert (df["low"] <= df["close"]).all(), "Low must be <= Close"
+    assert (df["high"] >= df["open"]).all(), "High must be >= Open"
+    assert (df["low"] <= df["open"]).all(), "Low must be <= Open"
+    # Close should be between high and low
+    assert (df["close"] >= df["low"]).all(), "Close must be >= Low"
+    assert (df["close"] <= df["high"]).all(), "Close must be <= High"
     
     print(f"✓ Data file format validated")
     print(f"  - Shape: {df.shape}")
