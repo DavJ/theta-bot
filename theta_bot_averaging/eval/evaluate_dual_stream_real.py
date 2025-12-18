@@ -32,14 +32,19 @@ from theta_bot_averaging.data import build_targets, load_dataset
 from theta_bot_averaging.features import build_dual_stream_inputs, build_features
 from theta_bot_averaging.models import BaselineModel, DualStreamModel
 from theta_bot_averaging.validation.purged_split import PurgedTimeSeriesSplit
+from theta_bot_averaging.utils.data_sanity import log_data_sanity
 
 
-def load_data(data_path: str) -> pd.DataFrame:
-    """Load the BTCUSDT sample data."""
+def load_data(data_path: str) -> Tuple[pd.DataFrame, Dict]:
+    """Load the BTCUSDT sample data and perform sanity check."""
     print(f"Loading data from {data_path}...")
     df = load_dataset(data_path)
     print(f"  Loaded {len(df)} bars from {df.index[0]} to {df.index[-1]}")
-    return df
+    
+    # Perform data sanity check
+    sanity_stats = log_data_sanity(df, symbol="BTCUSDT")
+    
+    return df, sanity_stats
 
 
 def evaluate_baseline(
@@ -120,6 +125,29 @@ def evaluate_baseline(
     
     predictions_df = pd.concat(all_predictions).sort_index()
     aggregate_metrics = pd.DataFrame(all_metrics).mean(numeric_only=True).to_dict()
+    
+    # DIAGNOSTIC: Check prediction quality
+    print(f"\n  DIAGNOSTICS (Baseline):")
+    pred_std = predictions_df["predicted_return"].std()
+    print(f"    std(predicted_return) = {pred_std:.6f}")
+    
+    # Class distribution
+    class_counts = predictions_df["signal"].value_counts().sort_index()
+    print(f"    Signal distribution: {dict(class_counts)}")
+    
+    # Class mean returns
+    class_means = predictions_df.groupby("signal")["future_return"].mean()
+    print(f"    Class mean returns:")
+    for cls in [-1, 0, 1]:
+        if cls in class_means.index:
+            print(f"      signal={cls:+2d}: {class_means[cls]:+.6f}")
+    
+    # Check for degenerate predictions
+    if pred_std < 1e-6:
+        print(f"    ⚠️  WARNING: Predictions are nearly constant (std < 1e-6)")
+    
+    # Check if predicted_return exists
+    assert "predicted_return" in predictions_df.columns, "predicted_return missing from output"
     
     print(f"  ✓ Completed {len(all_metrics)} folds")
     
@@ -233,6 +261,29 @@ def evaluate_dual_stream(
     predictions_df = pd.concat(all_predictions).sort_index()
     aggregate_metrics = pd.DataFrame(all_metrics).mean(numeric_only=True).to_dict()
     
+    # DIAGNOSTIC: Check prediction quality
+    print(f"\n  DIAGNOSTICS (Dual-Stream):")
+    pred_std = predictions_df["predicted_return"].std()
+    print(f"    std(predicted_return) = {pred_std:.6f}")
+    
+    # Class distribution
+    class_counts = predictions_df["signal"].value_counts().sort_index()
+    print(f"    Signal distribution: {dict(class_counts)}")
+    
+    # Class mean returns
+    class_means = predictions_df.groupby("signal")["future_return"].mean()
+    print(f"    Class mean returns:")
+    for cls in [-1, 0, 1]:
+        if cls in class_means.index:
+            print(f"      signal={cls:+2d}: {class_means[cls]:+.6f}")
+    
+    # Check for degenerate predictions
+    if pred_std < 1e-6:
+        print(f"    ⚠️  WARNING: Predictions are nearly constant (std < 1e-6)")
+    
+    # Check if predicted_return exists
+    assert "predicted_return" in predictions_df.columns, "predicted_return missing from output"
+    
     print(f"  ✓ Completed {len(all_metrics)} folds")
     
     return predictions_df, aggregate_metrics, all_metrics
@@ -277,6 +328,8 @@ def generate_report(
     dual_stream_metrics: Dict,
     config: Dict,
     output_path: str,
+    data_sanity_stats: Dict = None,
+    fast_mode: bool = False,
 ) -> None:
     """Generate markdown report comparing baseline and dual-stream models."""
     
@@ -362,7 +415,96 @@ def generate_report(
     conclusion += f"The evaluation demonstrates the dual-stream architecture's ability to process both Theta sequence patterns and Mellin transform features on synthetic but realistic market data."
     
     report += conclusion
-    report += "\n\n---\n*Note: This evaluation uses synthetic BTCUSDT data for reproducible benchmarking. Results are for research purposes only.*\n"
+    
+    # Add diagnostics summary section
+    report += "\n\n## Diagnostics Summary\n\n"
+    
+    # FAST mode warning
+    if fast_mode:
+        report += "**⚠️  FAST MODE / DIAGNOSTIC ONLY**\n\n"
+        report += "This report was generated in FAST mode with reduced splits and epochs.\n"
+        report += "Results are for diagnostic purposes only and should not be used for final conclusions.\n\n"
+    
+    # Data sanity
+    if data_sanity_stats:
+        report += "### Data Sanity\n\n"
+        report += f"- **Price Range:** ${data_sanity_stats['min_close']:.2f} - ${data_sanity_stats['max_close']:.2f}\n"
+        report += f"- **Mean Price:** ${data_sanity_stats['mean_close']:.2f}\n"
+        report += f"- **Date Range:** {data_sanity_stats['start_timestamp']} to {data_sanity_stats['end_timestamp']}\n"
+        report += f"- **Rows:** {data_sanity_stats['num_rows']:,}\n"
+        
+        if data_sanity_stats.get('appears_synthetic', False):
+            report += f"\n**⚠️  WARNING:** {data_sanity_stats.get('warning_message', 'Data appears synthetic')}\n"
+        report += "\n"
+    
+    # Prediction diagnostics
+    report += "### Prediction Quality\n\n"
+    
+    baseline_std = baseline_preds["predicted_return"].std()
+    dual_stream_std = dual_stream_preds["predicted_return"].std()
+    
+    report += f"**Baseline Model:**\n"
+    report += f"- std(predicted_return): {baseline_std:.6f}\n"
+    
+    baseline_class_counts = baseline_preds["signal"].value_counts().sort_index().to_dict()
+    report += f"- Signal distribution: {baseline_class_counts}\n"
+    
+    baseline_class_means = baseline_preds.groupby("signal")["future_return"].mean().to_dict()
+    report += f"- Class mean returns:\n"
+    for cls in [-1, 0, 1]:
+        if cls in baseline_class_means:
+            report += f"  - signal={cls:+2d}: {baseline_class_means[cls]:+.6f}\n"
+    
+    if baseline_std < 1e-6:
+        report += f"\n**⚠️  WARNING:** Baseline predictions are nearly constant (std < 1e-6)\n"
+    
+    report += f"\n**Dual-Stream Model:**\n"
+    report += f"- std(predicted_return): {dual_stream_std:.6f}\n"
+    
+    dual_stream_class_counts = dual_stream_preds["signal"].value_counts().sort_index().to_dict()
+    report += f"- Signal distribution: {dual_stream_class_counts}\n"
+    
+    dual_stream_class_means = dual_stream_preds.groupby("signal")["future_return"].mean().to_dict()
+    report += f"- Class mean returns:\n"
+    for cls in [-1, 0, 1]:
+        if cls in dual_stream_class_means:
+            report += f"  - signal={cls:+2d}: {dual_stream_class_means[cls]:+.6f}\n"
+    
+    if dual_stream_std < 1e-6:
+        report += f"\n**⚠️  WARNING:** Dual-Stream predictions are nearly constant (std < 1e-6)\n"
+    
+    # Root cause analysis
+    report += "\n### Root Cause Analysis\n\n"
+    
+    # Determine most likely cause
+    causes = []
+    
+    if data_sanity_stats and data_sanity_stats.get('appears_synthetic', False):
+        causes.append("DATA: Synthetic/unrealistic price data detected")
+    
+    if baseline_std < 1e-6 or dual_stream_std < 1e-6:
+        causes.append("TRAINING: Model outputs are nearly constant (training ineffective)")
+    
+    if abs(baseline_pred['correlation']) < 0.05 and abs(dual_stream_pred['correlation']) < 0.05:
+        causes.append("EVALUATION: Both models show near-zero correlation (possible fallback logic or data issues)")
+    
+    # Check if class means are nearly identical
+    if baseline_class_means:
+        mean_values = list(baseline_class_means.values())
+        if len(mean_values) > 1 and max(mean_values) - min(mean_values) < 1e-4:
+            causes.append("TARGET: Class mean returns are nearly identical (target may not be predictive)")
+    
+    if causes:
+        report += "**Predictivity loss is most likely caused by:**\n\n"
+        for cause in causes:
+            report += f"- {cause}\n"
+    else:
+        report += "**No obvious root cause detected.** Predictivity may be limited by:\n"
+        report += "- Market efficiency (weak signal in 1H data)\n"
+        report += "- Model capacity (insufficient complexity)\n"
+        report += "- Feature quality (limited information in Theta/Mellin features)\n"
+    
+    report += "\n---\n*Note: This evaluation uses synthetic BTCUSDT data for reproducible benchmarking. Results are for research purposes only.*\n"
     
     # Write report
     with open(output_path, "w") as f:
@@ -461,8 +603,62 @@ def main():
         print("Please ensure data/BTCUSDT_1H_sample.csv.gz exists in the repository.")
         return 1
     
-    df = load_data(str(data_path))
+    df, data_sanity_stats = load_data(str(data_path))
     df_targets = build_targets(df, horizon=config["horizon"], threshold_bps=config["threshold_bps"])
+    
+    # DIAGNOSTIC: Parameter sanity check
+    print("\n" + "=" * 70)
+    print("PARAMETER SANITY CHECK")
+    print("=" * 70)
+    print(f"theta_window: {config['theta_window']}")
+    print(f"theta_q: {config['theta_q']}")
+    print(f"theta_terms: {config['theta_terms']}")
+    print(f"mellin_k: {config['mellin_k']}")
+    print(f"mellin_alpha: {config['mellin_alpha']}")
+    print(f"mellin_omega_max: {config['mellin_omega_max']}")
+    print(f"horizon: {config['horizon']}")
+    print(f"threshold_bps: {config['threshold_bps']}")
+    print(f"torch_epochs: {config['torch_epochs']}")
+    print(f"torch_batch_size: {config['torch_batch_size']}")
+    print(f"torch_lr: {config['torch_lr']}")
+    
+    # Check for potentially too-small parameters
+    warnings = []
+    if config['theta_window'] < 64:
+        warnings.append(f"theta_window={config['theta_window']} may be too small to capture regime structure (consider >= 64)")
+    if config['mellin_omega_max'] <= 1.0:
+        warnings.append(f"mellin_omega_max={config['mellin_omega_max']} may be too small for frequency analysis (consider > 1.0)")
+    
+    if warnings:
+        print("\n⚠️  WARNINGS:")
+        for w in warnings:
+            print(f"    {w}")
+    else:
+        print("\n✓ Parameters appear reasonable")
+    print("=" * 70 + "\n")
+    
+    # DIAGNOSTIC: Target alignment check (leakage sanity)
+    print("=" * 70)
+    print("TARGET ALIGNMENT CHECK")
+    print("=" * 70)
+    close_returns = df_targets["close"].pct_change()
+    future_return = df_targets["future_return"]
+    
+    # Align for correlation computation
+    aligned_df = pd.DataFrame({
+        'close_return': close_returns,
+        'future_return': future_return
+    }).dropna()
+    
+    if len(aligned_df) > 1:
+        lag0_corr = aligned_df['close_return'].corr(aligned_df['future_return'])
+        print(f"Correlation between close_return[t] and future_return[t]: {lag0_corr:.4f}")
+        
+        if lag0_corr > 0.5:
+            print("⚠️  WARNING: Strong positive correlation detected (possible leakage)")
+        else:
+            print("✓ No obvious leakage detected")
+    print("=" * 70 + "\n")
     
     # Evaluate baseline
     baseline_preds, baseline_metrics, _ = evaluate_baseline(
@@ -505,6 +701,8 @@ def main():
         dual_stream_metrics=dual_stream_metrics,
         config=config,
         output_path=str(output_path),
+        data_sanity_stats=data_sanity_stats,
+        fast_mode=args.fast,
     )
     
     print("\n" + "=" * 70)
