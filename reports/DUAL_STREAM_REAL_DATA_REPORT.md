@@ -1,14 +1,16 @@
 # Dual-Stream Real Data Evaluation Report
 
-**Generated:** 2025-12-18 23:10:51 UTC
+**Generated:** 2025-12-19 15:09:10 UTC
 
 ## Dataset Summary
 
+✓ **REAL MARKET SAMPLE**
+
 - **Symbol:** BTCUSDT
 - **Timeframe:** 1 Hour (1H)
-- **Date Range:** 2024-06-01 00:00:00+00:00 to 2024-11-27 23:00:00+00:00
-- **Total Bars:** 4,320
-- **Price Range:** $13441.23 to $103374.60
+- **Date Range:** 2024-06-01 00:00:00+00:00 to 2024-09-30 23:00:00+00:00
+- **Total Bars:** 2,928
+- **Price Range:** $64465.34 to $69924.26
 
 ## Configuration
 
@@ -35,22 +37,22 @@
 
 | Metric | Baseline | Dual-Stream | Δ |
 |--------|----------|-------------|---|
-| **Correlation** | -0.0439 | -0.0349 | 0.0090 |
-| **Hit Rate (Direction)** | 48.34% | 50.84% | 2.50% |
+| **Correlation** | 0.5911 | 0.6042 | 0.0131 |
+| **Hit Rate (Direction)** | 77.80% | 77.44% | -0.36% |
 
 ### Trading Metrics
 
 | Metric | Baseline | Dual-Stream | Δ |
 |--------|----------|-------------|---|
-| **Total Return** | -0.63% | -17.00% | -16.38% |
-| **Sharpe Ratio** | -1.501 | -1.910 | -0.410 |
-| **Max Drawdown** | -33.80% | -35.72% | -1.92% |
-| **Win Rate** | 24.04% | 23.24% | -0.79% |
-| **Profit Factor** | 0.90 | 0.93 | 0.03 |
+| **Total Return** | 1.14% | 0.31% | -0.83% |
+| **Sharpe Ratio** | 7.787 | 6.507 | -1.280 |
+| **Max Drawdown** | -0.16% | -0.27% | -0.12% |
+| **Win Rate** | 3.50% | 7.89% | 4.39% |
+| **Profit Factor** | 2.32 | 1.53 | -0.79 |
 
 ## Conclusion
 
-Both models show comparable performance, with improved predictive correlation. The evaluation demonstrates the dual-stream architecture's ability to process both Theta sequence patterns and Mellin transform features on synthetic but realistic market data.
+Both models show comparable performance, with improved predictive correlation. The evaluation demonstrates the dual-stream architecture's ability to process both Theta sequence patterns and Mellin transform features.
 
 ## Diagnostics Summary
 
@@ -61,37 +63,38 @@ Results are for diagnostic purposes only and should not be used for final conclu
 
 ### Data Sanity
 
-- **Price Range:** $13441.23 - $103374.60
-- **Mean Price:** $48950.66
-- **Date Range:** 2024-06-01 00:00:00+00:00 to 2024-11-27 23:00:00+00:00
-- **Rows:** 4,320
-
-**⚠️  WARNING:** BTCUSDT price range $13441.23 - $103374.60 spans an unusually wide range for 2024-2024. This may indicate synthetic or concatenated data.
+- **min_close:** $64465.34
+- **max_close:** $69924.26
+- **Mean Price:** $67107.94
+- **Start timestamp:** 2024-06-01 00:00:00+00:00
+- **End timestamp:** 2024-09-30 23:00:00+00:00
+- **Rows:** 2,928
+- **appears_unrealistic:** False
 
 ### Prediction Quality
 
 **Baseline Model:**
-- std(predicted_return): 0.001083
-- Signal distribution: {-1.0: 131, 0.0: 714, 1.0: 570}
+- predicted_return_std: 0.000525
+- Signal distribution: {-1.0: 19, 0.0: 959, 1.0: 22}
 - Class mean returns:
-  - signal=-1: +0.002199
-  - signal=+0: +0.001044
-  - signal=+1: +0.000831
+  - signal=-1: -0.001163
+  - signal=+0: +0.000038
+  - signal=+1: +0.001410
 
 **Dual-Stream Model:**
-- std(predicted_return): 0.001206
-- Signal distribution: {-1.0: 168, 0.0: 742, 1.0: 514}
+- predicted_return_std: 0.000594
+- Signal distribution: {-1.0: 14, 0.0: 240, 1.0: 12}
 - Class mean returns:
-  - signal=-1: +0.002700
-  - signal=+0: +0.001052
-  - signal=+1: +0.000747
+  - signal=-1: -0.000788
+  - signal=+0: -0.000118
+  - signal=+1: +0.000981
 
 ### Root Cause Analysis
 
-**Predictivity loss is most likely caused by:**
-
-- DATA: Synthetic/unrealistic price data detected
-- EVALUATION: Both models show near-zero correlation (possible fallback logic or data issues)
+**No obvious root cause detected.** Predictivity may be limited by:
+- Market efficiency (weak signal in 1H data)
+- Model capacity (insufficient complexity)
+- Feature quality (limited information in Theta/Mellin features)
 
 ---
-*Note: This evaluation uses synthetic BTCUSDT data for reproducible benchmarking. Results are for research purposes only.*
+*This evaluation uses the committed real-market sample dataset. Results are for research purposes only.*
