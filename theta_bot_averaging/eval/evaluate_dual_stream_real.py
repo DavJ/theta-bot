@@ -37,13 +37,23 @@ from theta_bot_averaging.utils.data_sanity import log_data_sanity
 
 
 def load_data(data_path: str) -> Tuple[pd.DataFrame, Dict]:
-    """Load the BTCUSDT sample data and perform sanity check."""
+    """Load the BTCUSDT real data and perform strict sanity check."""
     print(f"Loading data from {data_path}...")
+    
+    # Check if file exists first
+    data_file = Path(data_path)
+    if not data_file.exists():
+        raise FileNotFoundError(
+            f"ERROR: Required dataset file not found: {data_path}\n"
+            f"The evaluation requires the committed real market dataset.\n"
+            f"Please ensure data/BTCUSDT_1H_real.csv.gz exists in the repository."
+        )
+    
     df = load_dataset(data_path)
     print(f"  Loaded {len(df)} bars from {df.index[0]} to {df.index[-1]}")
     
-    # Perform data sanity check
-    sanity_stats = log_data_sanity(df, symbol="BTCUSDT")
+    # Perform STRICT data sanity check - will raise ValueError if data is unrealistic
+    sanity_stats = log_data_sanity(df, symbol="BTCUSDT", strict=True)
     
     return df, sanity_stats
 
@@ -392,10 +402,10 @@ def generate_report(
     # Trading metrics already in metrics dicts
     
     # Determine dataset label based on sanity check
-    if data_sanity_stats and data_sanity_stats.get('appears_unrealistic', False):
-        dataset_label = "⚠️  **UNREALISTIC/SYNTHETIC-LIKE SAMPLE**"
+    if data_sanity_stats and data_sanity_stats.get('is_realistic', True):
+        dataset_label = "✓ **DATA SOURCE: REAL MARKET SAMPLE (validated)**"
     else:
-        dataset_label = "✓ **REAL MARKET SAMPLE**"
+        dataset_label = "⚠️  **UNREALISTIC/SYNTHETIC-LIKE SAMPLE** (should not occur in production)"
     
     report = f"""# Dual-Stream Real Data Evaluation Report
 
@@ -494,10 +504,14 @@ def generate_report(
         report += f"- **Start timestamp:** {data_sanity_stats['start_timestamp']}\n"
         report += f"- **End timestamp:** {data_sanity_stats['end_timestamp']}\n"
         report += f"- **Rows:** {data_sanity_stats['num_rows']:,}\n"
-        report += f"- **appears_unrealistic:** {data_sanity_stats.get('appears_unrealistic', False)}\n"
+        report += f"- **is_realistic:** {data_sanity_stats.get('is_realistic', True)}\n"
         
-        if data_sanity_stats.get('appears_unrealistic', False):
-            report += f"\n**⚠️  WARNING:** {data_sanity_stats.get('warning_message', 'Data appears unrealistic')}\n"
+        if not data_sanity_stats.get('is_realistic', True):
+            report += f"\n**⚠️  WARNING:** Data failed sanity checks:\n"
+            for check in data_sanity_stats.get('failed_checks', []):
+                report += f"  - {check}\n"
+        else:
+            report += f"\n✓ **All sanity checks passed** - data validated as realistic market data\n"
         report += "\n"
     
     # Prediction diagnostics
@@ -535,8 +549,8 @@ def generate_report(
     # Determine most likely cause
     causes = []
     
-    if data_sanity_stats and data_sanity_stats.get('appears_unrealistic', False):
-        causes.append("DATA: Synthetic/unrealistic price data detected")
+    if data_sanity_stats and not data_sanity_stats.get('is_realistic', True):
+        causes.append("DATA: Dataset failed sanity validation checks")
     
     if baseline_pred_std < 1e-6 or dual_stream_pred_std < 1e-6:
         causes.append("TRAINING: Model outputs are nearly constant (training ineffective)")
@@ -562,10 +576,12 @@ def generate_report(
     
     # Add footer based on data sanity
     report += "\n---\n"
-    if data_sanity_stats and data_sanity_stats.get('appears_unrealistic', False):
-        report += "*WARNING: This evaluation sample appears unrealistic; treat results as synthetic-like data. Results are for research purposes only.*\n"
+    if data_sanity_stats and data_sanity_stats.get('is_realistic', True):
+        report += "*This evaluation uses the committed real-market dataset (data/BTCUSDT_1H_real.csv.gz). "
+        report += "All data sanity checks passed. Results are for research purposes only.*\n"
     else:
-        report += "*This evaluation uses the committed real-market sample dataset. Results are for research purposes only.*\n"
+        report += "*WARNING: This evaluation sample appears unrealistic; treat results as synthetic-like data. "
+        report += "Results are for research purposes only.*\n"
     
     # Write report
     with open(output_path, "w") as f:
@@ -592,7 +608,7 @@ def main():
     parser.add_argument(
         "--data-path",
         type=str,
-        default="data/BTCUSDT_1H_sample.csv.gz",
+        default="data/BTCUSDT_1H_real.csv.gz",
         help="Path to data file",
     )
     parser.add_argument(
@@ -661,10 +677,19 @@ def main():
     data_path = Path(args.data_path)
     if not data_path.exists():
         print(f"\nERROR: Data file not found: {data_path}")
-        print("Please ensure data/BTCUSDT_1H_sample.csv.gz exists in the repository.")
+        print("The evaluation requires the committed real market dataset:")
+        print("  data/BTCUSDT_1H_real.csv.gz")
+        print("This file must exist in the repository for evaluation to proceed.")
         return 1
     
-    df, data_sanity_stats = load_data(str(data_path))
+    try:
+        df, data_sanity_stats = load_data(str(data_path))
+    except ValueError as e:
+        print(f"\nERROR: Data sanity check failed!")
+        print(f"{e}")
+        print("\nEvaluation aborted. The dataset does not meet quality requirements.")
+        return 1
+    
     df_targets = build_targets(df, horizon=config["horizon"], threshold_bps=config["threshold_bps"])
     
     # DIAGNOSTIC: Parameter sanity check

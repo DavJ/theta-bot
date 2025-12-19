@@ -19,38 +19,113 @@ def test_synthetic_data_detection():
     
     stats = check_price_sanity(df, symbol="BTCUSDT")
     
-    assert stats["appears_synthetic"] is True
+    assert stats["is_realistic"] is False
+    assert stats["appears_unrealistic"] is True
+    assert len(stats["failed_checks"]) > 0
     assert stats["warning_message"] is not None
-    assert "unrealistic" in stats["warning_message"].lower() or "wide range" in stats["warning_message"].lower()
+
+
+def test_synthetic_data_strict_mode_raises():
+    """Test that strict mode raises ValueError for unrealistic data."""
+    # Create synthetic data with unrealistic price range
+    idx = pd.date_range("2024-06-01", periods=100, freq="h")
+    df = pd.DataFrame({
+        "open": range(10000, 110000, 1000),
+        "high": range(10100, 110100, 1000),
+        "low": range(9900, 109900, 1000),
+        "close": range(10000, 110000, 1000),
+        "volume": [100] * 100,
+    }, index=idx)
+    
+    with pytest.raises(ValueError, match="Dataset does not look real"):
+        check_price_sanity(df, symbol="BTCUSDT", strict=True)
 
 
 def test_realistic_data_no_warning():
     """Test that realistic data does not trigger warnings."""
     # Create data with realistic BTC price range for 2024
-    idx = pd.date_range("2024-06-01", periods=100, freq="h")
+    idx = pd.date_range("2024-06-01", periods=2000, freq="h")
     df = pd.DataFrame({
-        "open": range(60000, 70000, 100),
-        "high": range(60100, 70100, 100),
-        "low": range(59900, 69900, 100),
-        "close": range(60000, 70000, 100),
-        "volume": [100] * 100,
+        "open": [60000 + i * 5 for i in range(2000)],
+        "high": [60100 + i * 5 for i in range(2000)],
+        "low": [59900 + i * 5 for i in range(2000)],
+        "close": [60000 + i * 5 for i in range(2000)],
+        "volume": [100] * 2000,
     }, index=idx)
     
     stats = check_price_sanity(df, symbol="BTCUSDT")
     
-    assert stats["appears_synthetic"] is False
+    assert stats["is_realistic"] is True
+    assert stats["appears_unrealistic"] is False
     assert stats["warning_message"] is None
+    assert len(stats["failed_checks"]) == 0
+
+
+def test_insufficient_rows_detected():
+    """Test that insufficient row count is detected."""
+    idx = pd.date_range("2024-01-01", periods=500, freq="h")
+    df = pd.DataFrame({
+        "open": [50000] * 500,
+        "high": [51000] * 500,
+        "low": [49000] * 500,
+        "close": [50000] * 500,
+        "volume": [100] * 500,
+    }, index=idx)
+    
+    stats = check_price_sanity(df)
+    
+    assert stats["is_realistic"] is False
+    assert "Insufficient data" in str(stats["failed_checks"])
+
+
+def test_nan_values_detected():
+    """Test that NaN values are detected."""
+    idx = pd.date_range("2024-01-01", periods=2000, freq="h")
+    df = pd.DataFrame({
+        "open": [50000] * 2000,
+        "high": [51000] * 2000,
+        "low": [49000] * 2000,
+        "close": [50000] * 1999 + [float('nan')],
+        "volume": [100] * 2000,
+    }, index=idx)
+    
+    stats = check_price_sanity(df)
+    
+    assert stats["is_realistic"] is False
+    assert any("NaN" in check for check in stats["failed_checks"])
+
+
+def test_non_monotonic_timestamps_detected():
+    """Test that non-monotonic timestamps are detected."""
+    idx = pd.DatetimeIndex([
+        "2024-01-01 00:00:00",
+        "2024-01-01 02:00:00",  # Jump forward
+        "2024-01-01 01:00:00",  # Jump back (not monotonic)
+    ] + [f"2024-01-01 {i:02d}:00:00" for i in range(3, 1003)])
+    
+    df = pd.DataFrame({
+        "open": [50000] * len(idx),
+        "high": [51000] * len(idx),
+        "low": [49000] * len(idx),
+        "close": [50000] * len(idx),
+        "volume": [100] * len(idx),
+    }, index=idx)
+    
+    stats = check_price_sanity(df)
+    
+    assert stats["is_realistic"] is False
+    assert any("monotonic" in check.lower() for check in stats["failed_checks"])
 
 
 def test_check_price_sanity_returns_stats():
     """Test that check_price_sanity returns expected fields."""
-    idx = pd.date_range("2024-01-01", periods=10, freq="h")
+    idx = pd.date_range("2024-01-01", periods=2000, freq="h")
     df = pd.DataFrame({
-        "open": [50000] * 10,
-        "high": [51000] * 10,
-        "low": [49000] * 10,
-        "close": [50000] * 10,
-        "volume": [100] * 10,
+        "open": [50000] * 2000,
+        "high": [51000] * 2000,
+        "low": [49000] * 2000,
+        "close": [50000] * 2000,
+        "volume": [100] * 2000,
     }, index=idx)
     
     stats = check_price_sanity(df)
@@ -61,8 +136,10 @@ def test_check_price_sanity_returns_stats():
     assert "start_timestamp" in stats
     assert "end_timestamp" in stats
     assert "num_rows" in stats
-    assert "appears_synthetic" in stats
+    assert "is_realistic" in stats
+    assert "appears_unrealistic" in stats
+    assert "failed_checks" in stats
     
     assert stats["min_close"] == 50000
     assert stats["max_close"] == 50000
-    assert stats["num_rows"] == 10
+    assert stats["num_rows"] == 2000
