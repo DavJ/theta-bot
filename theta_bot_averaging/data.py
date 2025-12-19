@@ -8,6 +8,10 @@ import pandas as pd
 REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
 OPTIONAL_COLUMNS = ["vwap", "trades"]
 
+# Threshold for detecting millisecond epoch timestamps
+# Binance uses ms timestamps >= 10^12 (e.g., 1711929600000 = 2024-04-01)
+MS_EPOCH_THRESHOLD = 10**12
+
 
 class SchemaError(ValueError):
     pass
@@ -84,11 +88,11 @@ def load_dataset(path: str) -> pd.DataFrame:
     is_numeric_index = pd.api.types.is_numeric_dtype(df.index)
     
     # Check if this looks like millisecond epoch timestamps
-    # Binance uses ms timestamps >= 10^12 (e.g., 1711929600000)
+    # Binance uses ms timestamps >= MS_EPOCH_THRESHOLD (e.g., 1711929600000)
     is_ms_epoch = False
     if is_numeric_index:
         # Check if values are in the ms epoch range (>= 10^12)
-        if len(df.index) > 0 and df.index[0] >= 10**12:
+        if len(df.index) > 0 and df.index[0] >= MS_EPOCH_THRESHOLD:
             is_ms_epoch = True
     
     # Convert timestamps based on format
@@ -100,6 +104,9 @@ def load_dataset(path: str) -> pd.DataFrame:
         # For 1h candles, shift by +1h to get CLOSE times
         # Binance provides openTime, but we want closeTime for predictions
         # (A 1h candle opened at 00:00 closes at 01:00)
+        # NOTE: This shift is hardcoded for 1h intervals. If using other intervals
+        # (e.g., 5m, 15m, 1d), this logic would need adjustment. The current
+        # implementation is designed specifically for the BTCUSDT_1H_real.csv.gz data.
         df.index = df.index + pd.Timedelta(hours=1)
     elif not isinstance(df.index, pd.DatetimeIndex):
         # Try parsing as string datetime

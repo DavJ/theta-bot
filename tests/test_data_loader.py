@@ -97,7 +97,7 @@ def test_load_dataset_schema_validation(tmp_path):
         load_dataset(str(csv_path))
 
 
-def test_numeric_index_detection():
+def test_numeric_index_detection(tmp_path):
     """Test that numeric ms epoch timestamps are correctly detected."""
     # Create DataFrame with numeric index in ms epoch range
     csv_content = """timestamp,open,high,low,close,volume
@@ -113,14 +113,12 @@ def test_numeric_index_detection():
     # Verify it's in ms epoch range (>= 10^12)
     assert df.index[0] >= 10**12
     
-    # Now test through load_dataset
-    from tempfile import NamedTemporaryFile
-    with NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
-        f.write(csv_content)
-        f.flush()
-        
-        result_df = load_dataset(f.name)
-        
-        # Should be converted to DatetimeIndex
-        assert isinstance(result_df.index, pd.DatetimeIndex)
-        assert result_df.index.tz is not None
+    # Now test through load_dataset using tmp_path fixture
+    csv_path = tmp_path / "test_numeric_ms.csv"
+    csv_path.write_text(csv_content)
+    
+    result_df = load_dataset(str(csv_path))
+    
+    # Should be converted to DatetimeIndex
+    assert isinstance(result_df.index, pd.DatetimeIndex)
+    assert result_df.index.tz is not None
