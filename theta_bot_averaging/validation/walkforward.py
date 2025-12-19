@@ -14,6 +14,7 @@ from theta_bot_averaging.data import build_targets, load_dataset
 from theta_bot_averaging.features import build_features, build_dual_stream_inputs
 from theta_bot_averaging.models import BaselineModel, DualStreamModel
 from theta_bot_averaging.validation.purged_split import PurgedTimeSeriesSplit
+from theta_bot_averaging.utils import SignalMode
 
 
 @dataclass
@@ -22,6 +23,7 @@ class WalkforwardConfig:
     horizon: int = 1
     threshold_bps: float = 10.0
     model_type: str = "logit"
+    signal_mode: SignalMode = "threshold"
     fee_rate: float = 0.0004
     slippage_bps: float = 1.0
     spread_bps: float = 0.5
@@ -96,6 +98,7 @@ def run_walkforward(config_path: str) -> Dict:
             model = DualStreamModel(
                 positive_threshold=thr,
                 negative_threshold=-thr,
+                signal_mode=cfg.signal_mode,
                 epochs=cfg.torch_epochs,
                 batch_size=cfg.torch_batch_size,
                 lr=cfg.torch_lr,
@@ -153,6 +156,7 @@ def run_walkforward(config_path: str) -> Dict:
                 mode=cfg.model_type,
                 positive_threshold=thr,
                 negative_threshold=-thr,
+                signal_mode=cfg.signal_mode,
             )
             model.fit(X_train, y_train, future_return=future_returns.iloc[train_idx])
             preds = model.predict(X_test)

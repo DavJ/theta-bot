@@ -1,8 +1,8 @@
 data_path: "real_data/BTCUSDT_1h.csv"
 horizon: 1
-threshold_bps: 10
+threshold_bps: 10  # Note: ignored in quantile mode, but kept for compatibility
 model_type: "dual_stream"
-signal_mode: "threshold"  # Signal generation mode: "threshold" (default) or "quantile"
+signal_mode: "quantile"  # Use quantile-based signals (95th/5th percentile per fold)
 fee_rate: 0.0004
 slippage_bps: 1.0
 spread_bps: 0.5
@@ -23,3 +23,10 @@ mellin_omega_max: 1.0 # Mellin transform max frequency
 torch_epochs: 50      # Number of training epochs
 torch_batch_size: 32  # Training batch size
 torch_lr: 0.001       # Learning rate (1e-3)
+
+# Quantile mode explanation:
+# When signal_mode = "quantile", signals are generated as follows:
+#   - Long (1):  predicted_return > 95th percentile (within fold)
+#   - Short (-1): predicted_return < 5th percentile (within fold)
+#   - Neutral (0): everything else
+# This tests whether the model can rank opportunities, independent of absolute return magnitudes.
