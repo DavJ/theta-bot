@@ -87,6 +87,7 @@ def check_price_sanity(df: pd.DataFrame, symbol: str = "BTCUSDT") -> Dict:
         'end_timestamp': end_ts,
         'num_rows': num_rows,
         'appears_synthetic': appears_synthetic,
+        'appears_unrealistic': appears_synthetic,  # Alias for clarity
         'warning_message': warning_message,
     }
 

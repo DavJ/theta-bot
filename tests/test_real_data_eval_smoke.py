@@ -91,6 +91,12 @@ def test_real_data_eval_smoke():
     # The report should have percentage signs and actual numbers
     assert "%" in report_text, "No percentage values found in report"
     
+    # Check for new required fields in report
+    assert "min_close" in report_text, "Report missing min_close field"
+    assert "max_close" in report_text, "Report missing max_close field"
+    assert "appears_unrealistic" in report_text, "Report missing appears_unrealistic field"
+    assert "predicted_return_std" in report_text, "Report missing predicted_return_std for models"
+    
     # Check that output indicates success
     assert "EVALUATION COMPLETE" in result.stdout or "Report written" in result.stdout
     

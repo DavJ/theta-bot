@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -54,7 +55,7 @@ def evaluate_baseline(
     threshold_bps: float,
     fee_rate: float = 0.0004,
     fast_mode: bool = False,
-) -> Tuple[pd.DataFrame, Dict, List[Dict]]:
+) -> Tuple[pd.DataFrame, Dict, List[Dict], Dict]:
     """
     Evaluate baseline model using walk-forward validation.
     
@@ -62,23 +63,28 @@ def evaluate_baseline(
         predictions: Combined predictions DataFrame
         aggregate_metrics: Aggregated metrics across folds
         fold_metrics: List of per-fold metrics
+        timing_stats: Dict with timing information
     """
     print("\n" + "=" * 70)
     print("BASELINE MODEL EVALUATION")
     print("=" * 70)
     
+    t_start = time.perf_counter()
     features = build_features(df_targets)
     data = pd.concat([features, df_targets[["label", "future_return"]]], axis=1).dropna()
     
     if fast_mode:
-        # Use only first 50% of data in fast mode
-        n_fast = len(data) // 2
-        data = data.iloc[:n_fast]
-        print(f"  Fast mode: Using first {n_fast} samples")
+        # Use fixed cap for fast mode
+        N_FAST_BASELINE = 1500
+        n_fast = min(N_FAST_BASELINE, len(data))
+        data = data.head(n_fast)
+        print(f"  Fast mode: Using first {n_fast} samples (capped at {N_FAST_BASELINE})")
     
     features = data[features.columns]
     targets = data["label"]
     future_returns = data["future_return"]
+    t_features = time.perf_counter() - t_start
+    print(f"  Feature building time: {t_features:.2f}s")
     
     # Convert basis points to decimal (10 bps = 10/10000 = 0.001)
     thr = threshold_bps / 10_000.0
@@ -87,6 +93,7 @@ def evaluate_baseline(
     all_predictions = []
     all_metrics = []
     
+    t_train_start = time.perf_counter()
     for fold_num, (train_idx, test_idx) in enumerate(splitter.split(features.index), 1):
         if len(train_idx) == 0 or len(test_idx) == 0:
             continue
@@ -123,8 +130,17 @@ def evaluate_baseline(
         all_metrics.append(backtest_res.metrics)
         all_predictions.append(fold_df)
     
+    t_train = time.perf_counter() - t_train_start
+    print(f"  Training time: {t_train:.2f}s")
+    
     predictions_df = pd.concat(all_predictions).sort_index()
     aggregate_metrics = pd.DataFrame(all_metrics).mean(numeric_only=True).to_dict()
+    
+    timing_stats = {
+        'feature_time': t_features,
+        'train_time': t_train,
+        'total_time': t_features + t_train,
+    }
     
     # DIAGNOSTIC: Check prediction quality
     print(f"\n  DIAGNOSTICS (Baseline):")
@@ -151,7 +167,7 @@ def evaluate_baseline(
     
     print(f"  ✓ Completed {len(all_metrics)} folds")
     
-    return predictions_df, aggregate_metrics, all_metrics
+    return predictions_df, aggregate_metrics, all_metrics, timing_stats
 
 
 def evaluate_dual_stream(
@@ -170,7 +186,7 @@ def evaluate_dual_stream(
     torch_lr: float = 1e-3,
     fee_rate: float = 0.0004,
     fast_mode: bool = False,
-) -> Tuple[pd.DataFrame, Dict, List[Dict]]:
+) -> Tuple[pd.DataFrame, Dict, List[Dict], Dict]:
     """
     Evaluate dual-stream model using walk-forward validation.
     
@@ -178,13 +194,25 @@ def evaluate_dual_stream(
         predictions: Combined predictions DataFrame
         aggregate_metrics: Aggregated metrics across folds
         fold_metrics: List of per-fold metrics
+        timing_stats: Dict with timing information
     """
     print("\n" + "=" * 70)
     print("DUAL-STREAM MODEL EVALUATION")
     print("=" * 70)
     
+    # Apply fast mode parameter reductions
+    if fast_mode:
+        theta_terms = min(theta_terms, 6)
+        mellin_k = min(mellin_k, 8)
+        theta_window = min(theta_window, 96)
+        print(f"  Fast mode parameter reductions:")
+        print(f"    theta_terms: {theta_terms} (max 6)")
+        print(f"    mellin_k: {mellin_k} (max 8)")
+        print(f"    theta_window: {theta_window} (max 96)")
+    
     # Build dual-stream inputs
     print(f"  Building Theta+Mellin features...")
+    t_start = time.perf_counter()
     index, X_theta, X_mellin = build_dual_stream_inputs(
         df=df_targets,
         window=theta_window,
@@ -196,14 +224,19 @@ def evaluate_dual_stream(
     )
     
     if fast_mode:
-        # Use only first 50% of samples in fast mode
-        n_fast = len(index) // 2
+        # Use fixed cap for fast mode
+        N_FAST_DUAL = 400
+        N_FAST_DUAL_MAX = 600
+        n_fast = min(N_FAST_DUAL, len(index))
+        n_fast = min(n_fast, N_FAST_DUAL_MAX)  # Hard cap
         index = index[:n_fast]
         X_theta = X_theta[:n_fast]
         X_mellin = X_mellin[:n_fast]
-        print(f"  Fast mode: Using first {n_fast} samples")
+        print(f"  Fast mode: Using first {n_fast} samples (capped at {N_FAST_DUAL}, max {N_FAST_DUAL_MAX})")
     
+    t_features = time.perf_counter() - t_start
     print(f"  Theta shape: {X_theta.shape}, Mellin shape: {X_mellin.shape}")
+    print(f"  Feature building time: {t_features:.2f}s")
     
     targets = df_targets.loc[index, "label"].values
     future_returns = df_targets.loc[index, "future_return"].values
@@ -215,6 +248,7 @@ def evaluate_dual_stream(
     all_predictions = []
     all_metrics = []
     
+    t_train_start = time.perf_counter()
     for fold_num, (train_idx, test_idx) in enumerate(splitter.split(index), 1):
         if len(train_idx) == 0 or len(test_idx) == 0:
             continue
@@ -258,8 +292,17 @@ def evaluate_dual_stream(
         all_metrics.append(backtest_res.metrics)
         all_predictions.append(fold_df)
     
+    t_train = time.perf_counter() - t_train_start
+    print(f"  Training time: {t_train:.2f}s")
+    
     predictions_df = pd.concat(all_predictions).sort_index()
     aggregate_metrics = pd.DataFrame(all_metrics).mean(numeric_only=True).to_dict()
+    
+    timing_stats = {
+        'feature_time': t_features,
+        'train_time': t_train,
+        'total_time': t_features + t_train,
+    }
     
     # DIAGNOSTIC: Check prediction quality
     print(f"\n  DIAGNOSTICS (Dual-Stream):")
@@ -286,7 +329,7 @@ def evaluate_dual_stream(
     
     print(f"  ✓ Completed {len(all_metrics)} folds")
     
-    return predictions_df, aggregate_metrics, all_metrics
+    return predictions_df, aggregate_metrics, all_metrics, timing_stats
 
 
 def compute_predictive_metrics(predictions: pd.DataFrame) -> Dict:
@@ -329,6 +372,8 @@ def generate_report(
     config: Dict,
     output_path: str,
     data_sanity_stats: Dict = None,
+    baseline_timing: Dict = None,
+    dual_stream_timing: Dict = None,
     fast_mode: bool = False,
 ) -> None:
     """Generate markdown report comparing baseline and dual-stream models."""
@@ -337,13 +382,28 @@ def generate_report(
     baseline_pred = compute_predictive_metrics(baseline_preds)
     dual_stream_pred = compute_predictive_metrics(dual_stream_preds)
     
+    # Compute prediction diagnostics
+    baseline_pred_std = baseline_preds["predicted_return"].std()
+    dual_stream_pred_std = dual_stream_preds["predicted_return"].std()
+    
+    baseline_signal_counts = baseline_preds["signal"].value_counts().sort_index().to_dict()
+    dual_stream_signal_counts = dual_stream_preds["signal"].value_counts().sort_index().to_dict()
+    
     # Trading metrics already in metrics dicts
+    
+    # Determine dataset label based on sanity check
+    if data_sanity_stats and data_sanity_stats.get('appears_unrealistic', False):
+        dataset_label = "⚠️  **UNREALISTIC/SYNTHETIC-LIKE SAMPLE**"
+    else:
+        dataset_label = "✓ **REAL MARKET SAMPLE**"
     
     report = f"""# Dual-Stream Real Data Evaluation Report
 
 **Generated:** {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")}
 
 ## Dataset Summary
+
+{dataset_label}
 
 - **Symbol:** BTCUSDT
 - **Timeframe:** 1 Hour (1H)
@@ -412,7 +472,7 @@ def generate_report(
     else:
         conclusion += "though baseline maintains slightly better predictive correlation. "
     
-    conclusion += f"The evaluation demonstrates the dual-stream architecture's ability to process both Theta sequence patterns and Mellin transform features on synthetic but realistic market data."
+    conclusion += f"The evaluation demonstrates the dual-stream architecture's ability to process both Theta sequence patterns and Mellin transform features."
     
     report += conclusion
     
@@ -428,26 +488,24 @@ def generate_report(
     # Data sanity
     if data_sanity_stats:
         report += "### Data Sanity\n\n"
-        report += f"- **Price Range:** ${data_sanity_stats['min_close']:.2f} - ${data_sanity_stats['max_close']:.2f}\n"
+        report += f"- **min_close:** ${data_sanity_stats['min_close']:.2f}\n"
+        report += f"- **max_close:** ${data_sanity_stats['max_close']:.2f}\n"
         report += f"- **Mean Price:** ${data_sanity_stats['mean_close']:.2f}\n"
-        report += f"- **Date Range:** {data_sanity_stats['start_timestamp']} to {data_sanity_stats['end_timestamp']}\n"
+        report += f"- **Start timestamp:** {data_sanity_stats['start_timestamp']}\n"
+        report += f"- **End timestamp:** {data_sanity_stats['end_timestamp']}\n"
         report += f"- **Rows:** {data_sanity_stats['num_rows']:,}\n"
+        report += f"- **appears_unrealistic:** {data_sanity_stats.get('appears_unrealistic', False)}\n"
         
-        if data_sanity_stats.get('appears_synthetic', False):
-            report += f"\n**⚠️  WARNING:** {data_sanity_stats.get('warning_message', 'Data appears synthetic')}\n"
+        if data_sanity_stats.get('appears_unrealistic', False):
+            report += f"\n**⚠️  WARNING:** {data_sanity_stats.get('warning_message', 'Data appears unrealistic')}\n"
         report += "\n"
     
     # Prediction diagnostics
     report += "### Prediction Quality\n\n"
     
-    baseline_std = baseline_preds["predicted_return"].std()
-    dual_stream_std = dual_stream_preds["predicted_return"].std()
-    
     report += f"**Baseline Model:**\n"
-    report += f"- std(predicted_return): {baseline_std:.6f}\n"
-    
-    baseline_class_counts = baseline_preds["signal"].value_counts().sort_index().to_dict()
-    report += f"- Signal distribution: {baseline_class_counts}\n"
+    report += f"- predicted_return_std: {baseline_pred_std:.6f}\n"
+    report += f"- Signal distribution: {baseline_signal_counts}\n"
     
     baseline_class_means = baseline_preds.groupby("signal")["future_return"].mean().to_dict()
     report += f"- Class mean returns:\n"
@@ -455,14 +513,12 @@ def generate_report(
         if cls in baseline_class_means:
             report += f"  - signal={cls:+2d}: {baseline_class_means[cls]:+.6f}\n"
     
-    if baseline_std < 1e-6:
-        report += f"\n**⚠️  WARNING:** Baseline predictions are nearly constant (std < 1e-6)\n"
+    if baseline_pred_std < 1e-6:
+        report += f"\n**⚠️  WARNING:** Model outputs nearly constant predicted_return; training may be ineffective or features degenerate.\n"
     
     report += f"\n**Dual-Stream Model:**\n"
-    report += f"- std(predicted_return): {dual_stream_std:.6f}\n"
-    
-    dual_stream_class_counts = dual_stream_preds["signal"].value_counts().sort_index().to_dict()
-    report += f"- Signal distribution: {dual_stream_class_counts}\n"
+    report += f"- predicted_return_std: {dual_stream_pred_std:.6f}\n"
+    report += f"- Signal distribution: {dual_stream_signal_counts}\n"
     
     dual_stream_class_means = dual_stream_preds.groupby("signal")["future_return"].mean().to_dict()
     report += f"- Class mean returns:\n"
@@ -470,8 +526,8 @@ def generate_report(
         if cls in dual_stream_class_means:
             report += f"  - signal={cls:+2d}: {dual_stream_class_means[cls]:+.6f}\n"
     
-    if dual_stream_std < 1e-6:
-        report += f"\n**⚠️  WARNING:** Dual-Stream predictions are nearly constant (std < 1e-6)\n"
+    if dual_stream_pred_std < 1e-6:
+        report += f"\n**⚠️  WARNING:** Model outputs nearly constant predicted_return; training may be ineffective or features degenerate.\n"
     
     # Root cause analysis
     report += "\n### Root Cause Analysis\n\n"
@@ -479,10 +535,10 @@ def generate_report(
     # Determine most likely cause
     causes = []
     
-    if data_sanity_stats and data_sanity_stats.get('appears_synthetic', False):
+    if data_sanity_stats and data_sanity_stats.get('appears_unrealistic', False):
         causes.append("DATA: Synthetic/unrealistic price data detected")
     
-    if baseline_std < 1e-6 or dual_stream_std < 1e-6:
+    if baseline_pred_std < 1e-6 or dual_stream_pred_std < 1e-6:
         causes.append("TRAINING: Model outputs are nearly constant (training ineffective)")
     
     if abs(baseline_pred['correlation']) < 0.05 and abs(dual_stream_pred['correlation']) < 0.05:
@@ -504,7 +560,12 @@ def generate_report(
         report += "- Model capacity (insufficient complexity)\n"
         report += "- Feature quality (limited information in Theta/Mellin features)\n"
     
-    report += "\n---\n*Note: This evaluation uses synthetic BTCUSDT data for reproducible benchmarking. Results are for research purposes only.*\n"
+    # Add footer based on data sanity
+    report += "\n---\n"
+    if data_sanity_stats and data_sanity_stats.get('appears_unrealistic', False):
+        report += "*WARNING: This evaluation sample appears unrealistic; treat results as synthetic-like data. Results are for research purposes only.*\n"
+    else:
+        report += "*This evaluation uses the committed real-market sample dataset. Results are for research purposes only.*\n"
     
     # Write report
     with open(output_path, "w") as f:
@@ -661,7 +722,7 @@ def main():
     print("=" * 70 + "\n")
     
     # Evaluate baseline
-    baseline_preds, baseline_metrics, _ = evaluate_baseline(
+    baseline_preds, baseline_metrics, _, baseline_timing = evaluate_baseline(
         df_targets=df_targets,
         n_splits=config["n_splits"],
         horizon=config["horizon"],
@@ -671,7 +732,7 @@ def main():
     )
     
     # Evaluate dual-stream
-    dual_stream_preds, dual_stream_metrics, _ = evaluate_dual_stream(
+    dual_stream_preds, dual_stream_metrics, _, dual_stream_timing = evaluate_dual_stream(
         df_targets=df_targets,
         n_splits=config["n_splits"],
         horizon=config["horizon"],
@@ -702,6 +763,8 @@ def main():
         config=config,
         output_path=str(output_path),
         data_sanity_stats=data_sanity_stats,
+        baseline_timing=baseline_timing,
+        dual_stream_timing=dual_stream_timing,
         fast_mode=args.fast,
     )
     
