@@ -58,7 +58,56 @@ def build_targets(
 
 
 def load_dataset(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path, index_col=0, parse_dates=True)
+    """
+    Load OHLCV dataset from CSV with support for Binance kline format.
+    
+    Handles:
+    - Millisecond epoch timestamps (Binance format)
+    - String datetime formats
+    - Converts Binance openTime to closeTime for 1h candles (+1h shift)
+    
+    Parameters
+    ----------
+    path : str
+        Path to CSV file
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with DatetimeIndex (UTC close times) and OHLCV columns
+    """
+    # Read CSV without parse_dates to avoid warnings on numeric timestamps
+    df = pd.read_csv(path, index_col=0)
+    
+    # Determine if we need to parse timestamps
+    index_col_name = df.index.name if df.index.name else "index"
+    is_numeric_index = pd.api.types.is_numeric_dtype(df.index)
+    
+    # Check if this looks like millisecond epoch timestamps
+    # Binance uses ms timestamps >= 10^12 (e.g., 1711929600000)
+    is_ms_epoch = False
+    if is_numeric_index:
+        # Check if values are in the ms epoch range (>= 10^12)
+        if len(df.index) > 0 and df.index[0] >= 10**12:
+            is_ms_epoch = True
+    
+    # Convert timestamps based on format
+    if index_col_name == "timestamp" or is_ms_epoch:
+        # Binance kline format: timestamp column with ms epoch values
+        # These represent candle OPEN times
+        df.index = pd.to_datetime(df.index.astype("int64"), unit="ms", utc=True)
+        
+        # For 1h candles, shift by +1h to get CLOSE times
+        # Binance provides openTime, but we want closeTime for predictions
+        # (A 1h candle opened at 00:00 closes at 01:00)
+        df.index = df.index + pd.Timedelta(hours=1)
+    elif not isinstance(df.index, pd.DatetimeIndex):
+        # Try parsing as string datetime
+        df.index = pd.to_datetime(df.index, utc=True)
+    elif df.index.tz is None:
+        # Already DatetimeIndex but no timezone - localize to UTC
+        df.index = df.index.tz_localize("UTC")
+    
     _assert_schema(df)
     return df
 
