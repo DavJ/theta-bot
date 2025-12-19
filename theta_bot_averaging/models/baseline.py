@@ -10,6 +10,8 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.preprocessing import StandardScaler
 
+from theta_bot_averaging.utils import SignalMode, generate_signals
+
 
 PredictionMode = Literal["logit", "mlp"]
 
@@ -32,12 +34,14 @@ class BaselineModel:
         mode: PredictionMode = "logit",
         positive_threshold: float = 0.0005,
         negative_threshold: float = -0.0005,
+        signal_mode: SignalMode = "threshold",
         random_state: int = 42,
         max_iter: int = 200,
     ):
         self.mode = mode
         self.positive_threshold = positive_threshold
         self.negative_threshold = negative_threshold
+        self.signal_mode = signal_mode
         self.random_state = random_state
         self.max_iter = max_iter
 
@@ -129,10 +133,14 @@ class BaselineModel:
         )
 
         predicted_return = expected_return
-        signal = predicted_return.copy()
-        signal[:] = 0
-        signal[predicted_return > self.positive_threshold] = 1
-        signal[predicted_return < self.negative_threshold] = -1
+        
+        # Generate signals using the configured mode
+        signal = generate_signals(
+            predicted_return,
+            mode=self.signal_mode,
+            positive_threshold=self.positive_threshold,
+            negative_threshold=self.negative_threshold,
+        )
 
         return PredictedOutput(
             predicted_return=predicted_return,
