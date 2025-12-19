@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Generate synthetic but realistic BTCUSDT 1H candlestick data for evaluation.
-This creates ~6 months of synthetic data with realistic price patterns.
+Generate synthetic but realistic BTCUSDT 1H candlestick data for TESTING ONLY.
+
+NOTE: This script generates SYNTHETIC data for unit tests and development.
+      It should NOT be used for the main evaluation.
+      The main evaluation must use: data/BTCUSDT_1H_real.csv.gz
 """
 import numpy as np
 import pandas as pd
@@ -101,15 +104,22 @@ def generate_synthetic_btc_data(
 
 
 def main():
-    """Generate and save synthetic BTCUSDT data."""
+    """Generate and save synthetic BTCUSDT data for testing purposes."""
+    print("=" * 70)
+    print("⚠️  WARNING: Generating SYNTHETIC data for TESTING ONLY")
+    print("=" * 70)
+    print("This script creates synthetic data for unit tests and development.")
+    print("The main evaluation MUST use: data/BTCUSDT_1H_real.csv.gz")
+    print("=" * 70 + "\n")
+    
     print("Generating synthetic BTCUSDT 1H data...")
     df = generate_synthetic_btc_data()
     
-    # Save to data directory
+    # Save to data directory with "_synthetic" suffix to avoid confusion
     data_dir = Path(__file__).parent.parent / "data"
     data_dir.mkdir(exist_ok=True)
     
-    output_path = data_dir / "BTCUSDT_1H_sample.csv.gz"
+    output_path = data_dir / "BTCUSDT_1H_synthetic_test.csv.gz"
     df.to_csv(output_path, compression="gzip")
     
     print(f"✓ Generated {len(df)} bars")
@@ -117,6 +127,11 @@ def main():
     print(f"✓ Price range: ${df['close'].min():.2f} to ${df['close'].max():.2f}")
     print(f"✓ Saved to: {output_path}")
     print(f"✓ File size: {output_path.stat().st_size / 1024:.1f} KB")
+    
+    print("\n" + "=" * 70)
+    print("⚠️  REMINDER: This is SYNTHETIC data for testing only!")
+    print("Main evaluation uses: data/BTCUSDT_1H_real.csv.gz")
+    print("=" * 70)
     
     # Show sample
     print("\nFirst few rows:")

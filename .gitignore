@@ -68,6 +68,11 @@ optimization_output/
 production_check/
 quick_test/
 
+# Allowlist: committed real market data for evaluation
+!data/BTCUSDT_1H_real.csv.gz
+# Exclude: synthetic test data
+data/*_synthetic*.csv.gz
+
 # Allowlist: tiny regression fixtures
 !regression/**
 test_data/
