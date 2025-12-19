@@ -78,6 +78,38 @@ class BaselineModel:
             self.class_mean_returns = self._default_class_mean_returns()
             for cls, val in means.items():
                 self.class_mean_returns[int(cls)] = float(val)
+            
+            # Sanity check: class mean returns should satisfy mu[-1] < mu[0] < mu[+1]
+            # This ensures that labels are correctly aligned with future returns
+            mu_neg = self.class_mean_returns.get(-1)
+            mu_zero = self.class_mean_returns.get(0)
+            mu_pos = self.class_mean_returns.get(1)
+            
+            violations = []
+            if mu_neg is not None and mu_zero is not None and mu_neg >= mu_zero:
+                violations.append(f"mu[-1]={mu_neg:.6f} >= mu[0]={mu_zero:.6f}")
+            if mu_zero is not None and mu_pos is not None and mu_zero >= mu_pos:
+                violations.append(f"mu[0]={mu_zero:.6f} >= mu[+1]={mu_pos:.6f}")
+            if mu_neg is not None and mu_pos is not None and mu_neg >= mu_pos:
+                violations.append(f"mu[-1]={mu_neg:.6f} >= mu[+1]={mu_pos:.6f}")
+            
+            if violations:
+                print("\n" + "=" * 70)
+                print("⚠️  WARNING: Class mean return ordering violation detected!")
+                print("=" * 70)
+                print("Expected: mu[-1] < mu[0] < mu[+1]")
+                print(f"Actual: mu[-1]={mu_neg}, mu[0]={mu_zero}, mu[+1]={mu_pos}")
+                print("\nViolations:")
+                for v in violations:
+                    print(f"  - {v}")
+                print("\nThis indicates a potential issue with:")
+                print("  1. Label construction (sign inversion)")
+                print("  2. Future return computation (wrong direction)")
+                print("  3. Data quality (unrealistic or corrupted)")
+                print("\nSample of (future_return, label) pairs for inspection:")
+                sample = df[["future_return", "label"]].head(20)
+                print(sample.to_string())
+                print("=" * 70 + "\n")
 
     def predict(self, X: pd.DataFrame) -> PredictedOutput:
         Xs = self.scaler.transform(X.values)
