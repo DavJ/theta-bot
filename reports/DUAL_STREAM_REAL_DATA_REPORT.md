@@ -1,6 +1,6 @@
 # Dual-Stream Real Data Evaluation Report
 
-**Generated:** 2025-12-19 15:37:49 UTC
+**Generated:** 2025-12-19 18:33:47 UTC
 
 ## Dataset Summary
 
@@ -8,9 +8,9 @@
 
 - **Symbol:** BTCUSDT
 - **Timeframe:** 1 Hour (1H)
-- **Date Range:** 2024-06-01 00:00:00+00:00 to 2024-09-30 23:00:00+00:00
-- **Total Bars:** 2,928
-- **Price Range:** $64465.34 to $69924.26
+- **Date Range:** 2024-04-01 01:00:00+00:00 to 2024-10-01 01:00:00+00:00
+- **Total Bars:** 4,393
+- **Price Range:** $49804.00 to $72404.00
 
 ## Configuration
 
@@ -37,22 +37,22 @@
 
 | Metric | Baseline | Dual-Stream | Δ |
 |--------|----------|-------------|---|
-| **Correlation** | 0.5911 | 0.6042 | 0.0131 |
-| **Hit Rate (Direction)** | 77.80% | 77.44% | -0.36% |
+| **Correlation** | 0.0044 | -0.1234 | -0.1278 |
+| **Hit Rate (Direction)** | 50.45% | 46.62% | -3.83% |
 
 ### Trading Metrics
 
 | Metric | Baseline | Dual-Stream | Δ |
 |--------|----------|-------------|---|
-| **Total Return** | 1.14% | 0.31% | -0.83% |
-| **Sharpe Ratio** | 7.787 | 6.507 | -1.280 |
-| **Max Drawdown** | -0.16% | -0.27% | -0.12% |
-| **Win Rate** | 3.50% | 7.89% | 4.39% |
-| **Profit Factor** | 2.32 | 1.53 | -0.79 |
+| **Total Return** | -4.80% | -10.20% | -5.40% |
+| **Sharpe Ratio** | -3.395 | -12.501 | -9.106 |
+| **Max Drawdown** | -7.58% | -11.04% | -3.46% |
+| **Win Rate** | 14.20% | 20.30% | 6.10% |
+| **Profit Factor** | 0.72 | 0.56 | -0.16 |
 
 ## Conclusion
 
-Both models show comparable performance, with improved predictive correlation. The evaluation demonstrates the dual-stream architecture's ability to process both Theta sequence patterns and Mellin transform features.
+Both models show comparable performance, though baseline maintains slightly better predictive correlation. The evaluation demonstrates the dual-stream architecture's ability to process both Theta sequence patterns and Mellin transform features.
 
 ## Diagnostics Summary
 
@@ -63,12 +63,12 @@ Results are for diagnostic purposes only and should not be used for final conclu
 
 ### Data Sanity
 
-- **min_close:** $64465.34
-- **max_close:** $69924.26
-- **Mean Price:** $67107.94
-- **Start timestamp:** 2024-06-01 00:00:00+00:00
-- **End timestamp:** 2024-09-30 23:00:00+00:00
-- **Rows:** 2,928
+- **min_close:** $49804.00
+- **max_close:** $72404.00
+- **Mean Price:** $63334.84
+- **Start timestamp:** 2024-04-01 01:00:00+00:00
+- **End timestamp:** 2024-10-01 01:00:00+00:00
+- **Rows:** 4,393
 - **is_realistic:** True
 
 ✓ **All sanity checks passed** - data validated as realistic market data
@@ -76,20 +76,20 @@ Results are for diagnostic purposes only and should not be used for final conclu
 ### Prediction Quality
 
 **Baseline Model:**
-- predicted_return_std: 0.000525
-- Signal distribution: {-1.0: 19, 0.0: 959, 1.0: 22}
+- predicted_return_std: 0.000984
+- Signal distribution: {-1.0: 33, 0.0: 711, 1.0: 256}
 - Class mean returns:
-  - signal=-1: -0.001163
-  - signal=+0: +0.000038
-  - signal=+1: +0.001410
+  - signal=-1: +0.000623
+  - signal=+0: +0.000060
+  - signal=+1: +0.000197
 
 **Dual-Stream Model:**
-- predicted_return_std: 0.000594
-- Signal distribution: {-1.0: 14, 0.0: 240, 1.0: 12}
+- predicted_return_std: 0.001298
+- Signal distribution: {-1.0: 32, 0.0: 142, 1.0: 92}
 - Class mean returns:
-  - signal=-1: -0.000788
-  - signal=+0: -0.000118
-  - signal=+1: +0.000981
+  - signal=-1: +0.002262
+  - signal=+0: -0.000204
+  - signal=+1: -0.001576
 
 ### Root Cause Analysis
 

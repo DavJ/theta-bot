@@ -12,6 +12,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from theta_bot_averaging.data import load_dataset
+
 
 def test_real_data_eval_smoke():
     """
@@ -31,7 +33,7 @@ def test_real_data_eval_smoke():
         pytest.skip(f"Data file not found: {data_path}")
     
     # Verify data can be loaded
-    df = pd.read_csv(data_path, index_col=0, parse_dates=True)
+    df = load_dataset(str(data_path))
     assert len(df) > 0, "Data file is empty"
     assert "close" in df.columns, "Missing 'close' column in data"
     
@@ -125,7 +127,7 @@ def test_data_file_format():
         pytest.skip(f"Data file not found: {data_path}")
     
     # Load and verify data structure
-    df = pd.read_csv(data_path, index_col=0, parse_dates=True)
+    df = load_dataset(str(data_path))
     
     # Check required columns
     required_cols = ["open", "high", "low", "close", "volume"]
