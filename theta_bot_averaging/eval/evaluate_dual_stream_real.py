@@ -102,6 +102,7 @@ def evaluate_baseline(
     
     all_predictions = []
     all_metrics = []
+    all_training_class_means = []  # Store training class means from each fold
     
     t_train_start = time.perf_counter()
     for fold_num, (train_idx, test_idx) in enumerate(splitter.split(features.index), 1):
@@ -120,6 +121,10 @@ def evaluate_baseline(
             max_iter=200,
         )
         model.fit(X_train, y_train, future_return=future_returns.iloc[train_idx])
+        
+        # Store training class mean returns
+        all_training_class_means.append(model.class_mean_returns.copy())
+        
         preds = model.predict(X_test)
         
         fold_df = pd.DataFrame(
@@ -157,13 +162,22 @@ def evaluate_baseline(
     pred_std = predictions_df["predicted_return"].std()
     print(f"    std(predicted_return) = {pred_std:.6f}")
     
-    # Class distribution
+    # Signal distribution (predicted)
     class_counts = predictions_df["signal"].value_counts().sort_index()
-    print(f"    Signal distribution: {dict(class_counts)}")
+    print(f"    Predicted signal distribution: {dict(class_counts)}")
     
-    # Class mean returns
+    # Training class mean returns (what the model learned)
+    print(f"    Training class mean returns (learned from labels):")
+    avg_training_means = {}
+    for cls in [-1, 0, 1]:
+        vals = [fold_means.get(cls, 0.0) for fold_means in all_training_class_means if cls in fold_means]
+        if vals:
+            avg_training_means[cls] = np.mean(vals)
+            print(f"      label={cls:+2d}: {avg_training_means[cls]:+.6f}")
+    
+    # Test set mean returns by predicted signal (for comparison)
     class_means = predictions_df.groupby("signal")["future_return"].mean()
-    print(f"    Class mean returns:")
+    print(f"    Test set mean returns by predicted signal:")
     for cls in [-1, 0, 1]:
         if cls in class_means.index:
             print(f"      signal={cls:+2d}: {class_means[cls]:+.6f}")
@@ -257,6 +271,7 @@ def evaluate_dual_stream(
     
     all_predictions = []
     all_metrics = []
+    all_training_class_means = []  # Store training class means from each fold
     
     t_train_start = time.perf_counter()
     for fold_num, (train_idx, test_idx) in enumerate(splitter.split(index), 1):
@@ -282,6 +297,10 @@ def evaluate_dual_stream(
             lr=torch_lr,
         )
         model.fit(X_theta_train, X_mellin_train, y_train, future_return=future_return_train)
+        
+        # Store training class mean returns
+        all_training_class_means.append(model.class_mean_returns.copy())
+        
         preds = model.predict(X_theta_test, X_mellin_test, test_index)
         
         fold_df = pd.DataFrame(
@@ -319,13 +338,22 @@ def evaluate_dual_stream(
     pred_std = predictions_df["predicted_return"].std()
     print(f"    std(predicted_return) = {pred_std:.6f}")
     
-    # Class distribution
+    # Signal distribution (predicted)
     class_counts = predictions_df["signal"].value_counts().sort_index()
-    print(f"    Signal distribution: {dict(class_counts)}")
+    print(f"    Predicted signal distribution: {dict(class_counts)}")
     
-    # Class mean returns
+    # Training class mean returns (what the model learned)
+    print(f"    Training class mean returns (learned from labels):")
+    avg_training_means = {}
+    for cls in [-1, 0, 1]:
+        vals = [fold_means.get(cls, 0.0) for fold_means in all_training_class_means if cls in fold_means]
+        if vals:
+            avg_training_means[cls] = np.mean(vals)
+            print(f"      label={cls:+2d}: {avg_training_means[cls]:+.6f}")
+    
+    # Test set mean returns by predicted signal (for comparison)
     class_means = predictions_df.groupby("signal")["future_return"].mean()
-    print(f"    Class mean returns:")
+    print(f"    Test set mean returns by predicted signal:")
     for cls in [-1, 0, 1]:
         if cls in class_means.index:
             print(f"      signal={cls:+2d}: {class_means[cls]:+.6f}")
