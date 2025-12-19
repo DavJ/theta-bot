@@ -97,11 +97,11 @@ def test_nan_values_detected():
 
 def test_non_monotonic_timestamps_detected():
     """Test that non-monotonic timestamps are detected."""
-    idx = pd.DatetimeIndex([
-        "2024-01-01 00:00:00",
-        "2024-01-01 02:00:00",  # Jump forward
-        "2024-01-01 01:00:00",  # Jump back (not monotonic)
-    ] + [f"2024-01-01 {i:02d}:00:00" for i in range(3, 1003)])
+    # Create a non-monotonic timestamp sequence by manually shuffling some dates
+    dates = pd.date_range("2024-01-01", periods=1500, freq="h")
+    # Take first 3 dates and swap them to make non-monotonic
+    idx_list = [dates[0], dates[2], dates[1]] + list(dates[3:])
+    idx = pd.DatetimeIndex(idx_list)
     
     df = pd.DataFrame({
         "open": [50000] * len(idx),
