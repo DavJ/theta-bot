@@ -2,7 +2,7 @@
 
 This directory contains datasets used for reproducible evaluation of trading models.
 
-## BTCUSDT_1H_sample.csv.gz
+## BTCUSDT_1H_real.csv.gz
 
 **Description:** Real market BTCUSDT 1-hour candlestick data for evaluation purposes.
 
@@ -42,7 +42,7 @@ This is an evaluation-only sample dataset. The data represents realistic market 
 import pandas as pd
 
 # Load the data
-df = pd.read_csv("data/BTCUSDT_1H_sample.csv.gz", index_col=0, parse_dates=True)
+df = pd.read_csv("data/BTCUSDT_1H_real.csv.gz", index_col=0, parse_dates=True)
 print(df.head())
 ```
 

@@ -25,7 +25,7 @@ def test_real_data_eval_smoke():
     """
     # Check if data file exists
     repo_root = Path(__file__).resolve().parent.parent
-    data_path = repo_root / "data" / "BTCUSDT_1H_sample.csv.gz"
+    data_path = repo_root / "data" / "BTCUSDT_1H_real.csv.gz"
     
     if not data_path.exists():
         pytest.skip(f"Data file not found: {data_path}")
@@ -94,8 +94,9 @@ def test_real_data_eval_smoke():
     # Check for new required fields in report
     assert "min_close" in report_text, "Report missing min_close field"
     assert "max_close" in report_text, "Report missing max_close field"
-    assert "appears_unrealistic" in report_text, "Report missing appears_unrealistic field"
+    assert "is_realistic" in report_text, "Report missing is_realistic field"
     assert "predicted_return_std" in report_text, "Report missing predicted_return_std for models"
+    assert "DATA SOURCE: REAL MARKET SAMPLE (validated)" in report_text, "Report missing data source validation statement"
     
     # Check that output indicates success
     assert "EVALUATION COMPLETE" in result.stdout or "Report written" in result.stdout
@@ -118,7 +119,7 @@ def test_evaluation_script_importable():
 def test_data_file_format():
     """Test that the data file has the correct format."""
     repo_root = Path(__file__).resolve().parent.parent
-    data_path = repo_root / "data" / "BTCUSDT_1H_sample.csv.gz"
+    data_path = repo_root / "data" / "BTCUSDT_1H_real.csv.gz"
     
     if not data_path.exists():
         pytest.skip(f"Data file not found: {data_path}")

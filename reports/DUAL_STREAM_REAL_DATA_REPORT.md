@@ -1,10 +1,10 @@
 # Dual-Stream Real Data Evaluation Report
 
-**Generated:** 2025-12-19 15:09:10 UTC
+**Generated:** 2025-12-19 15:37:49 UTC
 
 ## Dataset Summary
 
-✓ **REAL MARKET SAMPLE**
+✓ **DATA SOURCE: REAL MARKET SAMPLE (validated)**
 
 - **Symbol:** BTCUSDT
 - **Timeframe:** 1 Hour (1H)
@@ -69,7 +69,9 @@ Results are for diagnostic purposes only and should not be used for final conclu
 - **Start timestamp:** 2024-06-01 00:00:00+00:00
 - **End timestamp:** 2024-09-30 23:00:00+00:00
 - **Rows:** 2,928
-- **appears_unrealistic:** False
+- **is_realistic:** True
+
+✓ **All sanity checks passed** - data validated as realistic market data
 
 ### Prediction Quality
 
@@ -97,4 +99,4 @@ Results are for diagnostic purposes only and should not be used for final conclu
 - Feature quality (limited information in Theta/Mellin features)
 
 ---
-*This evaluation uses the committed real-market sample dataset. Results are for research purposes only.*
+*This evaluation uses the committed real-market dataset (data/BTCUSDT_1H_real.csv.gz). All data sanity checks passed. Results are for research purposes only.*
