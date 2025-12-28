@@ -27,6 +27,13 @@ def make_vol_burst_labels(
     - event[t] = 1 if future_vol[t] >= threshold else 0
     - Last H rows are dropped (no future window available)
     
+    **Indexing Example (horizon=3):**
+    For close prices at indices [0, 1, 2, 3, 4, 5]:
+    - At t=0: future_vol[0] = std([r[1], r[2], r[3]]) where r[i] = log(close[i]/close[i-1])
+    - At t=1: future_vol[1] = std([r[2], r[3], r[4]])
+    - At t=2: future_vol[2] = std([r[3], r[4], r[5]])
+    - At t=3: Cannot compute (not enough future data) → dropped
+    
     Parameters
     ----------
     close : pd.Series

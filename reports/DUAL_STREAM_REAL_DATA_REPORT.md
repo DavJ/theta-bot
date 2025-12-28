@@ -1,6 +1,6 @@
 # Dual-Stream Real Data Evaluation Report
 
-**Generated:** 2025-12-19 18:59:21 UTC
+**Generated:** 2025-12-28 23:20:39 UTC
 
 ## Dataset Summary
 
@@ -77,7 +77,7 @@ Results are for diagnostic purposes only and should not be used for final conclu
 
 **Baseline Model:**
 - predicted_return_std: 0.000984
-- Predicted signal distribution: {-1.0: 33, 0.0: 711, 1.0: 256}
+- Predicted signal distribution: {-1: 33, 0: 711, 1: 256}
 - Training class mean returns (learned from labels):
   - label=-1: -0.005112
   - label=+0: +0.000028
@@ -89,7 +89,7 @@ Results are for diagnostic purposes only and should not be used for final conclu
 
 **Dual-Stream Model:**
 - predicted_return_std: 0.001298
-- Predicted signal distribution: {-1.0: 32, 0.0: 142, 1.0: 92}
+- Predicted signal distribution: {-1: 32, 0: 142, 1: 92}
 - Training class mean returns (learned from labels):
   - label=-1: -0.004437
   - label=+0: +0.000050

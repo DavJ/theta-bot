@@ -26,6 +26,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, average_precision_score, brier_score_loss
 
+# Small epsilon to avoid division by zero
+EPSILON = 1e-9
+
 # Add repo root to path
 repo_root = Path(__file__).resolve().parent.parent.parent
 if str(repo_root) not in sys.path:
@@ -144,7 +147,7 @@ def evaluate_baseline_events(
         if top_mask.sum() > 0 and bottom_mask.sum() > 0:
             mean_vol_top = future_vol_test[top_mask].mean()
             mean_vol_bottom = future_vol_test[bottom_mask].mean()
-            vol_ratio = mean_vol_top / (mean_vol_bottom + 1e-9)
+            vol_ratio = mean_vol_top / (mean_vol_bottom + EPSILON)
             vol_diff = mean_vol_top - mean_vol_bottom
         else:
             mean_vol_top = np.nan
@@ -259,7 +262,6 @@ def evaluate_dual_stream_events(
         print(f"  Fast mode: Using first {n_fast} samples (capped at {N_FAST})")
     
     t_features = time.perf_counter() - t_start
-    print(f"  Theta shape: ({len(X_theta)}, {theta_window}), Mellin shape: ({len(X_mellin)}, {mellin_k})")
     print(f"  Dual-stream matrix shape: {X_dual.shape}")
     print(f"  Feature building time: {t_features:.2f}s")
     
@@ -322,7 +324,7 @@ def evaluate_dual_stream_events(
         if top_mask.sum() > 0 and bottom_mask.sum() > 0:
             mean_vol_top = future_vol_test[top_mask].mean()
             mean_vol_bottom = future_vol_test[bottom_mask].mean()
-            vol_ratio = mean_vol_top / (mean_vol_bottom + 1e-9)
+            vol_ratio = mean_vol_top / (mean_vol_bottom + EPSILON)
             vol_diff = mean_vol_top - mean_vol_bottom
         else:
             mean_vol_top = np.nan
