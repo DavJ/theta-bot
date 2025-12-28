@@ -77,24 +77,25 @@ def test_vol_burst_future_window_correctness():
     assert len(future_vol) == 5
     
     # Manually compute expected future volatility for t=0
-    # future window for t=0: returns[1:4] (close[1] to close[3])
+    # future window for t=0: r[1], r[2], r[3] where r[t] = log(close[t]/close[t-1])
     # r[1] = log(110/100) = log(1.1) ≈ 0.0953
     # r[2] = log(120/110) = log(1.0909) ≈ 0.0870
     # r[3] = log(130/120) = log(1.0833) ≈ 0.0800
-    # std([0.0953, 0.0870, 0.0800]) ≈ 0.0078
+    # std([0.0953, 0.0870, 0.0800]) with ddof=1 (pandas default)
     
-    log_close = np.log(close.values)
-    returns = np.diff(log_close)
+    # Use pandas to match the implementation's behavior
+    log_close_series = np.log(close)
+    returns_series = log_close_series.diff()  # returns[0]=NaN, returns[1]=r[1], etc.
     
-    # For t=0, future returns are returns[1:4]
-    expected_vol_0 = np.std(returns[1:4])
+    # For t=0, future returns are returns[1:4] in pandas indexing
+    expected_vol_0 = returns_series.iloc[1:4].std()  # Uses ddof=1 by default
     
     # Check that computed value is close
     assert np.isclose(future_vol.iloc[0], expected_vol_0, rtol=1e-5), \
         f"Expected future_vol[0]={expected_vol_0:.6f}, got {future_vol.iloc[0]:.6f}"
     
     # For t=1, future returns are returns[2:5]
-    expected_vol_1 = np.std(returns[2:5])
+    expected_vol_1 = returns_series.iloc[2:5].std()
     assert np.isclose(future_vol.iloc[1], expected_vol_1, rtol=1e-5), \
         f"Expected future_vol[1]={expected_vol_1:.6f}, got {future_vol.iloc[1]:.6f}"
 
