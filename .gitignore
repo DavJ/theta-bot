@@ -70,8 +70,17 @@ quick_test/
 
 # Allowlist: committed real market data for evaluation
 !data/BTCUSDT_1H_real.csv.gz
+!data/README.md
 # Exclude: synthetic test data
 data/*_synthetic*.csv.gz
+# Exclude: raw data directories (users should download their own)
+data/raw/
+data/processed/
+data/metadata/
+# But keep the directory structure documentation
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/metadata/.gitkeep
 
 # Allowlist: tiny regression fixtures
 !regression/**
