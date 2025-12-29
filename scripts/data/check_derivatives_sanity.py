@@ -34,6 +34,9 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
 
+TIMESTAMP_CANDIDATES = ("close_time_ms", "timestamp_ms", "timestamp", "open_time_ms")
+
+
 def ms_to_utc(ms: int) -> str:
     """Convert milliseconds to UTC string."""
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -58,6 +61,13 @@ def parse_date_utc(s: str) -> int:
     return int(dt.timestamp() * 1000)
 
 
+def detect_timestamp_column(df: pd.DataFrame) -> Optional[str]:
+    for candidate in TIMESTAMP_CANDIDATES:
+        if candidate in df.columns:
+            return candidate
+    return None
+
+
 def interval_to_ms(interval: str) -> int:
     unit = interval[-1]
     n = int(interval[:-1])
@@ -77,11 +87,7 @@ def load_csv_gz(path: Path) -> Optional[pd.DataFrame]:
     
     try:
         df = pd.read_csv(path, compression="gzip")
-        ts_col = None
-        for candidate in ("close_time_ms", "timestamp_ms", "timestamp", "open_time_ms"):
-            if candidate in df.columns:
-                ts_col = candidate
-                break
+        ts_col = detect_timestamp_column(df)
         if ts_col is None:
             print(f"  ERROR: No timestamp column in {path}")
             return None

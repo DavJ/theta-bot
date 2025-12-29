@@ -327,7 +327,7 @@ def main() -> int:
             records = list(iter_all_open_interest(symbol, args.period, start_ms, end_ms, throttle_s=throttle_s, session=session))
 
         if not records:
-            print("API returned no data or was rate-limited; attempting bulk archive fallback...", file=sys.stderr)
+            print("API returned no data; attempting bulk archive fallback...", file=sys.stderr)
             bulk_df = download_bulk_open_interest(symbol, start_ms, end_ms, session=session, throttle_s=throttle_s)
             if bulk_df is not None:
                 records = normalize_oi_dataframe(bulk_df, symbol)

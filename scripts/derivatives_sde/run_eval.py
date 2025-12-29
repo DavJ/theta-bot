@@ -50,8 +50,10 @@ def main() -> None:
             df = compute.compute_mu_sigma_lambda(panel, q=args.q)
             loaders.save_processed(sym, df, processed_dir)
 
-        if args.start or args.end:
-            df = df.loc[args.start : args.end]
+        start_bound = args.start if args.start else None
+        end_bound = args.end if args.end else None
+        if start_bound is not None or end_bound is not None:
+            df = df.loc[start_bound:end_bound]
 
         eval_results[sym] = evaluate_symbol(df, horizons=horizons, q=args.q)
         print(f"{sym}: evaluated horizons {horizons}")
