@@ -277,20 +277,30 @@ def main() -> int:
                     all_pass = False
         
         # Check step sizes (expecting 1h = 3600000 ms after resampling)
-        print("\n3. STEP SIZE CHECK (1h interval)")
+        # Exception: funding rates are native 8h intervals
+        print("\n3. STEP SIZE CHECK")
         print("-" * 80)
         for name, df in dataframes.items():
             if df is not None:
-                correct, gaps = check_step_sizes(df, name, expected_step_ms=3600000)
-                if gaps > len(df) * 0.01:  # More than 1% gaps
-                    print(f"    WARNING: High gap rate for {name}")
+                if name == "funding":
+                    # Funding rates are published every 8 hours
+                    correct, gaps = check_step_sizes(df, name, expected_step_ms=8*3600000)
+                else:
+                    correct, gaps = check_step_sizes(df, name, expected_step_ms=3600000)
+                    if gaps > len(df) * 0.01:  # More than 1% gaps
+                        print(f"    WARNING: High gap rate for {name}")
         
         # Check missingness
         print("\n4. MISSINGNESS REPORT")
         print("-" * 80)
         for name, df in dataframes.items():
-            missing_pct = check_missingness(df, name, start_ms, end_ms, interval_ms=3600000)
-            if missing_pct > 5.0:
+            if name == "funding":
+                # Funding rates are published every 8 hours
+                missing_pct = check_missingness(df, name, start_ms, end_ms, interval_ms=8*3600000)
+            else:
+                missing_pct = check_missingness(df, name, start_ms, end_ms, interval_ms=3600000)
+            
+            if missing_pct > 5.0 and name != "funding":
                 print(f"    WARNING: High missingness for {name}: {missing_pct:.2f}%")
                 all_pass = False
         
