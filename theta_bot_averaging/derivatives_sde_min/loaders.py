@@ -105,7 +105,6 @@ def load_symbol_panel(
     if end:
         panel = panel.loc[:end]
 
-    panel["returns"] = np.log(panel["spot_close"]).diff()
     return panel
 
 

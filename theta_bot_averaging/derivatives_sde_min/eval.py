@@ -14,7 +14,7 @@ def evaluate_symbol(df: pd.DataFrame, horizons: Iterable[int], q: float = 0.85, 
     """
     log_price = np.log(df["spot_close"])
     lambda_threshold = df["lambda"].quantile(q) if len(df["lambda"].dropna()) else np.nan
-    active_mask = df["lambda"] >= lambda_threshold if not np.isnan(lambda_threshold) else pd.Series(False, index=df.index)
+    active_mask = df["lambda"] >= lambda_threshold if not np.isnan(lambda_threshold) else pd.Series(False, index=df.index, dtype=bool)
     inactive_mask = ~active_mask
 
     rng = np.random.default_rng(seed)

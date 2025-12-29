@@ -239,18 +239,19 @@ def normalize_oi_dataframe(df: pd.DataFrame, symbol: str) -> List[OpenInterest]:
     if "timestamp" not in df.columns:
         return []
 
+    def _first_available(row, keys, default=0.0):
+        for key in keys:
+            if key in row and not pd.isna(row[key]):
+                return row[key]
+        return default
+
     df = df.dropna(subset=["timestamp"])
     rows: List[OpenInterest] = []
     for _, row in df.iterrows():
         try:
             ts = int(row["timestamp"])
-            oi_val = float(row.get("open_interest", row.get("sumOpenInterest", row.get("openInterest", 0.0))))
-            oi_value = float(
-                row.get(
-                    "open_interest_value",
-                    row.get("sumOpenInterestValue", row.get("openInterestValue", 0.0)),
-                )
-            )
+            oi_val = float(_first_available(row, ["open_interest", "sumOpenInterest", "openInterest"]))
+            oi_value = float(_first_available(row, ["open_interest_value", "sumOpenInterestValue", "openInterestValue"]))
         except (TypeError, ValueError):
             continue
         rows.append(

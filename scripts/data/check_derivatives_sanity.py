@@ -336,13 +336,14 @@ def main() -> int:
 
         print("\n2. REQUIRED COLUMN CHECKS")
         print("-" * 80)
-        all_pass = (
+        required_ok = (
             check_required_columns(dataframes.get("spot"), "spot", ["close"])
             and check_required_columns(dataframes.get("funding"), "funding", ["funding_rate"])
             and check_required_columns(dataframes.get("open_interest"), "open_interest", ["open_interest"])
             and check_required_columns(dataframes.get("mark"), "mark", ["close"])
             and (args.skip_basis or check_required_columns(dataframes.get("basis"), "basis", ["basis"]))
-        ) and all_pass
+        )
+        all_pass = all_pass and required_ok
         
         # Check monotonicity
         print("\n3. MONOTONICITY CHECK")

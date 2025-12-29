@@ -32,6 +32,8 @@ def compute_mu_sigma_lambda(
     Lambda = |mu| / sigma and active flag is set by quantile q.
     """
     df = panel.copy()
+    if "returns" not in df.columns:
+        df["returns"] = np.log(df["spot_close"]).diff()
     df["doi"] = np.log(df["open_interest"]).diff()
     df["z_doi"] = rolling_z(df["doi"], window=z_window)
     df["z_funding"] = rolling_z(df["funding_rate"], window=z_window)
