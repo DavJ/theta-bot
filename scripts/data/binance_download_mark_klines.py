@@ -32,6 +32,8 @@ import requests
 
 
 BINANCE_FAPI_BASE = "https://fapi.binance.com"
+VOLUME_IDX = 5
+CLOSE_TIME_IDX = 6
 
 
 def parse_date_utc(s: str) -> int:
@@ -122,11 +124,11 @@ def fetch_mark_klines(
             out: List[MarkKline] = []
             for row in data:
                 # Format: [openTime, open, high, low, close, volume, closeTime, ...]
-                vol = float(row[5]) if len(row) > 5 and row[5] is not None else None
+                vol = float(row[VOLUME_IDX]) if len(row) > VOLUME_IDX and row[VOLUME_IDX] is not None else None
                 out.append(
                     MarkKline(
                         open_time_ms=int(row[0]),
-                        close_time_ms=int(row[6]),
+                        close_time_ms=int(row[CLOSE_TIME_IDX]),
                         open=float(row[1]),
                         high=float(row[2]),
                         low=float(row[3]),

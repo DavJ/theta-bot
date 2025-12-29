@@ -35,6 +35,8 @@ import requests
 
 
 BINANCE_FAPI_BASE = "https://fapi.binance.com"
+OI_FIELD = "sumOpenInterest"
+OI_VALUE_FIELD = "sumOpenInterestValue"
 
 
 def parse_date_utc(s: str) -> int:
@@ -125,8 +127,8 @@ def fetch_open_interest_hist(
                 out.append(
                     OpenInterest(
                         timestamp=int(row["timestamp"]),
-                        open_interest=float(row["sumOpenInterest"]),
-                        open_interest_value=float(row["sumOpenInterestValue"]),
+                        open_interest=float(row[OI_FIELD]),
+                        open_interest_value=float(row[OI_VALUE_FIELD]),
                         symbol=row["symbol"],
                     )
                 )

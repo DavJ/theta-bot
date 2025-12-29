@@ -275,6 +275,7 @@ def main() -> int:
     start_ms = parse_date_utc(args.start)
     end_ms = parse_date_utc(args.end)
     data_dir = Path(args.data_dir)
+    # Expected cadence for primary series (defaults to 1h grid).
     interval_ms = interval_to_ms(args.interval)
     
     print("=" * 80)

@@ -23,7 +23,7 @@ def write_decomposition_report(summaries: List[Dict], path: str = "reports/DERIV
     ]
 
     for s in summaries:
-        window = f"{s['start']} → {s['end']}"
+        window = f"{s['start']} -> {s['end']}"
         lines.append(
             f"| {s['symbol']} | {s['rows']} | {window} | {s['active_share']:.3f} | {s['lambda_threshold']:.4f} |"
         )
