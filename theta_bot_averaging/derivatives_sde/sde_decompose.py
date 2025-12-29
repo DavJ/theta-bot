@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -20,7 +19,7 @@ def compute_lambda(mu: pd.Series, sigma: pd.Series) -> pd.Series:
     return lam.replace([np.inf, -np.inf], np.nan)
 
 
-def gate_lambda(Lambda: pd.Series, tau: Optional[float] = 1.0, tau_quantile: Optional[float] = None) -> pd.Series:
+def gate_lambda(Lambda: pd.Series, tau: float | None = 1.0, tau_quantile: float | None = None) -> pd.Series:
     """Determine active periods based on threshold or quantile."""
     if tau_quantile is not None:
         threshold = Lambda.quantile(tau_quantile)

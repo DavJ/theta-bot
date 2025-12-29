@@ -57,7 +57,7 @@ def walk_forward_fit(
 
     df = pd.concat([X, y], axis=1)
     df = df[mask]
-    # Require at least one observation per fold plus a small buffer to start the expansion.
+    # Require at least n_folds observations plus two extra points to seed and expand the walk-forward fit.
     if len(df) < n_folds + 2:
         return {"folds": [], "summary": {}}
 

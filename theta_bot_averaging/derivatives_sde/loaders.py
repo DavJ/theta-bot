@@ -4,12 +4,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
 import pandas as pd
 
 
-def load_csv_gz(path: Path) -> Optional[pd.DataFrame]:
+def load_csv_gz(path: Path) -> pd.DataFrame | None:
     """Load gzipped CSV with a millisecond timestamp column."""
     if not path.exists():
         return None

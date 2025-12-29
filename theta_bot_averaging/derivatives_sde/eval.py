@@ -20,10 +20,18 @@ def _effect_metrics(mu: pd.Series, y: pd.Series) -> dict:
     mu_v = mu[valid]
     y_v = y[valid]
     sign_agreement = (np.sign(mu_v) == np.sign(y_v)).mean()
-    cond_mean_up = y_v[mu_v > 0].mean()
-    cond_mean_down = y_v[mu_v < 0].mean()
+    up_slice = y_v[mu_v > 0]
+    down_slice = y_v[mu_v < 0]
+    cond_mean_up = up_slice.mean() if not up_slice.empty else np.nan
+    cond_mean_down = down_slice.mean() if not down_slice.empty else np.nan
     std_all = y_v.std()
-    valid_std = std_all is not None and (not np.isnan(std_all)) and std_all != 0
+    valid_std = (
+        std_all is not None
+        and (not np.isnan(std_all))
+        and std_all != 0
+        and not np.isnan(cond_mean_up)
+        and not np.isnan(cond_mean_down)
+    )
     effect_size = (cond_mean_up - cond_mean_down) / std_all if valid_std else np.nan
     return {
         "sign_agreement": sign_agreement,
@@ -45,10 +53,7 @@ def evaluate_bias(df: pd.DataFrame, horizons: list[int], shuffle_seed: int | Non
         active_metrics = _effect_metrics(df["mu"][active_mask], y_h[active_mask])
         inactive_metrics = _effect_metrics(df["mu"][~active_mask], y_h[~active_mask])
 
-        if shuffle_seed is None:
-            shuffled_mu = df["mu"].sample(frac=1.0).reset_index(drop=True)
-        else:
-            shuffled_mu = df["mu"].sample(frac=1.0, random_state=shuffle_seed).reset_index(drop=True)
+        shuffled_mu = df["mu"].sample(frac=1.0, random_state=shuffle_seed).reset_index(drop=True)
         shuffled_mu.index = df.index
         shuffled_metrics = _effect_metrics(shuffled_mu[active_mask], y_h[active_mask])
 
