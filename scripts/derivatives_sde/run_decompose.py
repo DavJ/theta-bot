@@ -67,8 +67,7 @@ def main() -> None:
             }
             for idx, row in top.iterrows()
         ]
-        lambda_non_null = df["lambda_threshold"].dropna()
-        lambda_threshold_value = float(lambda_non_null.iloc[-1]) if len(lambda_non_null) else float("nan")
+        lambda_threshold_value = float(df.attrs.get("lambda_threshold", float("nan")))
         summaries.append(
             {
                 "symbol": sym,

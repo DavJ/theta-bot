@@ -45,9 +45,9 @@ def compute_mu_sigma_lambda(
 
     lambda_clean = df["lambda"].dropna()
     lambda_threshold = lambda_clean.quantile(q) if len(lambda_clean) else np.nan
-    df["lambda_threshold"] = lambda_threshold
     if np.isnan(lambda_threshold):
         df["active"] = False
     else:
         df["active"] = df["lambda"] >= lambda_threshold
+    df.attrs["lambda_threshold"] = lambda_threshold
     return df
