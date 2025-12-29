@@ -14,9 +14,14 @@ def compute_mu_components(
     rho: pd.Series | None = None,
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """Compute mu(t) components based on standardized state."""
-    z_oi_change = state_df.get("z_oi_change")
-    z_funding = state_df.get("z_funding")
-    z_basis = state_df.get("z_basis")
+    required = ["z_oi_change", "z_funding", "z_basis"]
+    missing = [c for c in required if c not in state_df.columns]
+    if missing:
+        raise KeyError(f"Missing required columns for mu computation: {missing}")
+
+    z_oi_change = state_df["z_oi_change"]
+    z_funding = state_df["z_funding"]
+    z_basis = state_df["z_basis"]
 
     mu1 = -alpha * z_oi_change * z_funding
     mu2 = beta * z_oi_change * z_basis

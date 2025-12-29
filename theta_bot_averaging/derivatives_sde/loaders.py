@@ -16,7 +16,10 @@ def load_csv_gz(path: Path) -> Optional[pd.DataFrame]:
     df = pd.read_csv(path, compression="gzip")
     if "timestamp" not in df.columns:
         raise ValueError(f"Missing 'timestamp' column in {path}")
-    df["timestamp"] = pd.to_numeric(df["timestamp"], errors="coerce").astype("int64")
+    try:
+        df["timestamp"] = pd.to_numeric(df["timestamp"], errors="raise").astype("int64")
+    except Exception as exc:
+        raise ValueError(f"Invalid timestamp values in {path}") from exc
     df = df.sort_values("timestamp").reset_index(drop=True)
     df.index = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
     df = df.drop(columns=["timestamp"])

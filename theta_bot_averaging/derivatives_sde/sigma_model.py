@@ -17,8 +17,7 @@ def compute_sigma(
     if ewma_lambda is not None:
         alpha = 1 - ewma_lambda
         ewma = returns.ewm(alpha=alpha, adjust=False).std(bias=False)
-        sigma = roll.combine_first(ewma)
-        sigma = sigma.fillna(ewma)
+        sigma = roll.fillna(ewma)
     else:
         sigma = roll
     sigma = sigma.fillna(0.0)

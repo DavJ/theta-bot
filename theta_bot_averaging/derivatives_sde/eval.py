@@ -9,7 +9,7 @@ import pandas as pd
 
 def future_return(returns: pd.Series, horizon: int) -> pd.Series:
     """Compute log price change over the next H hours."""
-    return returns.shift(-1).rolling(window=horizon, min_periods=horizon).sum()
+    return returns.shift(-1).rolling(window=horizon, min_periods=horizon).sum().shift(-(horizon - 1))
 
 
 def _effect_metrics(mu: pd.Series, y: pd.Series) -> dict:
@@ -23,7 +23,8 @@ def _effect_metrics(mu: pd.Series, y: pd.Series) -> dict:
     cond_mean_up = y_v[mu_v > 0].mean()
     cond_mean_down = y_v[mu_v < 0].mean()
     std_all = y_v.std()
-    effect_size = (cond_mean_up - cond_mean_down) / std_all if std_all and not np.isnan(std_all) else np.nan
+    valid_std = std_all is not None and (not np.isnan(std_all)) and std_all != 0
+    effect_size = (cond_mean_up - cond_mean_down) / std_all if valid_std else np.nan
     return {
         "sign_agreement": sign_agreement,
         "cond_mean_up": cond_mean_up,
@@ -44,7 +45,10 @@ def evaluate_bias(df: pd.DataFrame, horizons: list[int], shuffle_seed: int | Non
         active_metrics = _effect_metrics(df["mu"][active_mask], y_h[active_mask])
         inactive_metrics = _effect_metrics(df["mu"][~active_mask], y_h[~active_mask])
 
-        shuffled_mu = df["mu"].sample(frac=1.0, random_state=shuffle_seed).reset_index(drop=True) if shuffle_seed is not None else df["mu"].sample(frac=1.0).reset_index(drop=True)
+        if shuffle_seed is None:
+            shuffled_mu = df["mu"].sample(frac=1.0).reset_index(drop=True)
+        else:
+            shuffled_mu = df["mu"].sample(frac=1.0, random_state=shuffle_seed).reset_index(drop=True)
         shuffled_mu.index = df.index
         shuffled_metrics = _effect_metrics(shuffled_mu[active_mask], y_h[active_mask])
 
@@ -55,8 +59,10 @@ def evaluate_bias(df: pd.DataFrame, horizons: list[int], shuffle_seed: int | Non
             if len(active_lambda) >= 5:
                 try:
                     deciles = pd.qcut(active_lambda, q=10, labels=False, duplicates="drop")
-                    for dec in sorted(deciles.unique()):
-                        mask_dec = active_mask & (deciles == dec)
+                    deciles_full = pd.Series(index=df.index, dtype=float)
+                    deciles_full.loc[active_lambda.index] = deciles
+                    for dec in sorted(deciles.dropna().unique()):
+                        mask_dec = deciles_full == dec
                         decile_metrics[int(dec)] = _effect_metrics(df["mu"][mask_dec], y_h[mask_dec])
                 except ValueError:
                     decile_metrics = {}
