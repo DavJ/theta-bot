@@ -40,7 +40,8 @@ def compute_zscore(
     rolling_std = series.rolling(window, min_periods=min_periods).std()
     
     # Compute z-score, avoiding division by zero
-    zscore = (series - rolling_mean) / rolling_std.replace(0, np.nan)
+    # Use small epsilon instead of NaN to prevent NaN propagation
+    zscore = (series - rolling_mean) / rolling_std.replace(0, 1e-10)
     
     return zscore
 

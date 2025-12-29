@@ -42,6 +42,9 @@ from theta_bot_averaging.derivatives_state import (
 from theta_bot_averaging.derivatives_state.features import align_series
 from theta_bot_averaging.derivatives_state.report import save_report
 
+# Constant for millisecond to microsecond conversion
+MS_TO_NS = 1_000_000
+
 
 def generate_drift_for_symbol(
     symbol: str,
@@ -164,7 +167,7 @@ def generate_drift_for_symbol(
     
     # Reset index to include timestamp column
     drift_df_out = drift_df.copy()
-    drift_df_out["timestamp"] = (drift_df_out.index.astype("int64") // 10**6).astype(int)
+    drift_df_out["timestamp"] = (drift_df_out.index.astype("int64") // MS_TO_NS).astype(int)
     drift_df_out = drift_df_out[["timestamp"] + [c for c in drift_df_out.columns if c != "timestamp"]]
     
     print(f"  Saving to {output_path}...")

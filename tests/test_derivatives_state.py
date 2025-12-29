@@ -132,9 +132,9 @@ def test_apply_quantile_gate():
     active_pct = active.sum() / len(active)
     assert 0.10 < active_pct < 0.20, f"Expected ~15% active, got {active_pct*100:.1f}%"
     
-    # Check that all active values are above threshold
+    # Check that all active values are above or equal to threshold
     threshold = D.quantile(0.85)
-    assert (D[active] > threshold).all() or (D[active] == threshold).all()
+    assert (D[active] >= threshold).all() or active.sum() == 0
 
 
 def test_apply_threshold_gate():

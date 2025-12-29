@@ -40,9 +40,7 @@ def load_csv_gz(path: Path) -> Optional[pd.DataFrame]:
             raise ValueError(f"No 'timestamp' column in {path}")
         
         # Convert timestamp to datetime index
-        df["timestamp"] = pd.to_numeric(df["timestamp"], errors="coerce")
-        df = df.dropna(subset=["timestamp"])
-        df["timestamp"] = df["timestamp"].astype("int64")
+        df["timestamp"] = pd.to_numeric(df["timestamp"], errors="coerce").astype("int64")
         df = df.sort_values("timestamp").reset_index(drop=True)
         
         # Convert to UTC DatetimeIndex

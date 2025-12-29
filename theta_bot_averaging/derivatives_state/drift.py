@@ -65,7 +65,8 @@ def compute_drift(
     if rho is not None and gamma != 0:
         mu3 = gamma * rho * z_basis
     else:
-        mu3 = pd.Series(0.0, index=z_oi_change.index)
+        # Pre-allocate with zeros for efficiency
+        mu3 = pd.Series(0.0, index=z_oi_change.index, name="mu3")
     
     # Total drift
     mu = mu1 + mu2 + mu3
