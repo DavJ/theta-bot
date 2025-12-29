@@ -173,7 +173,7 @@ def generate_basis(symbol: str, start_ms: int, end_ms: int, base_price: float) -
     return data
 
 
-def write_csv_gz(path: Path, data: List[dict], columns: List[str]):
+def write_csv_gz(path: Path, data: List[dict], columns: List[str]) -> None:
     """Write data to gzipped CSV."""
     path.parent.mkdir(parents=True, exist_ok=True)
     
