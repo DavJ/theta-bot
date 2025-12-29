@@ -58,6 +58,18 @@ def parse_date_utc(s: str) -> int:
     return int(dt.timestamp() * 1000)
 
 
+def interval_to_ms(interval: str) -> int:
+    unit = interval[-1]
+    n = int(interval[:-1])
+    if unit == "m":
+        return n * 60_000
+    if unit == "h":
+        return n * 3_600_000
+    if unit == "d":
+        return n * 86_400_000
+    raise ValueError(f"Unsupported interval: {interval}")
+
+
 def load_csv_gz(path: Path) -> Optional[pd.DataFrame]:
     """Load gzipped CSV and return DataFrame with timestamp index."""
     if not path.exists():
@@ -65,17 +77,22 @@ def load_csv_gz(path: Path) -> Optional[pd.DataFrame]:
     
     try:
         df = pd.read_csv(path, compression="gzip")
-        if "timestamp" not in df.columns:
-            print(f"  ERROR: No 'timestamp' column in {path}")
+        ts_col = None
+        for candidate in ("close_time_ms", "timestamp_ms", "timestamp", "open_time_ms"):
+            if candidate in df.columns:
+                ts_col = candidate
+                break
+        if ts_col is None:
+            print(f"  ERROR: No timestamp column in {path}")
             return None
         
-        df["timestamp"] = pd.to_numeric(df["timestamp"], errors="coerce")
-        df = df.dropna(subset=["timestamp"])
-        df["timestamp"] = df["timestamp"].astype("int64")
-        df = df.sort_values("timestamp").reset_index(drop=True)
+        df[ts_col] = pd.to_numeric(df[ts_col], errors="coerce")
+        df = df.dropna(subset=[ts_col])
+        df[ts_col] = df[ts_col].astype("int64")
+        df = df.sort_values(ts_col).reset_index(drop=True)
         
         # Convert to datetime index
-        df.index = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
+        df.index = pd.to_datetime(df[ts_col], unit="ms", utc=True)
         
         return df
     except Exception as e:
@@ -213,6 +230,30 @@ def check_value_ranges(df: pd.DataFrame, name: str, column: str, expected_range:
             print(f"    WARNING: {out_of_range} values outside expected range [{min_val}, {max_val}]")
 
 
+def check_required_columns(df: pd.DataFrame, name: str, required: List[str]) -> bool:
+    if df is None:
+        print(f"  {name}: MISSING data")
+        return False
+    missing_cols = [c for c in required if c not in df.columns]
+    if missing_cols:
+        print(f"  {name}: missing columns {missing_cols}")
+        return False
+    nan_cols = df[required].isna().sum()
+    has_nan = nan_cols.sum() > 0
+    if has_nan:
+        print(f"  {name}: NaNs detected in {nan_cols[nan_cols > 0].to_dict()}")
+    return not has_nan
+
+
+def pick_column(df: Optional[pd.DataFrame], candidates: List[str]) -> Optional[str]:
+    if df is None:
+        return None
+    for c in candidates:
+        if c in df.columns:
+            return c
+    return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Comprehensive sanity check for derivatives data"
@@ -222,11 +263,13 @@ def main() -> int:
     ap.add_argument("--end", required=True, help="End date YYYY-MM-DD")
     ap.add_argument("--data-dir", default="data/raw", help="Base data directory (default: data/raw)")
     ap.add_argument("--skip-basis", action="store_true", help="Skip basis check (optional data)")
+    ap.add_argument("--interval", default="1h", help="Expected interval for spot/mark/basis/open-interest (default: 1h)")
     args = ap.parse_args()
     
     start_ms = parse_date_utc(args.start)
     end_ms = parse_date_utc(args.end)
     data_dir = Path(args.data_dir)
+    interval_ms = interval_to_ms(args.interval)
     
     print("=" * 80)
     print("DERIVATIVES DATA SANITY CHECK")
@@ -267,9 +310,36 @@ def main() -> int:
         }
         if not args.skip_basis and basis_df is not None:
             dataframes["basis"] = basis_df
+
+        # Normalize key column names
+        if funding_df is not None:
+            fund_col = pick_column(funding_df, ["funding_rate", "fundingRate"])
+            if fund_col and fund_col != "funding_rate":
+                funding_df = funding_df.rename(columns={fund_col: "funding_rate"})
+                dataframes["funding"] = funding_df
+        if oi_df is not None:
+            oi_col = pick_column(oi_df, ["open_interest", "sumOpenInterest"])
+            if oi_col and oi_col != "open_interest":
+                oi_df = oi_df.rename(columns={oi_col: "open_interest"})
+                dataframes["open_interest"] = oi_df
+        if basis_df is not None and "basis" not in basis_df.columns:
+            basis_col = pick_column(basis_df, ["value", "basis_value"])
+            if basis_col:
+                basis_df = basis_df.rename(columns={basis_col: "basis"})
+                dataframes["basis"] = basis_df
+
+        print("\n2. REQUIRED COLUMN CHECKS")
+        print("-" * 80)
+        all_pass = (
+            check_required_columns(dataframes.get("spot"), "spot", ["close"])
+            and check_required_columns(dataframes.get("funding"), "funding", ["funding_rate"])
+            and check_required_columns(dataframes.get("open_interest"), "open_interest", ["open_interest"])
+            and check_required_columns(dataframes.get("mark"), "mark", ["close"])
+            and (args.skip_basis or check_required_columns(dataframes.get("basis"), "basis", ["basis"]))
+        ) and all_pass
         
         # Check monotonicity
-        print("\n2. MONOTONICITY CHECK")
+        print("\n3. MONOTONICITY CHECK")
         print("-" * 80)
         for name, df in dataframes.items():
             if df is not None:
@@ -278,7 +348,7 @@ def main() -> int:
         
         # Check step sizes (expecting 1h = 3600000 ms after resampling)
         # Exception: funding rates are native 8h intervals
-        print("\n3. STEP SIZE CHECK")
+        print("\n4. STEP SIZE CHECK")
         print("-" * 80)
         for name, df in dataframes.items():
             if df is not None:
@@ -286,26 +356,26 @@ def main() -> int:
                     # Funding rates are published every 8 hours
                     correct, gaps = check_step_sizes(df, name, expected_step_ms=8*3600000)
                 else:
-                    correct, gaps = check_step_sizes(df, name, expected_step_ms=3600000)
+                    correct, gaps = check_step_sizes(df, name, expected_step_ms=interval_ms)
                     if gaps > len(df) * 0.01:  # More than 1% gaps
                         print(f"    WARNING: High gap rate for {name}")
         
         # Check missingness
-        print("\n4. MISSINGNESS REPORT")
+        print("\n5. MISSINGNESS REPORT")
         print("-" * 80)
         for name, df in dataframes.items():
             if name == "funding":
                 # Funding rates are published every 8 hours
                 missing_pct = check_missingness(df, name, start_ms, end_ms, interval_ms=8*3600000)
             else:
-                missing_pct = check_missingness(df, name, start_ms, end_ms, interval_ms=3600000)
+                missing_pct = check_missingness(df, name, start_ms, end_ms, interval_ms=interval_ms)
             
             if missing_pct > 5.0 and name != "funding":
                 print(f"    WARNING: High missingness for {name}: {missing_pct:.2f}%")
                 all_pass = False
         
         # Check overlap
-        print("\n5. OVERLAP INTERSECTION")
+        print("\n6. OVERLAP INTERSECTION")
         print("-" * 80)
         overlap_start, overlap_end = check_overlap(dataframes)
         if overlap_start is None or overlap_end is None:
@@ -317,7 +387,7 @@ def main() -> int:
                 print(f"  WARNING: Overlap window is short ({overlap_hours/24:.1f} days)")
         
         # Check value ranges
-        print("\n6. VALUE RANGE CHECKS")
+        print("\n7. VALUE RANGE CHECKS")
         print("-" * 80)
         if spot_df is not None:
             check_value_ranges(spot_df, "spot", "close")
