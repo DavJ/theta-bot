@@ -7,6 +7,11 @@ import pandas as pd
 
 
 def evaluate_symbol(df: pd.DataFrame, horizons: Iterable[int], q: float = 0.85, seed: int = 0) -> Dict:
+    """
+    Evaluate directional skill of the SDE signals.
+    Computes sign agreement, conditional means, effect size, inactive baseline, decile means,
+    and shuffled-mu baseline for each forecast horizon.
+    """
     log_price = np.log(df["spot_close"])
     lambda_threshold = df["lambda"].quantile(q) if len(df["lambda"].dropna()) else np.nan
     active_mask = df["lambda"] >= lambda_threshold if not np.isnan(lambda_threshold) else pd.Series(False, index=df.index)

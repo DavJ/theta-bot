@@ -77,8 +77,8 @@ def period_to_ms(period: str) -> int:
 @dataclass
 class OpenInterest:
     timestamp: int  # time (ms)
-    sum_open_interest: float  # Total open interest in base asset
-    sum_open_interest_value: float  # Total open interest in USDT
+    open_interest: float  # Total open interest in base asset
+    open_interest_value: float  # Total open interest in USDT
     symbol: str
 
 
@@ -125,8 +125,8 @@ def fetch_open_interest_hist(
                 out.append(
                     OpenInterest(
                         timestamp=int(row["timestamp"]),
-                        sum_open_interest=float(row["sumOpenInterest"]),
-                        sum_open_interest_value=float(row["sumOpenInterestValue"]),
+                        open_interest=float(row["sumOpenInterest"]),
+                        open_interest_value=float(row["sumOpenInterestValue"]),
                         symbol=row["symbol"],
                     )
                 )
@@ -256,8 +256,8 @@ def normalize_oi_dataframe(df: pd.DataFrame, symbol: str) -> List[OpenInterest]:
         rows.append(
             OpenInterest(
                 timestamp=ts,
-                sum_open_interest=oi_val,
-                sum_open_interest_value=oi_value,
+                open_interest=oi_val,
+                open_interest_value=oi_value,
                 symbol=symbol,
             )
         )
@@ -276,8 +276,8 @@ def write_csv_gz(path: str, rows: Iterable[OpenInterest]) -> int:
         for oi in rows:
             w.writerow([
                 oi.timestamp, 
-                f"{oi.sum_open_interest:.8f}", 
-                f"{oi.sum_open_interest_value:.8f}", 
+                f"{oi.open_interest:.8f}", 
+                f"{oi.open_interest_value:.8f}", 
                 oi.symbol
             ])
             count += 1

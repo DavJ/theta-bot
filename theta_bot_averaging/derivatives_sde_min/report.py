@@ -8,7 +8,7 @@ import pandas as pd
 
 def _fmt(val, digits: int) -> str:
     if pd.isna(val):
-        return "nan"
+        return "NA"
     return f"{val:.{digits}f}"
 
 

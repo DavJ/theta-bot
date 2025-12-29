@@ -20,6 +20,12 @@ def compute_mu_sigma_lambda(
     epsilon: float = 1e-8,
     q: float = 0.85,
 ) -> pd.DataFrame:
+    """
+    Compute drift (mu), volatility (sigma), and Lambda scores for the derivatives SDE model.
+    mu = -alpha * z(doi) * z(funding) + beta * z(doi) * z(basis)
+    sigma = rolling std of spot returns over sigma_window (with floor epsilon)
+    Lambda = |mu| / sigma and active flag is set by quantile q.
+    """
     df = panel.copy()
     df["doi"] = np.log(df["open_interest"]).diff()
     df["z_doi"] = rolling_z(df["doi"], window=z_window)

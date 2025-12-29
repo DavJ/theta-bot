@@ -183,14 +183,12 @@ def iter_all_mark_klines(
 def write_csv_gz(path: str, rows: Iterable[MarkKline]) -> int:
     """
     Write mark klines to gzipped CSV with columns:
-    open_time_ms,close_time_ms,open,high,low,close,volume,timestamp_ms
+    open_time_ms,close_time_ms,open,high,low,close,volume
     """
     count = 0
     with gzip.open(path, "wt", newline="") as f:
         w = csv.writer(f)
-        w.writerow(
-            ["open_time_ms", "close_time_ms", "open", "high", "low", "close", "volume", "timestamp_ms"]
-        )
+        w.writerow(["open_time_ms", "close_time_ms", "open", "high", "low", "close", "volume"])
         for k in rows:
             w.writerow(
                 [
@@ -201,7 +199,6 @@ def write_csv_gz(path: str, rows: Iterable[MarkKline]) -> int:
                     f"{k.low:.8f}",
                     f"{k.close:.8f}",
                     "" if k.volume is None else f"{k.volume:.8f}",
-                    k.close_time_ms,
                 ]
             )
             count += 1

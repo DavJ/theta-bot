@@ -67,6 +67,8 @@ def main() -> None:
             }
             for idx, row in top.iterrows()
         ]
+        lambda_non_null = df["lambda_threshold"].dropna()
+        lambda_threshold_value = float(lambda_non_null.iloc[-1]) if len(lambda_non_null) else float("nan")
         summaries.append(
             {
                 "symbol": sym,
@@ -74,7 +76,7 @@ def main() -> None:
                 "start": df.index[0],
                 "end": df.index[-1],
                 "active_share": float(df["active"].mean()) if len(df) else 0.0,
-                "lambda_threshold": float(df["lambda_threshold"].dropna().iloc[-1]) if df["lambda_threshold"].dropna().any() else float("nan"),
+                "lambda_threshold": lambda_threshold_value,
                 "top_events": top_events,
             }
         )

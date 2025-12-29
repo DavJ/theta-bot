@@ -18,6 +18,10 @@ def _pick_column(df: pd.DataFrame, candidates) -> Optional[str]:
 
 
 def _read_series(path: Path) -> pd.DataFrame:
+    """
+    Read a gzip CSV with a millisecond timestamp column into a UTC-indexed DataFrame.
+    Expects one of close_time_ms, timestamp_ms, timestamp, or open_time_ms to exist.
+    """
     df = pd.read_csv(path, compression="gzip")
     ts_col = _pick_column(df, TS_CANDIDATES)
     if ts_col is None:
@@ -35,6 +39,11 @@ def load_symbol_panel(
     start: Optional[str] = None,
     end: Optional[str] = None,
 ) -> pd.DataFrame:
+    """
+    Load and align spot, mark, funding, open interest, and basis data for a symbol.
+    Returns an hourly DataFrame with columns: spot_close, mark_close, funding_rate,
+    open_interest, open_interest_is_filled, basis, and returns.
+    """
     base = Path(data_dir)
     spot = _read_series(base / "spot" / f"{symbol}_{interval}.csv.gz")
     mark = _read_series(base / "futures" / f"{symbol}_mark_{interval}.csv.gz")

@@ -186,7 +186,7 @@ def iter_all_klines(
 def write_csv_gz(path: str, rows: Iterable[Kline]) -> int:
     """
     Write rows to a gzipped CSV with columns:
-    open_time_ms,close_time_ms,open,high,low,close,volume,timestamp_ms
+    open_time_ms,close_time_ms,open,high,low,close,volume
     """
     count = 0
     with gzip.open(path, "wt", newline="") as f:
@@ -200,7 +200,6 @@ def write_csv_gz(path: str, rows: Iterable[Kline]) -> int:
                 "low",
                 "close",
                 "volume",
-                "timestamp_ms",
             ]
         )
         for k in rows:
@@ -213,7 +212,6 @@ def write_csv_gz(path: str, rows: Iterable[Kline]) -> int:
                     f"{k.low:.8f}",
                     f"{k.close:.8f}",
                     f"{k.volume:.8f}",
-                    k.close_time_ms,
                 ]
             )
             count += 1
