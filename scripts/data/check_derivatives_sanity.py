@@ -89,7 +89,7 @@ def load_csv_gz(path: Path) -> Optional[pd.DataFrame]:
         df = pd.read_csv(path, compression="gzip")
         ts_col = detect_timestamp_column(df)
         if ts_col is None:
-            print(f"  ERROR: No timestamp column in {path}")
+            print(f"  ERROR: No timestamp column found in {path}. Expected one of: {TIMESTAMP_CANDIDATES}")
             return None
         
         df[ts_col] = pd.to_numeric(df[ts_col], errors="coerce")

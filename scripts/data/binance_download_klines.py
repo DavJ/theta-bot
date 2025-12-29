@@ -234,7 +234,7 @@ def main() -> int:
 
     symbols_arg = args.symbols or args.symbol
     if not symbols_arg:
-        raise SystemExit("Provide --symbols (comma-separated) or --symbol")
+        raise SystemExit("Provide --symbols or --symbol")
     symbols = [s.strip().upper() for s in symbols_arg.split(",") if s.strip()]
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
