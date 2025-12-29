@@ -6,6 +6,12 @@ from typing import Dict, List
 import pandas as pd
 
 
+def _fmt(val, digits: int) -> str:
+    if pd.isna(val):
+        return "nan"
+    return f"{val:.{digits}f}"
+
+
 def write_decomposition_report(summaries: List[Dict], path: str = "reports/DERIVATIVES_SDE_DECOMPOSITION.md") -> None:
     out_path = Path(path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -56,10 +62,10 @@ def write_eval_report(eval_results: Dict[str, Dict], path: str = "reports/DERIVA
         lines.append("| ---: | ---: | ---: | ---: | ---: |")
         for h, metrics in sorted(result["per_horizon"].items()):
             lines.append(
-                f"| {h} | {metrics['sign_agree'] if metrics['sign_agree'] == metrics['sign_agree'] else float('nan'):.4f} "
-                f"| {metrics['effect_size'] if metrics['effect_size'] == metrics['effect_size'] else float('nan'):.6f} "
-                f"| {metrics['inactive_mean'] if metrics['inactive_mean'] == metrics['inactive_mean'] else float('nan'):.6f} "
-                f"| {metrics['shuffled_sign_agree'] if metrics['shuffled_sign_agree'] == metrics['shuffled_sign_agree'] else float('nan'):.4f} |"
+                f"| {h} | {_fmt(metrics.get('sign_agree'), 4)} "
+                f"| {_fmt(metrics.get('effect_size'), 6)} "
+                f"| {_fmt(metrics.get('inactive_mean'), 6)} "
+                f"| {_fmt(metrics.get('shuffled_sign_agree'), 4)} |"
             )
         lines.append("")
         lines.append("### Lambda Decile Means (active set)")
