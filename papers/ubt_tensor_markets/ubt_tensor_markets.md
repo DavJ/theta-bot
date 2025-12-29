@@ -418,7 +418,7 @@ The value of this cross-domain application lies in:
 - **Geometric Insight**: The geometric language of flows, potentials, and curvature offers intuitive ways to think about market dynamics.
 - **Dimensionality Management**: The tensor generalization allows scaling to realistic market complexity while retaining structured subspaces for detailed analysis.
 
-In conclusion, this paper offers a theoretical framework for understanding coupled market systems through the lens of tensor analysis and biquaternion-inspired mathematics. It reframes the goal from prediction to characterization, from scalar prices to high-dimensional states, and from deterministic direction to regime evolution. While empirical validation remains an open challenge, the conceptual foundation presented here provides a structured approach to thinking about markets as complex dynamical systems.
+In conclusion, this paper offers a theoretical framework for understanding coupled market systems through the lens of tensor analysis and biquaternion-inspired mathematics. It reframes the goal from prediction to characterization, from scalar prices to high-dimensional states, and from directional price forecasting to geometry-driven regime evolution. While empirical validation remains an open challenge, the conceptual foundation presented here provides a structured approach to thinking about markets as complex dynamical systems.
 
 ---
 
