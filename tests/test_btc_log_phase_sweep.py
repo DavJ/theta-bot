@@ -31,7 +31,7 @@ def test_candidate_builders_positive_and_handle_windows(sample_df):
     assert (abslogret.dropna() >= 0).all()
 
     rv = build_candidate_series(sample_df, "rv", args)
-    assert math.isnan(rv.iloc[0])
+    assert pd.isna(rv.iloc[0])
     assert rv.iloc[2] >= 0
 
     atr = build_candidate_series(sample_df, "atr", args)
@@ -51,7 +51,7 @@ def test_targets_future_alignment_no_lookahead():
     assert targets["y_vol"].iloc[0] == pytest.approx(0.0)
     assert targets["y_vol"].iloc[1] == pytest.approx(0.0)
     assert targets["y_absret"].iloc[0] == pytest.approx(math.log(4.0))
-    assert math.isnan(targets["y_absret"].iloc[-2])
+    assert pd.isna(targets["y_absret"].iloc[-2])
 
 
 def test_evaluate_candidate_returns_metrics_and_buckets():

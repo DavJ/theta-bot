@@ -130,11 +130,12 @@ def _bucket_stats(feature: pd.Series, target: pd.Series, buckets: int = 5) -> Di
     counts = bucketed.value_counts().sort_index()
     out["bucket_counts"] = counts.to_dict()
     out["bucket_means"] = means.to_dict()
-    if means.empty or means.min() <= EPS_BUCKET:
+    clean_means = means.dropna()
+    if clean_means.empty or clean_means.min() <= EPS_BUCKET:
         out["bucket_ratio"] = math.nan
     else:
-        out["bucket_ratio"] = float(means.max() / means.min())
-    diffs = means.diff().dropna()
+        out["bucket_ratio"] = float(clean_means.max() / clean_means.min())
+    diffs = clean_means.diff().dropna()
     if diffs.empty:
         out["bucket_monotonic"] = "flat"
     elif (diffs >= 0).all():
@@ -184,7 +185,8 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
     bucket_out = _bucket_stats(joined["concentration"], joined["y_vol"])
     metrics.update(bucket_out)
 
-    # Optional classification: top 20% vol (>= 80th percentile)
+    # Optional classification: top 20% vol (>= 80th percentile); higher concentration is expected
+    # to coincide with higher future volatility.
     try:
         threshold = joined["y_vol"].quantile(AUC_TOP_QUANTILE)
         y_class = (joined["y_vol"] >= threshold).astype(int)
