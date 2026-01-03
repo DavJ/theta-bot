@@ -34,6 +34,13 @@ DEFAULT_CANDIDATES = [
     "distema",
 ]
 
+EPS_BUCKET = 1e-12
+AUC_TOP_QUANTILE = 0.8
+
+
+def _fmt_three(x: float) -> str:
+    return f"{x:0.3f}"
+
 
 def build_candidate_series(df: pd.DataFrame, name: str, args: argparse.Namespace) -> pd.Series:
     """
@@ -123,7 +130,7 @@ def _bucket_stats(feature: pd.Series, target: pd.Series, buckets: int = 5) -> Di
     counts = bucketed.value_counts().sort_index()
     out["bucket_counts"] = counts.to_dict()
     out["bucket_means"] = means.to_dict()
-    if means.empty or means.min() <= 1e-15:
+    if means.empty or means.min() <= EPS_BUCKET:
         out["bucket_ratio"] = math.nan
     else:
         out["bucket_ratio"] = float(means.max() / means.min())
@@ -179,11 +186,11 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
 
     # Optional classification: top 20% vol (>= 80th percentile)
     try:
-        threshold = joined["y_vol"].quantile(0.8)
+        threshold = joined["y_vol"].quantile(AUC_TOP_QUANTILE)
         y_class = (joined["y_vol"] >= threshold).astype(int)
         if y_class.nunique() > 1:
             metrics["auc_conc_y_vol"] = roc_auc_score(y_class, joined["concentration"])
-    except Exception:
+    except (ValueError, TypeError):
         metrics["auc_conc_y_vol"] = math.nan
 
     return metrics
@@ -312,7 +319,7 @@ def main() -> None:
         ]
         display_cols = [c for c in cols if c in ranked.columns]
         print("\nRanked summary (by |IC| on y_vol):")
-        print(ranked[display_cols].to_string(index=False, float_format=lambda x: f"{x:0.3f}"))
+        print(ranked[display_cols].to_string(index=False, float_format=_fmt_three))
 
 
 if __name__ == "__main__":
