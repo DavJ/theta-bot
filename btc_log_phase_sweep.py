@@ -37,6 +37,8 @@ DEFAULT_CANDIDATES = [
 ]
 
 EPS_BUCKET = 1e-12
+EPS_LOG = 1e-12
+ZERO_STD_REPLACEMENT = 1.0
 AUC_TOP_QUANTILE = 0.8  # 80th percentile threshold (top 20%)
 
 # Time-phase presets (hours). Used to build a second circular phase from timestamps.
@@ -47,6 +49,8 @@ TIME_PHASE_PRESETS_HOURS = {
     "month": 24.0 * 30.0,
     "lunar": 24.0 * 29.53059,  # synodic month (approx)
 }
+
+THETA_COLUMN_NAMES = ["theta_coeff", "theta_coeffs", "theta_energy"]
 
 
 def _fmt_three(x: float) -> str:
@@ -124,12 +128,13 @@ def rolling_torus_concentration(
 
     Embed each sample as v = (cos_s, sin_s, cos_t, sin_t) and compute:
         C = ||mean(v)|| / sqrt(2)
-    so that C in [0, 1] when both circles are perfectly aligned.
+    so that C stays in [0, 1], reaching 1 when both circular phases are perfectly aligned.
 
     This is a minimal torus extension: scale-phase × time-phase.
     """
     n = len(cos_s)
-    out = np.full(n, np.nan, dtype=float)
+    out = np.full(n, np.nan, dtype=float)  # NaNs preserve causality until at least `window` samples exist
+    norm_scale = 1.0 / math.sqrt(2.0)  # sqrt(2) is the max resultant when both unit circles align
     for i in range(n):
         lo = max(0, i - window + 1)
         m1 = np.mean(cos_s[lo : i + 1])
@@ -137,7 +142,7 @@ def rolling_torus_concentration(
         m3 = np.mean(cos_t[lo : i + 1])
         m4 = np.mean(sin_t[lo : i + 1])
         out[i] = float(
-            np.sqrt(m1 * m1 + m2 * m2 + m3 * m3 + m4 * m4) / math.sqrt(2.0)
+            np.sqrt(m1 * m1 + m2 * m2 + m3 * m3 + m4 * m4) * norm_scale
         )
     return out
 
@@ -175,12 +180,17 @@ def _rolling_pc1(df: pd.DataFrame, window: int) -> pd.Series:
             continue
         mean = window_arr.mean(axis=0)
         std = window_arr.std(axis=0)
-        std[std == 0.0] = 1.0
+        std[std == 0.0] = ZERO_STD_REPLACEMENT  # avoid division by zero; constant features normalize to zero so PCA still runs
         normed = (window_arr - mean) / std
         pca = PCA(n_components=1)
         comp = pca.fit_transform(normed)
         out[i] = comp[-1, 0]
     return pd.Series(out, index=df.index)
+
+
+def _stable_complex_log(spectrum: np.ndarray) -> np.ndarray:
+    """Compute a stable complex logarithm preserving magnitude and phase."""
+    return np.log(np.abs(spectrum) + EPS_LOG) + 1j * np.angle(spectrum)
 
 
 def _cepstral_phase(series: pd.Series, window: int) -> pd.Series:
@@ -192,7 +202,9 @@ def _cepstral_phase(series: pd.Series, window: int) -> pd.Series:
         if np.isnan(window_arr).any():
             continue
         spectrum = np.fft.fft(window_arr)
-        cepstrum = np.fft.ifft(np.log(spectrum + 1e-12))
+        # Use log-magnitude with preserved phase for stability of the complex logarithm
+        log_spectrum = _stable_complex_log(spectrum)
+        cepstrum = np.fft.ifft(log_spectrum)
         out[i] = (np.angle(cepstrum[-1]) / (2 * np.pi)) % 1.0
     return pd.Series(out, index=series.index)
 
@@ -203,12 +215,13 @@ def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Ser
         return None
     mode = str(mode).lower()
     window = int(getattr(args, "psi_window", getattr(args, "conc_window", 256)))
+    rv_window = int(getattr(args, "rv_window", 24))
     if window <= 0:
         return None
 
     if mode == "hilbert_rv":
         lr = np.log(df["close"] / df["close"].shift(1))
-        rv = lr.rolling(window=args.rv_window, min_periods=args.rv_window).std()
+        rv = lr.rolling(window=rv_window, min_periods=rv_window).std()
         rv_z = _rolling_zscore(rv, window)
         return _hilbert_phase(rv_z, window)
 
@@ -218,19 +231,19 @@ def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Ser
         return _hilbert_phase(pc1_z, window)
 
     if mode == "theta_phase":
-        theta_col = next(
-            (c for c in ["theta_coeff", "theta_coeffs", "theta_energy"] if c in df.columns),
-            None,
-        )
+        theta_col = next((c for c in THETA_COLUMN_NAMES if c in df.columns), None)
         if theta_col is None:
             return pd.Series(np.nan, index=df.index)
-        vals = df[theta_col].to_numpy(dtype=complex)
+        vals_raw = pd.to_numeric(df[theta_col], errors="coerce")
+        vals = np.asarray(vals_raw.to_numpy(), dtype=complex)
+        if np.isnan(vals_raw).all():
+            return pd.Series(np.nan, index=df.index)
         return pd.Series((np.angle(vals) / (2 * np.pi)) % 1.0, index=df.index)
 
     if mode == "cepstrum":
         lr = np.log(df["close"] / df["close"].shift(1))
-        rv = lr.rolling(window=args.rv_window, min_periods=args.rv_window).std()
-        log_rv = np.log(np.abs(rv) + 1e-12)
+        rv = lr.rolling(window=rv_window, min_periods=rv_window).std()
+        log_rv = np.log(np.abs(rv) + EPS_LOG)
         return _cepstral_phase(log_rv, window)
 
     raise ValueError(f"Unknown psi mode: {mode}")
@@ -494,7 +507,11 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="none",
         choices=["none", "hilbert_rv", "pca_hilbert", "theta_phase", "cepstrum"],
-        help="Optional internal phase ψ construction.",
+        help=(
+            "Internal phase ψ method: hilbert_rv (Hilbert of realized vol), "
+            "pca_hilbert (PCA then Hilbert), theta_phase (existing theta coefficients), "
+            "cepstrum (cepstral analysis), or none."
+        ),
     )
     parser.add_argument(
         "--psi-window",

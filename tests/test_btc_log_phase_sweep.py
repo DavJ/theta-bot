@@ -131,7 +131,7 @@ def test_hilbert_rv_psi_no_lookahead():
         }
     )
     df2 = df1.copy()
-    df2.loc[df2.index[-1], "close"] *= 5.0
+    df2.loc[df2.index[-1], "close"] *= 5.0  # perturb only the final point to ensure causality
     args = Namespace(
         base=10.0,
         conc_window=4,
