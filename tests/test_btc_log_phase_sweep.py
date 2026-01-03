@@ -9,6 +9,7 @@ from btc_log_phase_sweep import (
     build_candidate_series,
     build_targets,
     evaluate_candidate,
+    rolling_torus_concentration,
 )
 
 
@@ -69,3 +70,23 @@ def test_evaluate_candidate_returns_metrics_and_buckets():
     assert "ic_conc_y_vol" in res and res["ic_conc_y_vol"] is not None
     assert "bucket_counts" in res and sum(res["bucket_counts"].values()) == len(features)
     assert res["bucket_ratio"] >= 1.0
+
+
+def test_rolling_torus_concentration_range_and_basic_behavior():
+    # Perfectly aligned phases -> high concentration
+    n = 20
+    cos_s = np.ones(n)
+    sin_s = np.zeros(n)
+    cos_t = np.ones(n)
+    sin_t = np.zeros(n)
+    c = rolling_torus_concentration(cos_s, sin_s, cos_t, sin_t, window=10)
+    assert np.nanmax(c) <= 1.0 + 1e-9
+    assert np.nanmin(c[9:]) >= 0.99
+
+    # Random time circle should reduce concentration on average
+    rng = np.random.default_rng(0)
+    angles = rng.uniform(0, 2 * np.pi, size=n)
+    cos_t2 = np.cos(angles)
+    sin_t2 = np.sin(angles)
+    c2 = rolling_torus_concentration(cos_s, sin_s, cos_t2, sin_t2, window=10)
+    assert np.nanmean(c2[9:]) < 0.99
