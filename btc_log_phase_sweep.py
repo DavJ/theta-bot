@@ -226,14 +226,29 @@ def _stable_complex_log(spectrum: np.ndarray) -> np.ndarray:
     return np.log(np.abs(spectrum) + EPS_LOG) + 1j * np.angle(spectrum)
 
 
+def _extract_cepstrum_params(args: argparse.Namespace) -> tuple[int, float, int | None]:
+    min_bin = max(1, int(getattr(args, "cepstrum_min_bin", 2)))
+    max_frac = float(getattr(args, "cepstrum_max_frac", 0.25))
+    topk_raw = getattr(args, "cepstrum_topk", None)
+    if topk_raw is None:
+        topk: int | None = None
+    else:
+        try:
+            topk = int(topk_raw)
+        except (TypeError, ValueError) as e:
+            raise ValueError("--cepstrum-topk/--cepstrum_topk must be an integer or omitted.") from e
+        if topk < 1:
+            topk = None
+    return min_bin, max_frac, topk
+
+
 def _cepstral_phase(
     series: pd.Series, window: int, min_bin: int = 2, max_frac: float = 0.25, topk: int | None = None
 ) -> pd.Series:
     arr = series.to_numpy(dtype=float)
     n = len(arr)
     out = np.full(n, np.nan, dtype=float)
-    # ensure min_bin is non-negative
-    min_bin = max(0, int(min_bin))
+    min_bin = max(1, int(min_bin))
     max_frac = float(max_frac)
     for i in range(window - 1, n):
         window_arr = arr[i - window + 1 : i + 1]
@@ -242,17 +257,21 @@ def _cepstral_phase(
         spectrum = np.fft.fft(window_arr)
         log_mag = np.log(np.abs(spectrum) + EPS_LOG)
         cepstrum = np.fft.ifft(log_mag)
-        max_bin = min(int(window * max_frac), window // 2)
-        max_bin = max(max_bin, min_bin + 1)
+        candidate_max = min(int(window * max_frac), window // 2, len(cepstrum))
+        max_bin = max(candidate_max, min_bin + 1)
+        # clamp again after enforcing minimum to avoid overruns when min_bin is large
         max_bin = min(max_bin, len(cepstrum))
         if min_bin >= max_bin:
             continue
         candidate_slice = cepstrum[min_bin:max_bin]
         mags = np.abs(candidate_slice)
-        if topk is not None and topk > 1:
+        # When topk=1 or None, fall back to the single dominant bin
+        if topk is not None and topk >= 2:
             k = min(topk, len(candidate_slice))
             idxs = np.argpartition(mags, -k)[-k:]
-            combined = candidate_slice[idxs].sum()
+            angles = np.angle(candidate_slice[idxs])
+            weights = mags[idxs]
+            combined = np.sum(weights * np.exp(1j * angles))
             ang = float(np.angle(combined))
         else:
             best_idx = int(np.argmax(mags))
@@ -296,14 +315,7 @@ def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Ser
         lr = np.log(df["close"] / df["close"].shift(1))
         rv = lr.rolling(window=rv_window, min_periods=rv_window).std()
         log_rv = np.log(np.abs(rv) + EPS_LOG)
-        min_bin = int(getattr(args, "cepstrum_min_bin", 2))
-        max_frac = float(getattr(args, "cepstrum_max_frac", 0.25))
-        topk = getattr(args, "cepstrum_topk", None)
-        if topk is not None:
-            try:
-                topk = int(topk)
-            except (TypeError, ValueError):
-                topk = None
+        min_bin, max_frac, topk = _extract_cepstrum_params(args)
         return _cepstral_phase(log_rv, window, min_bin=min_bin, max_frac=max_frac, topk=topk)
 
     raise ValueError(f"Unknown psi mode: {mode}")
@@ -490,6 +502,7 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
         if not joined_s.empty:
             rank_scale = joined_s["concentration"].rank(pct=True, method="average")
             rank_int = joined_s["c_int"].rank(pct=True, method="average")
+            # Intentionally equal-weight blend of ranked scale concentration and internal-phase concentration (c_int)
             s_score = (rank_scale + rank_int) / 2.0
             metrics["ic_s_y_vol"] = s_score.corr(joined_s["y_vol"], method="spearman")
             s_bucket = _bucket_stats(s_score, joined_s["y_vol"])
