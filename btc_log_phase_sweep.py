@@ -161,8 +161,8 @@ def rolling_internal_concentration(
     """
     n = len(cos_phi)
     out = np.full(n, np.nan, dtype=float)
-    for i in range(window - 1, n):
-        lo = i - window + 1
+    for i in range(n):
+        lo = max(0, i - window + 1)
         has_nan = (
             np.isnan(cos_phi[lo : i + 1]).any()
             or np.isnan(sin_phi[lo : i + 1]).any()
@@ -492,7 +492,7 @@ def rank_candidates(results: Iterable[Dict[str, object]]) -> pd.DataFrame:
         table["abs_ic_torus_y_vol"] = table["ic_torus_y_vol"].abs()
         abs_cols.append(table["abs_ic_torus_y_vol"])
     if abs_cols:
-        table["abs_ic_best_y_vol"] = pd.concat(abs_cols, axis=1).max(axis=1)
+        table["abs_ic_best_y_vol"] = pd.concat(abs_cols, axis=1, ignore_index=True).max(axis=1)
         sort_cols = ["abs_ic_best_y_vol", "bucket_ratio"]
     return table.sort_values(by=sort_cols, ascending=False)
 
