@@ -73,6 +73,7 @@ def build_candidate_series(df: pd.DataFrame, name: str, args: argparse.Namespace
     elif name == "volume":
         series = df["volume"]
         if getattr(args, "volume_roll", 0):
+            # Optional rolling sum window for volume
             series = series.rolling(
                 window=args.volume_roll, min_periods=args.volume_roll
             ).sum()
@@ -131,7 +132,7 @@ def _bucket_stats(feature: pd.Series, target: pd.Series, buckets: int = 5) -> Di
     out["bucket_counts"] = counts.to_dict()
     out["bucket_means"] = means.to_dict()
     clean_means = means.dropna()
-    if clean_means.empty or clean_means.min() <= EPS_BUCKET:
+    if clean_means.empty or clean_means.min() < EPS_BUCKET:
         out["bucket_ratio"] = math.nan
     else:
         out["bucket_ratio"] = float(clean_means.max() / clean_means.min())
@@ -185,8 +186,8 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
     bucket_out = _bucket_stats(joined["concentration"], joined["y_vol"])
     metrics.update(bucket_out)
 
-    # Optional classification: top 20% vol (>= 80th percentile); higher concentration is expected
-    # to coincide with higher future volatility.
+    # Optional classification: top 20% vol (80th percentile threshold); higher concentration
+    # is expected to coincide with higher future volatility.
     try:
         threshold = joined["y_vol"].quantile(AUC_TOP_QUANTILE)
         y_class = (joined["y_vol"] >= threshold).astype(int)
@@ -255,7 +256,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ema-window", type=int, default=50)
     parser.add_argument("--target-window", type=int, default=24)
     parser.add_argument("--horizon", type=int, default=24)
-    parser.add_argument("--volume-roll", type=int, default=0, help="Rolling window for volume.")
+    parser.add_argument(
+        "--volume-roll", type=int, default=0, help="Rolling sum window for volume."
+    )
     parser.add_argument(
         "--candidates",
         type=str,
