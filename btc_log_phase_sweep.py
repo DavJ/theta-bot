@@ -147,6 +147,39 @@ def rolling_torus_concentration(
     return out
 
 
+def rolling_internal_concentration(
+    cos_phi: np.ndarray,
+    sin_phi: np.ndarray,
+    cos_psi: np.ndarray,
+    sin_psi: np.ndarray,
+    window: int = 256,
+) -> np.ndarray:
+    """Rolling mean resultant length for (phi, psi) on a torus embedded in R^4.
+
+    C_int = ||rolling_mean([cos φ, sin φ, cos ψ, sin ψ])|| / 2
+    which stays in [0, 1]. The 1/2 normalization follows the ψ integration
+    spec and differs from the time-phase torus scale (which uses √2).
+    """
+    n = len(cos_phi)
+    out = np.full(n, np.nan, dtype=float)
+    for i in range(n):
+        lo = max(0, i - window + 1)
+        has_nan = (
+            np.isnan(cos_phi[lo : i + 1]).any()
+            or np.isnan(sin_phi[lo : i + 1]).any()
+            or np.isnan(cos_psi[lo : i + 1]).any()
+            or np.isnan(sin_psi[lo : i + 1]).any()
+        )
+        if has_nan:
+            continue
+        m1 = np.mean(cos_phi[lo : i + 1])
+        m2 = np.mean(sin_phi[lo : i + 1])
+        m3 = np.mean(cos_psi[lo : i + 1])
+        m4 = np.mean(sin_psi[lo : i + 1])
+        out[i] = float(np.sqrt(m1 * m1 + m2 * m2 + m3 * m3 + m4 * m4) / 2.0)
+    return out
+
+
 def _rolling_zscore(series: pd.Series, window: int) -> pd.Series:
     mean = series.rolling(window=window, min_periods=window).mean()
     std = series.rolling(window=window, min_periods=window).std()
@@ -249,7 +282,9 @@ def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Ser
     raise ValueError(f"Unknown psi mode: {mode}")
 
 
-def compute_features(x: pd.Series, df: pd.DataFrame, args: argparse.Namespace) -> pd.DataFrame:
+def compute_features(
+    x: pd.Series, df: pd.DataFrame, args: argparse.Namespace, psi_series: pd.Series | None = None
+) -> pd.DataFrame:
     """Compute log-phase derived features for a candidate series.
 
     If a time-phase is enabled (args.time_phase_hours > 0), also compute a second
@@ -271,19 +306,18 @@ def compute_features(x: pd.Series, df: pd.DataFrame, args: argparse.Namespace) -
         index=x.index,
     )
 
-    psi_series = compute_internal_phase(df, args)
+    if psi_series is None:
+        psi_series = compute_internal_phase(df, args)
     has_psi = psi_series is not None and not psi_series.dropna().empty
     # Optional: add internal phase psi and torus concentration (phi, psi)
     if has_psi:
         psi_vals = psi_series.to_numpy(dtype=float)
         cos_psi, sin_psi = phase_embedding(psi_vals)
-        torus_conc = rolling_torus_concentration(
-            cos_phi, sin_phi, cos_psi, sin_psi, window=conc_window
-        )
+        torus_conc = rolling_internal_concentration(cos_phi, sin_phi, cos_psi, sin_psi, conc_window)
         out["psi"] = psi_vals
         out["cos_psi"] = cos_psi
         out["sin_psi"] = sin_psi
-        out["torus_concentration"] = torus_conc
+        out["c_int"] = torus_conc
     else:
         # Optional: add time-phase and torus concentration
         time_period_hours = float(getattr(args, "time_phase_hours", 0.0) or 0.0)
@@ -353,6 +387,13 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
         "bucket_ratio": math.nan,
         "bucket_monotonic": None,
         "auc_conc_y_vol": math.nan,
+        # Torus-internal (phi, psi) metrics when psi is enabled
+        "c_int_median": math.nan,
+        "c_int_p95": math.nan,
+        "ic_c_int_y_vol": math.nan,
+        "ic_c_int_y_absret": math.nan,
+        "c_int_bucket_ratio": math.nan,
+        "auc_c_int_y_vol": math.nan,
         # Optional torus (scale-phase × time-phase) metrics; present only when time-phase enabled.
         "torus_conc_median": math.nan,
         "torus_conc_p95": math.nan,
@@ -388,6 +429,27 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
     except (ValueError, TypeError):
         metrics["auc_conc_y_vol"] = math.nan
 
+    if "c_int" in features.columns:
+        joined_int = pd.concat([features[["c_int"]], targets], axis=1).dropna()
+        if not joined_int.empty:
+            metrics["c_int_median"] = float(joined_int["c_int"].median())
+            metrics["c_int_p95"] = float(joined_int["c_int"].quantile(0.95))
+            metrics["ic_c_int_y_vol"] = joined_int["c_int"].corr(
+                joined_int["y_vol"], method="spearman"
+            )
+            metrics["ic_c_int_y_absret"] = joined_int["c_int"].corr(
+                joined_int["y_absret"], method="spearman"
+            )
+            c_int_bucket = _bucket_stats(joined_int["c_int"], joined_int["y_vol"])
+            metrics["c_int_bucket_ratio"] = c_int_bucket.get("bucket_ratio", math.nan)
+            try:
+                threshold_int = joined_int["y_vol"].quantile(AUC_TOP_QUANTILE)
+                y_class_int = (joined_int["y_vol"] >= threshold_int).astype(int)
+                if y_class_int.nunique() > 1:
+                    metrics["auc_c_int_y_vol"] = roc_auc_score(y_class_int, joined_int["c_int"])
+            except (ValueError, TypeError):
+                metrics["auc_c_int_y_vol"] = math.nan
+
     # Optional torus concentration evaluation
     if "torus_concentration" in features.columns:
         joined2 = pd.concat([features[["torus_concentration"]], targets], axis=1).dropna()
@@ -422,11 +484,16 @@ def rank_candidates(results: Iterable[Dict[str, object]]) -> pd.DataFrame:
         return table
     table = table.copy()
     table["abs_ic_conc_y_vol"] = table["ic_conc_y_vol"].abs()
+    abs_cols = [table["abs_ic_conc_y_vol"]]
+    if "ic_c_int_y_vol" in table.columns:
+        table["abs_ic_c_int_y_vol"] = table["ic_c_int_y_vol"].abs()
+        abs_cols.append(table["abs_ic_c_int_y_vol"])
     if "ic_torus_y_vol" in table.columns:
         table["abs_ic_torus_y_vol"] = table["ic_torus_y_vol"].abs()
-        table["abs_ic_best_y_vol"] = table[["abs_ic_conc_y_vol", "abs_ic_torus_y_vol"]].max(axis=1)
-        return table.sort_values(by=["abs_ic_best_y_vol", "bucket_ratio"], ascending=False)
-    return table.sort_values(by=["abs_ic_conc_y_vol", "bucket_ratio"], ascending=False)
+        abs_cols.append(table["abs_ic_torus_y_vol"])
+    abs_df = pd.concat(abs_cols, axis=1, ignore_index=True)
+    table["abs_ic_best_y_vol"] = abs_df.max(axis=1)
+    return table.sort_values(by=["abs_ic_best_y_vol", "bucket_ratio"], ascending=False)
 
 
 def _plot_candidate(
@@ -453,7 +520,7 @@ def _plot_candidate(
         axes[1].set_title(f"Internal phase ψ - {candidate}")
 
     conc_ax = axes[1 + int(psi_present)]
-    if "torus_concentration" in features.columns:
+    if "c_int" in features.columns or "torus_concentration" in features.columns:
         conc_ax.plot(
             df["dt"],
             features["concentration"],
@@ -461,13 +528,22 @@ def _plot_candidate(
             linewidth=1.0,
             label="Scale conc",
         )
-        conc_ax.plot(
-            df["dt"],
-            features["torus_concentration"],
-            color="seagreen",
-            linewidth=1.0,
-            label="Torus conc",
-        )
+        if "c_int" in features.columns:
+            conc_ax.plot(
+                df["dt"],
+                features["c_int"],
+                color="seagreen",
+                linewidth=1.0,
+                label="C_int (φ, ψ)",
+            )
+        if "torus_concentration" in features.columns:
+            conc_ax.plot(
+                df["dt"],
+                features["torus_concentration"],
+                color="teal",
+                linewidth=1.0,
+                label="Torus conc",
+            )
         conc_ax.set_title(f"Rolling concentration {candidate} (scale vs torus)")
         conc_ax.legend()
     else:
@@ -566,12 +642,13 @@ def main() -> None:
     df = fetch_ohlcv_binance(
         symbol=args.symbol, timeframe=args.timeframe, limit_total=args.limit_total
     )
+    psi_series = compute_internal_phase(df, args)
     targets = build_targets(df, args)
     results = []
 
     for cand in _candidate_list(args):
         x = build_candidate_series(df, cand, args)
-        features = compute_features(x, df, args)
+        features = compute_features(x, df, args, psi_series=psi_series)
 
         metrics = evaluate_candidate(features, targets)
         metrics["candidate"] = cand
@@ -586,13 +663,20 @@ def main() -> None:
         metrics["backtest"] = bt_summary
         results.append(metrics)
 
-        extra = ""
+        extras: List[str] = []
+        if not math.isnan(metrics.get("ic_c_int_y_vol", math.nan)):
+            extras.append(
+                f" | C_int IC={metrics['ic_c_int_y_vol']:.3f}"
+                f" C_int ratio={metrics.get('c_int_bucket_ratio', math.nan):.3f}"
+                f" C_int AUC={metrics.get('auc_c_int_y_vol', math.nan):.3f}"
+            )
         if not math.isnan(metrics.get("ic_torus_y_vol", math.nan)):
-            extra = (
+            extras.append(
                 f" | Torus IC={metrics['ic_torus_y_vol']:.3f}"
                 f" Torus ratio={metrics.get('torus_bucket_ratio', math.nan):.3f}"
                 f" Torus AUC={metrics.get('auc_torus_y_vol', math.nan):.3f}"
             )
+        extra = "".join(extras)
         print(
             f"[{cand}] KS={metrics['ks_stat']:.3f}/{metrics['ks_p']:.3f} "
             f"IC(C,y_vol)={metrics['ic_conc_y_vol']:.3f} "
@@ -615,6 +699,15 @@ def main() -> None:
             "conc_median",
             "conc_p95",
         ]
+        if "ic_c_int_y_vol" in ranked.columns and not ranked["ic_c_int_y_vol"].isna().all():
+            cols += [
+                "ic_c_int_y_vol",
+                "ic_c_int_y_absret",
+                "c_int_bucket_ratio",
+                "auc_c_int_y_vol",
+                "c_int_median",
+                "c_int_p95",
+            ]
         if "ic_torus_y_vol" in ranked.columns and not ranked["ic_torus_y_vol"].isna().all():
             cols += [
                 "ic_torus_y_vol",
