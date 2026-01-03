@@ -8,6 +8,8 @@ import pytest
 from btc_log_phase_sweep import (
     build_candidate_series,
     build_targets,
+    compute_features,
+    compute_internal_phase,
     evaluate_candidate,
     rolling_torus_concentration,
 )
@@ -90,3 +92,112 @@ def test_rolling_torus_concentration_range_and_basic_behavior():
     sin_t2 = np.sin(angles)
     c2 = rolling_torus_concentration(cos_s, sin_s, cos_t2, sin_t2, window=10)
     assert np.nanmean(c2[9:]) < 0.99
+
+
+def test_hilbert_rv_psi_within_unit_interval():
+    idx = pd.date_range("2024-01-01", periods=12, freq="h")
+    close = np.array([100.0, 102.0, 101.0, 105.0, 110.0, 108.0, 112.0, 115.0, 117.0, 120.0, 118.0, 121.0])
+    df = pd.DataFrame(
+        {
+            "close": close,
+            "high": close + 1.0,
+            "low": close - 1.0,
+            "volume": np.linspace(1.0, 2.0, len(idx)),
+            "dt": idx,
+        }
+    )
+    args = Namespace(
+        base=10.0,
+        conc_window=4,
+        rv_window=3,
+        psi_mode="hilbert_rv",
+        psi_window=4,
+    )
+    features = compute_features(df["close"], df, args)
+    psi_vals = features["psi"].dropna()
+    assert not psi_vals.empty
+    assert ((psi_vals >= 0.0) & (psi_vals < 1.0)).all()
+
+
+def test_hilbert_rv_psi_no_lookahead():
+    idx = pd.date_range("2024-01-01", periods=12, freq="h")
+    close = np.array([100.0, 102.0, 101.0, 105.0, 110.0, 108.0, 112.0, 115.0, 117.0, 120.0, 118.0, 121.0])
+    df1 = pd.DataFrame(
+        {
+            "close": close,
+            "high": close + 1.0,
+            "low": close - 1.0,
+            "volume": np.linspace(1.0, 2.0, len(idx)),
+            "dt": idx,
+        }
+    )
+    df2 = df1.copy()
+    df2.loc[df2.index[-1], "close"] *= 5.0  # perturb only the final point to ensure causality
+    args = Namespace(
+        base=10.0,
+        conc_window=4,
+        rv_window=3,
+        psi_mode="hilbert_rv",
+        psi_window=4,
+    )
+    features1 = compute_features(df1["close"], df1, args)
+    features2 = compute_features(df2["close"], df2, args)
+    compare_idx = len(idx) - 2
+    v1 = features1["psi"].iloc[compare_idx]
+    v2 = features2["psi"].iloc[compare_idx]
+    assert math.isfinite(v1)
+    assert v1 == pytest.approx(v2)
+
+
+def test_c_int_computed_when_psi_enabled():
+    idx = pd.date_range("2024-01-01", periods=16, freq="h")
+    close = np.linspace(100.0, 120.0, len(idx))
+    df = pd.DataFrame(
+        {
+            "close": close,
+            "high": close + 1.0,
+            "low": close - 1.0,
+            "volume": np.linspace(1.0, 2.0, len(idx)),
+            "dt": idx,
+        }
+    )
+    args = Namespace(base=10.0, conc_window=4, rv_window=3, psi_mode="hilbert_rv", psi_window=4)
+    psi = compute_internal_phase(df, args)
+    features = compute_features(df["close"], df, args, psi_series=psi)
+    assert "c_int" in features.columns
+    c_int_vals = features["c_int"].dropna()
+    assert not c_int_vals.empty
+    assert ((c_int_vals >= 0.0) & (c_int_vals <= 1.0)).all()
+
+
+def test_different_psi_modes_produce_different_series():
+    idx = pd.date_range("2024-01-01", periods=20, freq="h")
+    close = np.sin(np.linspace(0, 4 * np.pi, len(idx))) * 5 + 100.0
+    df = pd.DataFrame(
+        {
+            "close": close,
+            "high": close + 1.0,
+            "low": close - 1.0,
+            "volume": np.linspace(1.0, 2.0, len(idx)),
+            "dt": idx,
+        }
+    )
+    args_hilbert = Namespace(
+        base=10.0,
+        conc_window=4,
+        rv_window=3,
+        psi_mode="hilbert_rv",
+        psi_window=4,
+    )
+    args_cepstrum = Namespace(
+        base=10.0,
+        conc_window=4,
+        rv_window=3,
+        psi_mode="cepstrum",
+        psi_window=4,
+    )
+    psi_hilbert = compute_internal_phase(df, args_hilbert)
+    psi_cepstrum = compute_internal_phase(df, args_cepstrum)
+    overlap_idx = psi_hilbert.dropna().index.intersection(psi_cepstrum.dropna().index)
+    assert not overlap_idx.empty
+    assert not np.allclose(psi_hilbert.loc[overlap_idx], psi_cepstrum.loc[overlap_idx])
