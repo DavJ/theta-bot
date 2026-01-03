@@ -35,7 +35,7 @@ DEFAULT_CANDIDATES = [
 ]
 
 EPS_BUCKET = 1e-12
-AUC_TOP_QUANTILE = 0.8
+AUC_TOP_QUANTILE = 0.8  # 80th percentile threshold (top 20%)
 
 
 def _fmt_three(x: float) -> str:
