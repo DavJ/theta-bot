@@ -205,11 +205,40 @@ python -m theta_bot_averaging.validation.walkforward configs/dual_stream_example
 
 **Configuration Parameters:**
 - `model_type: "dual_stream"` - Enable dual-stream architecture
+- `signal_mode: "threshold"` - Signal generation mode (default: "threshold")
+  - `"threshold"`: Fixed bps thresholds for long/short signals (default)
+  - `"quantile"`: Quantile-based signals (95th percentile long, 5th percentile short per fold)
 - `theta_window: 48` - Rolling window for theta basis (48 hours recommended)
 - `theta_q: 0.9` - Theta basis decay parameter
 - `theta_terms: 8` - Number of theta coefficients
 - `mellin_k: 16` - Mellin frequency samples
 - `torch_epochs: 50` - Training epochs (if PyTorch available)
+
+**Signal Generation Modes:**
+
+The system supports two signal generation modes for evaluation:
+
+1. **Threshold Mode (Default)**: Uses fixed bps thresholds
+   - Long signal: `predicted_return > threshold_bps / 10000`
+   - Short signal: `predicted_return < -threshold_bps / 10000`
+   - Neutral: otherwise
+
+2. **Quantile Mode (Evaluation Only)**: Ranks predictions per fold
+   - Long signal: `predicted_return > 95th percentile`
+   - Short signal: `predicted_return < 5th percentile`
+   - Neutral: otherwise
+   - Purpose: Tests whether model can rank opportunities independent of absolute magnitudes
+
+To use quantile mode, set `signal_mode: "quantile"` in your config YAML or use `--signal-mode quantile` with evaluation scripts.
+
+**Example:**
+```bash
+# Evaluate with quantile-based signals
+python evaluate_dual_stream_predictivity.py --signal-mode quantile
+
+# Or use a config file
+python scripts/run_walkforward.py --config configs/dual_stream_quantile.yaml
+```
 
 **Key Features:**
 - **No Lookahead**: Strict causal feature extraction (validated by tests)

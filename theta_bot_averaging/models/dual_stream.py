@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from .baseline import BaselineModel, PredictedOutput
+from theta_bot_averaging.utils import SignalMode, generate_signals
 
 
 class DualStreamModel:
@@ -31,6 +32,7 @@ class DualStreamModel:
         self,
         positive_threshold: float = 0.0005,
         negative_threshold: float = -0.0005,
+        signal_mode: SignalMode = "threshold",
         random_state: int = 42,
         device: str = "cpu",
         epochs: int = 50,
@@ -50,6 +52,8 @@ class DualStreamModel:
             Threshold for positive trading signal (buy)
         negative_threshold : float
             Threshold for negative trading signal (sell)
+        signal_mode : SignalMode
+            Signal generation mode: "threshold" or "quantile"
         random_state : int
             Random seed for reproducibility
         device : str
@@ -71,6 +75,7 @@ class DualStreamModel:
         """
         self.positive_threshold = positive_threshold
         self.negative_threshold = negative_threshold
+        self.signal_mode = signal_mode
         self.random_state = random_state
         self.device = device
         self.epochs = epochs
@@ -246,9 +251,12 @@ class DualStreamModel:
         )
 
         # Generate signal from thresholds
-        signal = pd.Series(0, index=index)
-        signal[expected_return > self.positive_threshold] = 1
-        signal[expected_return < self.negative_threshold] = -1
+        signal = generate_signals(
+            expected_return,
+            mode=self.signal_mode,
+            positive_threshold=self.positive_threshold,
+            negative_threshold=self.negative_threshold,
+        )
 
         return PredictedOutput(
             predicted_return=expected_return, signal=signal, probabilities=proba_df
@@ -287,6 +295,7 @@ class DualStreamModel:
             mode="logit",
             positive_threshold=self.positive_threshold,
             negative_threshold=self.negative_threshold,
+            signal_mode=self.signal_mode,
             random_state=self.random_state,
         )
         self._fallback_model.fit(X_df, y_series, future_return=future_return_series)
@@ -395,6 +404,38 @@ class DualStreamModel:
         self.class_mean_returns = self._default_class_mean_returns()
         for cls, val in means.items():
             self.class_mean_returns[int(cls)] = float(val)
+        
+        # Sanity check: class mean returns should satisfy mu[-1] < mu[0] < mu[+1]
+        # This ensures that labels are correctly aligned with future returns
+        mu_neg = self.class_mean_returns.get(-1)
+        mu_zero = self.class_mean_returns.get(0)
+        mu_pos = self.class_mean_returns.get(1)
+        
+        violations = []
+        if mu_neg is not None and mu_zero is not None and mu_neg >= mu_zero:
+            violations.append(f"mu[-1]={mu_neg:.6f} >= mu[0]={mu_zero:.6f}")
+        if mu_zero is not None and mu_pos is not None and mu_zero >= mu_pos:
+            violations.append(f"mu[0]={mu_zero:.6f} >= mu[+1]={mu_pos:.6f}")
+        if mu_neg is not None and mu_pos is not None and mu_neg >= mu_pos:
+            violations.append(f"mu[-1]={mu_neg:.6f} >= mu[+1]={mu_pos:.6f}")
+        
+        if violations:
+            print("\n" + "=" * 70)
+            print("⚠️  WARNING: Class mean return ordering violation detected!")
+            print("=" * 70)
+            print("Expected: mu[-1] < mu[0] < mu[+1]")
+            print(f"Actual: mu[-1]={mu_neg}, mu[0]={mu_zero}, mu[+1]={mu_pos}")
+            print("\nViolations:")
+            for v in violations:
+                print(f"  - {v}")
+            print("\nThis indicates a potential issue with:")
+            print("  1. Label construction (sign inversion)")
+            print("  2. Future return computation (wrong direction)")
+            print("  3. Data quality (unrealistic or corrupted)")
+            print("\nSample of (future_return, label) pairs for inspection:")
+            sample = df[["future_return", "label"]].head(20)
+            print(sample.to_string())
+            print("=" * 70 + "\n")
 
     @staticmethod
     def _default_class_mean_returns() -> Dict[int, float]:

@@ -65,7 +65,7 @@ def evaluate_baseline(
     threshold_bps: float,
     fee_rate: float = 0.0004,
     fast_mode: bool = False,
-) -> Tuple[pd.DataFrame, Dict, List[Dict], Dict]:
+) -> Tuple[pd.DataFrame, Dict, List[Dict], Dict, Dict]:
     """
     Evaluate baseline model using walk-forward validation.
     
@@ -74,6 +74,7 @@ def evaluate_baseline(
         aggregate_metrics: Aggregated metrics across folds
         fold_metrics: List of per-fold metrics
         timing_stats: Dict with timing information
+        avg_training_class_means: Average training class means across folds
     """
     print("\n" + "=" * 70)
     print("BASELINE MODEL EVALUATION")
@@ -102,6 +103,7 @@ def evaluate_baseline(
     
     all_predictions = []
     all_metrics = []
+    all_training_class_means = []  # Store training class means from each fold
     
     t_train_start = time.perf_counter()
     for fold_num, (train_idx, test_idx) in enumerate(splitter.split(features.index), 1):
@@ -120,6 +122,10 @@ def evaluate_baseline(
             max_iter=200,
         )
         model.fit(X_train, y_train, future_return=future_returns.iloc[train_idx])
+        
+        # Store training class mean returns
+        all_training_class_means.append(model.class_mean_returns.copy())
+        
         preds = model.predict(X_test)
         
         fold_df = pd.DataFrame(
@@ -157,13 +163,22 @@ def evaluate_baseline(
     pred_std = predictions_df["predicted_return"].std()
     print(f"    std(predicted_return) = {pred_std:.6f}")
     
-    # Class distribution
+    # Signal distribution (predicted)
     class_counts = predictions_df["signal"].value_counts().sort_index()
-    print(f"    Signal distribution: {dict(class_counts)}")
+    print(f"    Predicted signal distribution: {dict(class_counts)}")
     
-    # Class mean returns
+    # Training class mean returns (what the model learned)
+    print(f"    Training class mean returns (learned from labels):")
+    avg_training_means = {}
+    for cls in [-1, 0, 1]:
+        vals = [fold_means.get(cls, 0.0) for fold_means in all_training_class_means if cls in fold_means]
+        if vals:
+            avg_training_means[cls] = np.mean(vals)
+            print(f"      label={cls:+2d}: {avg_training_means[cls]:+.6f}")
+    
+    # Test set mean returns by predicted signal (for comparison)
     class_means = predictions_df.groupby("signal")["future_return"].mean()
-    print(f"    Class mean returns:")
+    print(f"    Test set mean returns by predicted signal:")
     for cls in [-1, 0, 1]:
         if cls in class_means.index:
             print(f"      signal={cls:+2d}: {class_means[cls]:+.6f}")
@@ -177,7 +192,14 @@ def evaluate_baseline(
     
     print(f"  ✓ Completed {len(all_metrics)} folds")
     
-    return predictions_df, aggregate_metrics, all_metrics, timing_stats
+    # Compute average training class means across folds
+    avg_training_means = {}
+    for cls in [-1, 0, 1]:
+        vals = [fold_means.get(cls, 0.0) for fold_means in all_training_class_means if cls in fold_means]
+        if vals:
+            avg_training_means[cls] = float(np.mean(vals))
+    
+    return predictions_df, aggregate_metrics, all_metrics, timing_stats, avg_training_means
 
 
 def evaluate_dual_stream(
@@ -196,7 +218,7 @@ def evaluate_dual_stream(
     torch_lr: float = 1e-3,
     fee_rate: float = 0.0004,
     fast_mode: bool = False,
-) -> Tuple[pd.DataFrame, Dict, List[Dict], Dict]:
+) -> Tuple[pd.DataFrame, Dict, List[Dict], Dict, Dict]:
     """
     Evaluate dual-stream model using walk-forward validation.
     
@@ -205,6 +227,7 @@ def evaluate_dual_stream(
         aggregate_metrics: Aggregated metrics across folds
         fold_metrics: List of per-fold metrics
         timing_stats: Dict with timing information
+        avg_training_class_means: Average training class means across folds
     """
     print("\n" + "=" * 70)
     print("DUAL-STREAM MODEL EVALUATION")
@@ -257,6 +280,7 @@ def evaluate_dual_stream(
     
     all_predictions = []
     all_metrics = []
+    all_training_class_means = []  # Store training class means from each fold
     
     t_train_start = time.perf_counter()
     for fold_num, (train_idx, test_idx) in enumerate(splitter.split(index), 1):
@@ -282,6 +306,10 @@ def evaluate_dual_stream(
             lr=torch_lr,
         )
         model.fit(X_theta_train, X_mellin_train, y_train, future_return=future_return_train)
+        
+        # Store training class mean returns
+        all_training_class_means.append(model.class_mean_returns.copy())
+        
         preds = model.predict(X_theta_test, X_mellin_test, test_index)
         
         fold_df = pd.DataFrame(
@@ -319,13 +347,22 @@ def evaluate_dual_stream(
     pred_std = predictions_df["predicted_return"].std()
     print(f"    std(predicted_return) = {pred_std:.6f}")
     
-    # Class distribution
+    # Signal distribution (predicted)
     class_counts = predictions_df["signal"].value_counts().sort_index()
-    print(f"    Signal distribution: {dict(class_counts)}")
+    print(f"    Predicted signal distribution: {dict(class_counts)}")
     
-    # Class mean returns
+    # Training class mean returns (what the model learned)
+    print(f"    Training class mean returns (learned from labels):")
+    avg_training_means = {}
+    for cls in [-1, 0, 1]:
+        vals = [fold_means.get(cls, 0.0) for fold_means in all_training_class_means if cls in fold_means]
+        if vals:
+            avg_training_means[cls] = np.mean(vals)
+            print(f"      label={cls:+2d}: {avg_training_means[cls]:+.6f}")
+    
+    # Test set mean returns by predicted signal (for comparison)
     class_means = predictions_df.groupby("signal")["future_return"].mean()
-    print(f"    Class mean returns:")
+    print(f"    Test set mean returns by predicted signal:")
     for cls in [-1, 0, 1]:
         if cls in class_means.index:
             print(f"      signal={cls:+2d}: {class_means[cls]:+.6f}")
@@ -339,7 +376,14 @@ def evaluate_dual_stream(
     
     print(f"  ✓ Completed {len(all_metrics)} folds")
     
-    return predictions_df, aggregate_metrics, all_metrics, timing_stats
+    # Compute average training class means across folds
+    avg_training_means = {}
+    for cls in [-1, 0, 1]:
+        vals = [fold_means.get(cls, 0.0) for fold_means in all_training_class_means if cls in fold_means]
+        if vals:
+            avg_training_means[cls] = float(np.mean(vals))
+    
+    return predictions_df, aggregate_metrics, all_metrics, timing_stats, avg_training_means
 
 
 def compute_predictive_metrics(predictions: pd.DataFrame) -> Dict:
@@ -384,6 +428,8 @@ def generate_report(
     data_sanity_stats: Dict = None,
     baseline_timing: Dict = None,
     dual_stream_timing: Dict = None,
+    baseline_training_means: Dict = None,
+    dual_stream_training_means: Dict = None,
     fast_mode: bool = False,
 ) -> None:
     """Generate markdown report comparing baseline and dual-stream models."""
@@ -519,10 +565,18 @@ def generate_report(
     
     report += f"**Baseline Model:**\n"
     report += f"- predicted_return_std: {baseline_pred_std:.6f}\n"
-    report += f"- Signal distribution: {baseline_signal_counts}\n"
+    report += f"- Predicted signal distribution: {baseline_signal_counts}\n"
     
+    # Training class means (what the model learned)
+    if baseline_training_means:
+        report += f"- Training class mean returns (learned from labels):\n"
+        for cls in [-1, 0, 1]:
+            if cls in baseline_training_means:
+                report += f"  - label={cls:+2d}: {baseline_training_means[cls]:+.6f}\n"
+    
+    # Test set mean returns by predicted signal (for comparison)
     baseline_class_means = baseline_preds.groupby("signal")["future_return"].mean().to_dict()
-    report += f"- Class mean returns:\n"
+    report += f"- Test set mean returns by predicted signal:\n"
     for cls in [-1, 0, 1]:
         if cls in baseline_class_means:
             report += f"  - signal={cls:+2d}: {baseline_class_means[cls]:+.6f}\n"
@@ -532,10 +586,18 @@ def generate_report(
     
     report += f"\n**Dual-Stream Model:**\n"
     report += f"- predicted_return_std: {dual_stream_pred_std:.6f}\n"
-    report += f"- Signal distribution: {dual_stream_signal_counts}\n"
+    report += f"- Predicted signal distribution: {dual_stream_signal_counts}\n"
     
+    # Training class means (what the model learned)
+    if dual_stream_training_means:
+        report += f"- Training class mean returns (learned from labels):\n"
+        for cls in [-1, 0, 1]:
+            if cls in dual_stream_training_means:
+                report += f"  - label={cls:+2d}: {dual_stream_training_means[cls]:+.6f}\n"
+    
+    # Test set mean returns by predicted signal (for comparison)
     dual_stream_class_means = dual_stream_preds.groupby("signal")["future_return"].mean().to_dict()
-    report += f"- Class mean returns:\n"
+    report += f"- Test set mean returns by predicted signal:\n"
     for cls in [-1, 0, 1]:
         if cls in dual_stream_class_means:
             report += f"  - signal={cls:+2d}: {dual_stream_class_means[cls]:+.6f}\n"
@@ -747,7 +809,7 @@ def main():
     print("=" * 70 + "\n")
     
     # Evaluate baseline
-    baseline_preds, baseline_metrics, _, baseline_timing = evaluate_baseline(
+    baseline_preds, baseline_metrics, _, baseline_timing, baseline_training_means = evaluate_baseline(
         df_targets=df_targets,
         n_splits=config["n_splits"],
         horizon=config["horizon"],
@@ -757,7 +819,7 @@ def main():
     )
     
     # Evaluate dual-stream
-    dual_stream_preds, dual_stream_metrics, _, dual_stream_timing = evaluate_dual_stream(
+    dual_stream_preds, dual_stream_metrics, _, dual_stream_timing, dual_stream_training_means = evaluate_dual_stream(
         df_targets=df_targets,
         n_splits=config["n_splits"],
         horizon=config["horizon"],
@@ -790,6 +852,8 @@ def main():
         data_sanity_stats=data_sanity_stats,
         baseline_timing=baseline_timing,
         dual_stream_timing=dual_stream_timing,
+        baseline_training_means=baseline_training_means,
+        dual_stream_training_means=dual_stream_training_means,
         fast_mode=args.fast,
     )
     

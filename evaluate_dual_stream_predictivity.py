@@ -151,7 +151,7 @@ def compute_correlation_and_metrics(predictions_df):
     }
 
 
-def run_evaluation(n_samples=500, n_splits=3, output_dir='evaluation_results'):
+def run_evaluation(n_samples=500, n_splits=3, output_dir='evaluation_results', signal_mode='threshold'):
     """
     Run evaluation comparing dual-stream and baseline models.
     
@@ -159,6 +159,7 @@ def run_evaluation(n_samples=500, n_splits=3, output_dir='evaluation_results'):
         n_samples: Number of samples
         n_splits: Number of walk-forward splits
         output_dir: Directory for results
+        signal_mode: Signal generation mode ('threshold' or 'quantile')
     
     Returns:
         Dictionary with comparison results
@@ -189,6 +190,7 @@ def run_evaluation(n_samples=500, n_splits=3, output_dir='evaluation_results'):
             'horizon': 1,
             'threshold_bps': 10.0,
             'model_type': model_type,
+            'signal_mode': signal_mode,
             'fee_rate': 0.0004,
             'slippage_bps': 1.0,
             'spread_bps': 0.5,
@@ -362,6 +364,9 @@ def main():
                         help='Walk-forward splits (default: 3)')
     parser.add_argument('--output-dir', default='evaluation_results',
                         help='Output directory (default: evaluation_results)')
+    parser.add_argument('--signal-mode', choices=['threshold', 'quantile'], 
+                        default='threshold',
+                        help='Signal generation mode: threshold (fixed bps) or quantile (percentile-based)')
     
     args = parser.parse_args()
     
@@ -374,6 +379,7 @@ Configuration:
   Data Type:     Synthetic (realistic market characteristics)
   Samples:       {args.n_samples}
   Splits:        {args.n_splits}
+  Signal Mode:   {args.signal_mode}
   Output:        {args.output_dir}
 
 This script will:
@@ -388,7 +394,8 @@ This script will:
     results = run_evaluation(
         n_samples=args.n_samples,
         n_splits=args.n_splits,
-        output_dir=args.output_dir
+        output_dir=args.output_dir,
+        signal_mode=args.signal_mode,
     )
     
     if results:
