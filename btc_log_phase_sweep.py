@@ -485,18 +485,15 @@ def rank_candidates(results: Iterable[Dict[str, object]]) -> pd.DataFrame:
     table = table.copy()
     table["abs_ic_conc_y_vol"] = table["ic_conc_y_vol"].abs()
     abs_cols = [table["abs_ic_conc_y_vol"]]
-    sort_cols = ["abs_ic_conc_y_vol", "bucket_ratio"]
     if "ic_c_int_y_vol" in table.columns:
         table["abs_ic_c_int_y_vol"] = table["ic_c_int_y_vol"].abs()
         abs_cols.append(table["abs_ic_c_int_y_vol"])
     if "ic_torus_y_vol" in table.columns:
         table["abs_ic_torus_y_vol"] = table["ic_torus_y_vol"].abs()
         abs_cols.append(table["abs_ic_torus_y_vol"])
-    if abs_cols:
-        abs_df = pd.DataFrame(abs_cols).T
-        table["abs_ic_best_y_vol"] = abs_df.max(axis=1)
-        sort_cols = ["abs_ic_best_y_vol", "bucket_ratio"]
-    return table.sort_values(by=sort_cols, ascending=False)
+    abs_df = pd.concat(abs_cols, axis=1, ignore_index=True)
+    table["abs_ic_best_y_vol"] = abs_df.max(axis=1)
+    return table.sort_values(by=["abs_ic_best_y_vol", "bucket_ratio"], ascending=False)
 
 
 def _plot_candidate(
@@ -666,20 +663,20 @@ def main() -> None:
         metrics["backtest"] = bt_summary
         results.append(metrics)
 
-        extra = ""
+        extras: List[str] = []
         if not math.isnan(metrics.get("ic_c_int_y_vol", math.nan)):
-            extra = (
+            extras.append(
                 f" | C_int IC={metrics['ic_c_int_y_vol']:.3f}"
                 f" C_int ratio={metrics.get('c_int_bucket_ratio', math.nan):.3f}"
                 f" C_int AUC={metrics.get('auc_c_int_y_vol', math.nan):.3f}"
             )
         if not math.isnan(metrics.get("ic_torus_y_vol", math.nan)):
-            extra = (
-                extra
-                + f" | Torus IC={metrics['ic_torus_y_vol']:.3f}"
+            extras.append(
+                f" | Torus IC={metrics['ic_torus_y_vol']:.3f}"
                 f" Torus ratio={metrics.get('torus_bucket_ratio', math.nan):.3f}"
                 f" Torus AUC={metrics.get('auc_torus_y_vol', math.nan):.3f}"
             )
+        extra = "".join(extras)
         print(
             f"[{cand}] KS={metrics['ks_stat']:.3f}/{metrics['ks_p']:.3f} "
             f"IC(C,y_vol)={metrics['ic_conc_y_vol']:.3f} "
