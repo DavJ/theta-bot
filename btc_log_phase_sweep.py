@@ -226,19 +226,57 @@ def _stable_complex_log(spectrum: np.ndarray) -> np.ndarray:
     return np.log(np.abs(spectrum) + EPS_LOG) + 1j * np.angle(spectrum)
 
 
-def _cepstral_phase(series: pd.Series, window: int) -> pd.Series:
+def _extract_cepstrum_params(args: argparse.Namespace) -> tuple[int, float, int | None]:
+    min_bin = max(1, int(getattr(args, "cepstrum_min_bin", 2)))
+    max_frac = float(getattr(args, "cepstrum_max_frac", 0.25))
+    topk_raw = getattr(args, "cepstrum_topk", None)
+    if topk_raw is None:
+        topk: int | None = None
+    else:
+        try:
+            topk = int(topk_raw)
+        except (TypeError, ValueError) as e:
+            raise ValueError("--cepstrum-topk/--cepstrum_topk must be an integer or omitted.") from e
+        if topk < 1:
+            topk = None
+    return min_bin, max_frac, topk
+
+
+def _cepstral_phase(
+    series: pd.Series, window: int, min_bin: int = 2, max_frac: float = 0.25, topk: int | None = None
+) -> pd.Series:
     arr = series.to_numpy(dtype=float)
     n = len(arr)
     out = np.full(n, np.nan, dtype=float)
+    min_bin = max(1, int(min_bin))
+    max_frac = float(max_frac)
     for i in range(window - 1, n):
         window_arr = arr[i - window + 1 : i + 1]
         if np.isnan(window_arr).any():
             continue
         spectrum = np.fft.fft(window_arr)
-        # Use log-magnitude with preserved phase for stability of the complex logarithm
-        log_spectrum = _stable_complex_log(spectrum)
-        cepstrum = np.fft.ifft(log_spectrum)
-        out[i] = (np.angle(cepstrum[-1]) / (2 * np.pi)) % 1.0
+        log_mag = np.log(np.abs(spectrum) + EPS_LOG)
+        cepstrum = np.fft.ifft(log_mag)
+        candidate_max = min(int(window * max_frac), window // 2, len(cepstrum))
+        max_bin = max(candidate_max, min_bin + 1)
+        # clamp again after enforcing minimum to avoid overruns when min_bin is large
+        max_bin = min(max_bin, len(cepstrum))
+        if min_bin >= max_bin:
+            continue
+        candidate_slice = cepstrum[min_bin:max_bin]
+        mags = np.abs(candidate_slice)
+        # When topk=1 or None, fall back to the single dominant bin
+        if topk is not None and topk >= 2:
+            k = min(topk, len(candidate_slice))
+            idxs = np.argpartition(mags, -k)[-k:]
+            angles = np.angle(candidate_slice[idxs])
+            weights = mags[idxs]
+            combined = np.sum(weights * np.exp(1j * angles))
+            ang = float(np.angle(combined))
+        else:
+            best_idx = int(np.argmax(mags))
+            ang = float(np.angle(candidate_slice[best_idx]))
+        out[i] = (ang / (2 * np.pi)) % 1.0
     return pd.Series(out, index=series.index)
 
 
@@ -277,7 +315,8 @@ def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Ser
         lr = np.log(df["close"] / df["close"].shift(1))
         rv = lr.rolling(window=rv_window, min_periods=rv_window).std()
         log_rv = np.log(np.abs(rv) + EPS_LOG)
-        return _cepstral_phase(log_rv, window)
+        min_bin, max_frac, topk = _extract_cepstrum_params(args)
+        return _cepstral_phase(log_rv, window, min_bin=min_bin, max_frac=max_frac, topk=topk)
 
     raise ValueError(f"Unknown psi mode: {mode}")
 
@@ -394,6 +433,12 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
         "ic_c_int_y_absret": math.nan,
         "c_int_bucket_ratio": math.nan,
         "auc_c_int_y_vol": math.nan,
+        # Ensemble score S = mean(rank(C_scale), rank(C_int))
+        "ic_s_y_vol": math.nan,
+        "s_bucket_counts": {},
+        "s_bucket_means": {},
+        "s_bucket_ratio": math.nan,
+        "auc_s_y_vol": math.nan,
         # Optional torus (scale-phase × time-phase) metrics; present only when time-phase enabled.
         "torus_conc_median": math.nan,
         "torus_conc_p95": math.nan,
@@ -449,6 +494,28 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
                     metrics["auc_c_int_y_vol"] = roc_auc_score(y_class_int, joined_int["c_int"])
             except (ValueError, TypeError):
                 metrics["auc_c_int_y_vol"] = math.nan
+    if "c_int" in features.columns and "concentration" in features.columns:
+        joined_s = pd.concat(
+            [features[["concentration", "c_int"]], targets],
+            axis=1,
+        ).dropna()
+        if not joined_s.empty:
+            rank_scale = joined_s["concentration"].rank(pct=True, method="average")
+            rank_int = joined_s["c_int"].rank(pct=True, method="average")
+            # Intentionally equal-weight blend of ranked scale concentration and internal-phase concentration (c_int)
+            s_score = (rank_scale + rank_int) / 2.0
+            metrics["ic_s_y_vol"] = s_score.corr(joined_s["y_vol"], method="spearman")
+            s_bucket = _bucket_stats(s_score, joined_s["y_vol"])
+            metrics["s_bucket_counts"] = s_bucket.get("bucket_counts", {})
+            metrics["s_bucket_means"] = s_bucket.get("bucket_means", {})
+            metrics["s_bucket_ratio"] = s_bucket.get("bucket_ratio", math.nan)
+            try:
+                threshold_s = joined_s["y_vol"].quantile(AUC_TOP_QUANTILE)
+                y_class_s = (joined_s["y_vol"] >= threshold_s).astype(int)
+                if y_class_s.nunique() > 1:
+                    metrics["auc_s_y_vol"] = roc_auc_score(y_class_s, s_score)
+            except (ValueError, TypeError):
+                metrics["auc_s_y_vol"] = math.nan
 
     # Optional torus concentration evaluation
     if "torus_concentration" in features.columns:
@@ -595,6 +662,24 @@ def parse_args() -> argparse.Namespace:
         default=256,
         help="Rolling window for ψ estimation (Hilbert/PCA/Cepstrum).",
     )
+    parser.add_argument(
+        "--cepstrum-min-bin",
+        type=int,
+        default=2,
+        help="Minimum quefrency bin (exclusive of DC) considered for cepstral ψ.",
+    )
+    parser.add_argument(
+        "--cepstrum-max-frac",
+        type=float,
+        default=0.25,
+        help="Maximum fraction of window length to include in cepstral search (e.g., 0.25 keeps bins up to w/4).",
+    )
+    parser.add_argument(
+        "--cepstrum-topk",
+        type=int,
+        default=None,
+        help="Optional: average phases of top-k cepstral peaks (k>1) to reduce jitter.",
+    )
     parser.add_argument("--target-window", type=int, default=24)
     parser.add_argument("--horizon", type=int, default=24)
     parser.add_argument(
@@ -669,6 +754,12 @@ def main() -> None:
                 f" | C_int IC={metrics['ic_c_int_y_vol']:.3f}"
                 f" C_int ratio={metrics.get('c_int_bucket_ratio', math.nan):.3f}"
                 f" C_int AUC={metrics.get('auc_c_int_y_vol', math.nan):.3f}"
+            )
+        if not math.isnan(metrics.get("ic_s_y_vol", math.nan)):
+            extras.append(
+                f" | S IC={metrics['ic_s_y_vol']:.3f}"
+                f" S ratio={metrics.get('s_bucket_ratio', math.nan):.3f}"
+                f" S AUC={metrics.get('auc_s_y_vol', math.nan):.3f}"
             )
         if not math.isnan(metrics.get("ic_torus_y_vol", math.nan)):
             extras.append(

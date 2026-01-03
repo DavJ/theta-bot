@@ -74,6 +74,30 @@ def test_evaluate_candidate_returns_metrics_and_buckets():
     assert res["bucket_ratio"] >= 1.0
 
 
+def test_evaluate_candidate_includes_ensemble_score():
+    phi = np.linspace(0, 1, 12, endpoint=False)
+    cos_phi = np.cos(2 * np.pi * phi)
+    sin_phi = np.sin(2 * np.pi * phi)
+    concentration = np.linspace(0.1, 0.9, 12)
+    c_int = np.linspace(0.2, 1.0, 12)
+    features = pd.DataFrame(
+        {
+            "phi": phi,
+            "cos_phi": cos_phi,
+            "sin_phi": sin_phi,
+            "concentration": concentration,
+            "c_int": c_int,
+        }
+    )
+    targets = pd.DataFrame(
+        {"y_vol": np.linspace(1.0, 3.0, 12), "y_absret": np.linspace(0.5, 1.5, 12)}
+    )
+    res = evaluate_candidate(features, targets)
+    assert not math.isnan(res["ic_s_y_vol"])
+    assert res["s_bucket_ratio"] >= 1.0
+    assert res["s_bucket_counts"]
+
+
 def test_rolling_torus_concentration_range_and_basic_behavior():
     # Perfectly aligned phases -> high concentration
     n = 20
@@ -201,3 +225,34 @@ def test_different_psi_modes_produce_different_series():
     overlap_idx = psi_hilbert.dropna().index.intersection(psi_cepstrum.dropna().index)
     assert not overlap_idx.empty
     assert not np.allclose(psi_hilbert.loc[overlap_idx], psi_cepstrum.loc[overlap_idx])
+
+
+def test_cepstrum_parameters_affect_output_and_stay_in_range():
+    idx = pd.date_range("2024-01-01", periods=24, freq="h")
+    close = np.sin(np.linspace(0, 6 * np.pi, len(idx))) * 3 + 100.0
+    df = pd.DataFrame(
+        {
+            "close": close,
+            "high": close + 1.0,
+            "low": close - 1.0,
+            "volume": np.linspace(1.0, 2.0, len(idx)),
+            "dt": idx,
+        }
+    )
+    base_kwargs = dict(base=10.0, conc_window=6, rv_window=4, psi_window=8)
+    args_default = Namespace(psi_mode="cepstrum", **base_kwargs)
+    args_tuned = Namespace(
+        psi_mode="cepstrum",
+        cepstrum_min_bin=3,
+        cepstrum_max_frac=0.5,
+        cepstrum_topk=3,
+        **base_kwargs,
+    )
+    psi_default = compute_internal_phase(df, args_default)
+    psi_tuned = compute_internal_phase(df, args_tuned)
+    psi_tuned_vals = psi_tuned.dropna()
+    assert not psi_tuned_vals.empty
+    assert ((psi_tuned_vals >= 0.0) & (psi_tuned_vals < 1.0)).all()
+    overlap = psi_default.dropna().index.intersection(psi_tuned_vals.index)
+    assert not overlap.empty
+    assert not np.allclose(psi_default.loc[overlap], psi_tuned.loc[overlap])
