@@ -41,6 +41,9 @@ def build_candidate_series(df: pd.DataFrame, name: str, args: argparse.Namespace
     The output aligns with df index and may contain NaNs from rolling windows.
     """
     name = name.lower()
+    rv_window = getattr(args, "rv_window", 24)
+    atr_window = getattr(args, "atr_window", 14)
+    ema_window = getattr(args, "ema_window", 50)
     if name == "price":
         series = df["close"]
     elif name == "abslogret":
@@ -48,7 +51,7 @@ def build_candidate_series(df: pd.DataFrame, name: str, args: argparse.Namespace
         series = lr.abs()
     elif name == "rv":
         lr = np.log(df["close"] / df["close"].shift(1))
-        series = lr.rolling(window=args.rv_window, min_periods=args.rv_window).std()
+        series = lr.rolling(window=rv_window, min_periods=rv_window).std()
     elif name == "atr":
         prev_close = df["close"].shift(1)
         tr = pd.concat(
@@ -59,7 +62,7 @@ def build_candidate_series(df: pd.DataFrame, name: str, args: argparse.Namespace
             ],
             axis=1,
         ).max(axis=1)
-        series = tr.rolling(window=args.atr_window, min_periods=args.atr_window).mean()
+        series = tr.rolling(window=atr_window, min_periods=atr_window).mean()
     elif name == "volume":
         series = df["volume"]
         if getattr(args, "volume_roll", 0):
@@ -67,7 +70,7 @@ def build_candidate_series(df: pd.DataFrame, name: str, args: argparse.Namespace
                 window=args.volume_roll, min_periods=args.volume_roll
             ).sum()
     elif name == "distema":
-        ema = df["close"].ewm(span=args.ema_window, adjust=False).mean()
+        ema = df["close"].ewm(span=ema_window, adjust=False).mean()
         series = (df["close"] - ema).abs()
     else:
         raise ValueError(f"Unknown candidate: {name}")
@@ -78,22 +81,26 @@ def build_candidate_series(df: pd.DataFrame, name: str, args: argparse.Namespace
 
 def build_targets(df: pd.DataFrame, args: argparse.Namespace) -> pd.DataFrame:
     """Construct strictly future-aligned targets."""
+    target_window = getattr(args, "target_window", 24)
+    horizon = getattr(args, "horizon", 24)
     lr = np.log(df["close"] / df["close"].shift(1))
     future_lr = lr.shift(-1)
     future_vol = (
-        future_lr.rolling(window=args.target_window, min_periods=args.target_window)
+        future_lr.rolling(window=target_window, min_periods=target_window)
         .std()
-        .shift(-(args.target_window - 1))
+        .shift(-(target_window - 1))
     )
-    future_absret = (np.log(df["close"].shift(-args.horizon) / df["close"])).abs()
+    future_absret = (np.log(df["close"].shift(-horizon) / df["close"])).abs()
     return pd.DataFrame({"y_vol": future_vol, "y_absret": future_absret})
 
 
 def compute_features(x: pd.Series, args: argparse.Namespace) -> pd.DataFrame:
     """Compute log-phase derived features for a candidate series."""
-    phi = log_phase(x.to_numpy(), base=args.base)
+    base = getattr(args, "base", 10.0)
+    conc_window = getattr(args, "conc_window", 256)
+    phi = log_phase(x.to_numpy(), base=base)
     cos_phi, sin_phi = phase_embedding(phi)
-    concentration = rolling_phase_concentration(phi, window=args.conc_window)
+    concentration = rolling_phase_concentration(phi, window=conc_window)
     return pd.DataFrame(
         {
             "phi": phi,
