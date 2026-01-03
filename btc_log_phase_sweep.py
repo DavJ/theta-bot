@@ -157,7 +157,8 @@ def rolling_internal_concentration(
     """Rolling mean resultant length for (phi, psi) on a torus embedded in R^4.
 
     C_int = ||rolling_mean([cos φ, sin φ, cos ψ, sin ψ])|| / 2
-    which stays in [0, 1].
+    which stays in [0, 1]. The 1/2 normalization follows the ψ integration
+    spec and differs from the time-phase torus scale (which uses √2).
     """
     n = len(cos_phi)
     out = np.full(n, np.nan, dtype=float)
@@ -492,7 +493,8 @@ def rank_candidates(results: Iterable[Dict[str, object]]) -> pd.DataFrame:
         table["abs_ic_torus_y_vol"] = table["ic_torus_y_vol"].abs()
         abs_cols.append(table["abs_ic_torus_y_vol"])
     if abs_cols:
-        table["abs_ic_best_y_vol"] = pd.concat(abs_cols, axis=1, ignore_index=True).max(axis=1)
+        abs_df = pd.DataFrame(abs_cols).T
+        table["abs_ic_best_y_vol"] = abs_df.max(axis=1)
         sort_cols = ["abs_ic_best_y_vol", "bucket_ratio"]
     return table.sort_values(by=sort_cols, ascending=False)
 
