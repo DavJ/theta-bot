@@ -123,7 +123,7 @@ def _bucket_stats(feature: pd.Series, target: pd.Series, buckets: int = 5) -> Di
     counts = bucketed.value_counts().sort_index()
     out["bucket_counts"] = counts.to_dict()
     out["bucket_means"] = means.to_dict()
-    if means.empty or means.min() == 0:
+    if means.empty or means.min() <= 1e-15:
         out["bucket_ratio"] = math.nan
     else:
         out["bucket_ratio"] = float(means.max() / means.min())
@@ -177,7 +177,7 @@ def evaluate_candidate(features: pd.DataFrame, targets: pd.DataFrame) -> Dict[st
     bucket_out = _bucket_stats(joined["concentration"], joined["y_vol"])
     metrics.update(bucket_out)
 
-    # Optional classification: top 20% vol
+    # Optional classification: top 20% vol (>= 80th percentile)
     try:
         threshold = joined["y_vol"].quantile(0.8)
         y_class = (joined["y_vol"] >= threshold).astype(int)
