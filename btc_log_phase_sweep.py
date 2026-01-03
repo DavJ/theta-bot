@@ -607,21 +607,6 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-    "--psi-mode",
-    type=str,
-    default="none",
-    choices=["none", "hilbert_rv", "pca_hilbert", "theta_phase", "cepstrum"],
-    help="Internal phase ψ estimator (imaginary component of complex phase)"
-    )
-
-    parser.add_argument(
-    "--psi-window",
-    type=int,
-    default=256,
-    help="Rolling window for ψ estimation (Hilbert / PCA / cepstrum)"
-    )
-
-    parser.add_argument(
         "--volume-roll", type=int, default=0, help="Rolling sum window for volume."
     )
     parser.add_argument(
