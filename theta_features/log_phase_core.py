@@ -52,6 +52,40 @@ def rolling_phase_concentration(phi: np.ndarray, window: int = 256) -> np.ndarra
 rolling_concentration = rolling_phase_concentration
 
 
+def rolling_internal_concentration(
+    cos_phi: np.ndarray,
+    sin_phi: np.ndarray,
+    cos_psi: np.ndarray,
+    sin_psi: np.ndarray,
+    window: int = 256,
+) -> np.ndarray:
+    """
+    Rolling mean resultant length for (phi, psi) on a torus embedded in R^4.
+
+    C_int = ||rolling_mean([cos φ, sin φ, cos ψ, sin ψ])|| / 2
+    which stays in [0, 1]. The 1/2 normalization follows the ψ integration
+    spec.
+    """
+    n = len(cos_phi)
+    out = np.full(n, np.nan, dtype=float)
+    for i in range(n):
+        lo = max(0, i - window + 1)
+        has_nan = (
+            np.isnan(cos_phi[lo : i + 1]).any()
+            or np.isnan(sin_phi[lo : i + 1]).any()
+            or np.isnan(cos_psi[lo : i + 1]).any()
+            or np.isnan(sin_psi[lo : i + 1]).any()
+        )
+        if has_nan:
+            continue
+        m1 = np.mean(cos_phi[lo : i + 1])
+        m2 = np.mean(sin_phi[lo : i + 1])
+        m3 = np.mean(cos_psi[lo : i + 1])
+        m4 = np.mean(sin_psi[lo : i + 1])
+        out[i] = float(np.sqrt(m1 * m1 + m2 * m2 + m3 * m3 + m4 * m4) / 2.0)
+    return out
+
+
 def max_drawdown(equity: np.ndarray) -> float:
     equity_arr = np.asarray(equity, dtype=float)
     if equity_arr.size == 0:

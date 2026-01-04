@@ -32,6 +32,17 @@ Or use existing CSV data:
 python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 ```
 
+## Spot Bot 2.0 runners (long/flat)
+
+- Regime smoke-test (logs optional):  
+  `python spot_bot/run_regime.py --csv path/to/BTCUSDT_1h.csv --db bot.db`
+- Backtest with simple fees/slippage and plots:  
+  `python spot_bot/run_backtest.py --csv path/to/BTCUSDT_1h.csv --slippage-bps 1 --save-plots plots/`
+- Live loop (defaults to dryrun; paper simulates fills):  
+  `python spot_bot/run_live.py --mode dryrun --config spot_bot/config.yaml --cache data/latest.csv --db bot.db`
+- Live execution requires explicit opt-in:  
+  `python spot_bot/run_live.py --mode live --i-understand-live-risk --config spot_bot/config.yaml --db bot.db`
+
 ### Manual Testing Steps
 
 1. **Download real market data:**
