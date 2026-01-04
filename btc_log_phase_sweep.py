@@ -646,6 +646,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--atr-window", type=int, default=14)
     parser.add_argument("--ema-window", type=int, default=50)
     parser.add_argument(
+        "--split",
+        type=float,
+        nargs="?",
+        const=0.7,
+        default=None,
+        help=(
+            "Optional train fraction for chronological split. "
+            "When provided without value defaults to 0.7. Omit to use full sample."
+        ),
+    )
+    parser.add_argument(
         "--psi-mode",
         type=str,
         default="none",
@@ -730,6 +741,7 @@ def main() -> None:
     psi_series = compute_internal_phase(df, args)
     targets = build_targets(df, args)
     results = []
+    max_lookahead = max(int(getattr(args, "target_window", 24)), int(getattr(args, "horizon", 24)))
 
     for cand in _candidate_list(args):
         x = build_candidate_series(df, cand, args)
@@ -747,6 +759,37 @@ def main() -> None:
         eq_bh, eq_filtered, bt_summary = risk_filter_backtest(bt_df, thr=args.thr)
         metrics["backtest"] = bt_summary
         results.append(metrics)
+
+        if args.split is not None:
+            split_idx = int(len(features) * float(args.split))
+            train_end = max(0, split_idx - max_lookahead)
+            train_feats = features.iloc[:train_end]
+            train_targets = targets.iloc[:train_end]
+            test_feats = features.iloc[split_idx:]
+            test_targets = targets.iloc[split_idx:]
+
+            train_metrics = evaluate_candidate(train_feats, train_targets)
+            test_metrics = evaluate_candidate(test_feats, test_targets)
+
+            def _fmt_section(name: str, m: Dict[str, object]) -> str:
+                parts = [
+                    f"{name} C IC={float(m.get('ic_conc_y_vol', math.nan)):.3f}"
+                    f" AUC={float(m.get('auc_conc_y_vol', math.nan)):.3f}"
+                ]
+                if not math.isnan(m.get("ic_c_int_y_vol", math.nan)):
+                    parts.append(
+                        f"C_int IC={float(m['ic_c_int_y_vol']):.3f}"
+                        f" AUC={float(m.get('auc_c_int_y_vol', math.nan)):.3f}"
+                    )
+                if not math.isnan(m.get("ic_s_y_vol", math.nan)):
+                    parts.append(
+                        f"S IC={float(m['ic_s_y_vol']):.3f}"
+                        f" AUC={float(m.get('auc_s_y_vol', math.nan)):.3f}"
+                    )
+                return " | ".join(parts)
+
+            print(f"[{cand}] TRAIN: {_fmt_section('Train', train_metrics)}")
+            print(f"[{cand}] TEST:  {_fmt_section('Test', test_metrics)}")
 
         extras: List[str] = []
         if not math.isnan(metrics.get("ic_c_int_y_vol", math.nan)):
