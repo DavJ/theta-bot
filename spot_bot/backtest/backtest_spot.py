@@ -3,9 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Optional
 
+import argparse
+
 import numpy as np
 import pandas as pd
 
+from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.portfolio import compute_target_position
 from spot_bot.regime.regime_engine import RegimeEngine
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
@@ -27,23 +30,11 @@ def _max_drawdown(equity_curve: pd.Series) -> float:
     return float(drawdown.min())
 
 
-def _build_regime_features(ohlcv_df: pd.DataFrame, window: int = 24) -> pd.DataFrame:
-    close = ohlcv_df["close"].astype(float)
-    returns = close.pct_change().fillna(0.0)
-    rolling_mean = returns.rolling(window, min_periods=1).mean().fillna(0.0)
-    rolling_std = returns.rolling(window, min_periods=1).std(ddof=0).fillna(0.0)
-    concentration = returns.abs().rolling(window, min_periods=1).mean().fillna(0.0)
-    regime_features = pd.DataFrame(
-        {"S": rolling_mean, "C": concentration, "rv": rolling_std},
-        index=ohlcv_df.index,
-    )
-    return regime_features
-
-
 def _run_backtest_core(
     ohlcv_df: pd.DataFrame,
     strategy: MeanReversionStrategy,
     regime_engine: Optional[RegimeEngine],
+    regime_features: Optional[pd.DataFrame],
     fee_rate: float,
     max_exposure: float,
     initial_equity: float,
@@ -74,10 +65,17 @@ def _run_backtest_core(
         risk_state = "ON"
         risk_budget = 1.0
         if regime_engine is not None:
-            regime_features = _build_regime_features(window_df)
-            decision = regime_engine.decide(regime_features)
-            risk_state = decision.risk_state
-            risk_budget = decision.risk_budget
+            if regime_features is None:
+                raise ValueError(
+                    "regime_features must be provided when regime_engine is set "
+                    "(use compute_features or pass feature_config to run_mean_reversion_backtests)."
+                )
+            features_slice = regime_features.iloc[: i + 1]
+            latest_feat = features_slice.iloc[-1]
+            if not (pd.isna(latest_feat.get("S")) or pd.isna(latest_feat.get("C"))):
+                decision = regime_engine.decide(features_slice)
+                risk_state = decision.risk_state
+                risk_budget = decision.risk_budget
 
         target_position = compute_target_position(
             equity_usdt=equity,
@@ -131,6 +129,7 @@ def run_mean_reversion_backtests(
     initial_equity: float = 1000.0,
     regime_config: Optional[Dict] = None,
     strategy: Optional[MeanReversionStrategy] = None,
+    feature_config: Optional[FeatureConfig] = None,
 ) -> Dict[str, BacktestResult]:
     """
     Run mean reversion backtests with and without risk gating.
@@ -142,19 +141,109 @@ def run_mean_reversion_backtests(
         ohlcv_df=ohlcv_df,
         strategy=mr_strategy,
         regime_engine=None,
+        regime_features=None,
         fee_rate=fee_rate,
         max_exposure=max_exposure,
         initial_equity=initial_equity,
     )
 
+    feat_cfg = feature_config or FeatureConfig()
+    regime_features = compute_features(ohlcv_df, cfg=feat_cfg)
     regime_engine = RegimeEngine(regime_config or {})
     gated = _run_backtest_core(
         ohlcv_df=ohlcv_df,
         strategy=mr_strategy,
         regime_engine=regime_engine,
+        regime_features=regime_features,
         fee_rate=fee_rate,
         max_exposure=max_exposure,
         initial_equity=initial_equity,
     )
 
     return {"baseline": baseline, "gated": gated}
+
+
+def _load_ohlcv_csv(path: str) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+        df = df.set_index("timestamp")
+    required = {"open", "high", "low", "close", "volume"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"CSV must contain columns: {missing}")
+    return df[["open", "high", "low", "close", "volume"]]
+
+
+def _build_feature_config_from_args(args: argparse.Namespace) -> FeatureConfig:
+    return FeatureConfig(
+        base=args.base,
+        rv_window=args.rv_window,
+        conc_window=args.conc_window,
+        psi_window=args.psi_window,
+        cepstrum_domain=args.cepstrum_domain,
+        cepstrum_min_bin=args.cepstrum_min_bin,
+        cepstrum_max_frac=args.cepstrum_max_frac,
+    )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run spot bot backtest with regime gating.")
+    parser.add_argument("--csv", required=True, help="Path to OHLCV CSV with timestamp column.")
+    parser.add_argument("--fee-rate", type=float, default=0.0005, help="Transaction fee rate per trade.")
+    parser.add_argument("--max-exposure", type=float, default=1.0, help="Maximum exposure fraction.")
+    parser.add_argument("--initial-equity", type=float, default=1000.0, help="Starting equity in quote currency.")
+    parser.add_argument("--s-off", dest="s_off", type=float, default=-0.1, help="Score threshold for OFF.")
+    parser.add_argument("--s-on", dest="s_on", type=float, default=0.2, help="Score threshold for ON/REDUCE.")
+    parser.add_argument("--rv-off", dest="rv_off", type=float, default=0.05, help="Vol threshold for OFF.")
+    parser.add_argument("--rv-reduce", dest="rv_reduce", type=float, default=0.04, help="Vol threshold for REDUCE.")
+    parser.add_argument("--base", type=float, default=FeatureConfig.base, help="Log-phase base (default 10).")
+    parser.add_argument("--rv-window", type=int, default=FeatureConfig.rv_window, help="RV window.")
+    parser.add_argument(
+        "--conc-window", type=int, default=FeatureConfig.conc_window, help="Rolling window for concentration."
+    )
+    parser.add_argument("--psi-window", type=int, default=FeatureConfig.psi_window, help="Rolling window for psi.")
+    parser.add_argument(
+        "--cepstrum-domain",
+        type=str,
+        default=FeatureConfig.cepstrum_domain,
+        choices=["linear", "logtime"],
+        help="Cepstrum domain.",
+    )
+    parser.add_argument(
+        "--cepstrum-min-bin", type=int, default=FeatureConfig.cepstrum_min_bin, help="Minimum cepstrum bin (>=1)."
+    )
+    parser.add_argument(
+        "--cepstrum-max-frac", type=float, default=FeatureConfig.cepstrum_max_frac, help="Max quefrency fraction."
+    )
+    return parser
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    ohlcv = _load_ohlcv_csv(args.csv)
+    regime_config = {
+        "s_off": args.s_off,
+        "s_on": args.s_on,
+        "rv_off": args.rv_off,
+        "rv_reduce": args.rv_reduce,
+    }
+    feat_cfg = _build_feature_config_from_args(args)
+    results = run_mean_reversion_backtests(
+        ohlcv_df=ohlcv,
+        fee_rate=args.fee_rate,
+        max_exposure=args.max_exposure,
+        initial_equity=args.initial_equity,
+        regime_config=regime_config,
+        feature_config=feat_cfg,
+    )
+    for name, res in results.items():
+        print(
+            f"[{name}] final_return={res.metrics['final_return']:.4f} "
+            f"max_drawdown={res.metrics['max_drawdown']:.4f} "
+            f"time_in_market={res.metrics['time_in_market']:.4f}"
+        )
+
+
+if __name__ == "__main__":
+    main()
