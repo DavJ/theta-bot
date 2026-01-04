@@ -646,6 +646,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--atr-window", type=int, default=14)
     parser.add_argument("--ema-window", type=int, default=50)
     parser.add_argument(
+        "--split",
+        type=float,
+        nargs="?",
+        const=0.7,
+        default=None,
+        help=(
+            "Optional train fraction for chronological split. "
+            "When provided without value defaults to 0.7. Omit to use full sample."
+        ),
+    )
+    parser.add_argument(
+        "--embargo",
+        type=int,
+        default=None,
+        help="Gap (in samples) excluded around split boundary; defaults to horizon when omitted.",
+    )
+    parser.add_argument(
+        "--bootstrap",
+        type=int,
+        default=0,
+        help="Number of bootstrap resamples on TEST set. 0 disables bootstrap.",
+    )
+    parser.add_argument(
+        "--block",
+        type=int,
+        default=72,
+        help="Block size for contiguous block bootstrap (in samples).",
+    )
+    parser.add_argument(
         "--psi-mode",
         type=str,
         default="none",
@@ -730,6 +759,10 @@ def main() -> None:
     psi_series = compute_internal_phase(df, args)
     targets = build_targets(df, args)
     results = []
+    # max_lookahead captures the largest future window implied by target_window or horizon
+    max_lookahead = max(int(args.target_window), int(args.horizon))
+    embargo_raw = args.embargo if args.embargo is not None else args.horizon
+    embargo = max(int(embargo_raw), max_lookahead)
 
     for cand in _candidate_list(args):
         x = build_candidate_series(df, cand, args)
@@ -747,6 +780,96 @@ def main() -> None:
         eq_bh, eq_filtered, bt_summary = risk_filter_backtest(bt_df, thr=args.thr)
         metrics["backtest"] = bt_summary
         results.append(metrics)
+
+        if args.split is not None:
+            split_idx = int(len(features) * float(args.split))
+            train_end = max(0, split_idx - embargo)
+            train_feats = features.iloc[:train_end]
+            train_targets = targets.iloc[:train_end]
+            test_start = min(len(features), split_idx + embargo)
+            test_feats = features.iloc[test_start:]
+            test_targets = targets.iloc[test_start:]
+
+            train_metrics = (
+                evaluate_candidate(train_feats, train_targets) if train_end > 0 else None
+            )
+            test_metrics = (
+                evaluate_candidate(test_feats, test_targets) if len(test_feats) > 0 else None
+            )
+
+            def _fmt_section(name: str, m: Dict[str, object]) -> str:
+                if m is None:
+                    return "insufficient data"
+
+                def _val(key: str) -> float:
+                    return float(m.get(key, math.nan))
+
+                parts = [
+                    f"{name} C IC={_val('ic_conc_y_vol'):.3f} "
+                    f"AUC={_val('auc_conc_y_vol'):.3f}"
+                ]
+                if not math.isnan(m.get("ic_c_int_y_vol", math.nan)):
+                    parts.append(
+                        f"C_int IC={_val('ic_c_int_y_vol'):.3f} "
+                        f"AUC={_val('auc_c_int_y_vol'):.3f}"
+                    )
+                if not math.isnan(m.get("ic_s_y_vol", math.nan)):
+                    parts.append(
+                        f"S IC={_val('ic_s_y_vol'):.3f} "
+                        f"AUC={_val('auc_s_y_vol'):.3f}"
+                    )
+                return " | ".join(parts)
+
+            print(f"[{cand}] TRAIN: {_fmt_section('Train', train_metrics)}")
+            print(f"[{cand}] TEST:  {_fmt_section('Test', test_metrics)}")
+            if test_metrics is not None and args.bootstrap > 0:
+                rng = np.random.default_rng()
+
+                def _sample_indices(n: int, block: int) -> np.ndarray:
+                    if n == 0:
+                        return np.array([], dtype=int)
+                    blk = min(n, max(1, block))
+                    if blk == n:
+                        return np.arange(n, dtype=int)
+                    idxs: List[int] = []
+                    while len(idxs) < n:
+                        start = rng.integers(0, max(1, n - blk + 1))
+                        idxs.extend(range(start, min(n, start + blk)))
+                    return np.array(idxs[:n], dtype=int)
+
+                metric_keys = [
+                    ("ic_conc_y_vol", "C IC"),
+                    ("auc_conc_y_vol", "C AUC"),
+                    ("ic_c_int_y_vol", "C_int IC"),
+                    ("auc_c_int_y_vol", "C_int AUC"),
+                    ("ic_s_y_vol", "S IC"),
+                    ("auc_s_y_vol", "S AUC"),
+                ]
+                collected: Dict[str, List[float]] = {k: [] for k, _ in metric_keys}
+                test_len = len(test_feats)
+                for _ in range(int(args.bootstrap)):
+                    idx = _sample_indices(test_len, args.block)
+                    if idx.size == 0:
+                        continue
+                    boot_metrics = evaluate_candidate(test_feats.iloc[idx], test_targets.iloc[idx])
+                    for k, _ in metric_keys:
+                        val = boot_metrics.get(k, math.nan)
+                        if not math.isnan(val):
+                            collected[k].append(float(val))
+
+                def _summary(vals: List[float]) -> str:
+                    if not vals:
+                        return "n/a"
+                    arr = np.asarray(vals, dtype=float)
+                    return (
+                        f"median={np.median(arr):.3f} "
+                        f"p05={np.percentile(arr, 5):.3f} "
+                        f"p95={np.percentile(arr, 95):.3f}"
+                    )
+
+                print(f"[{cand}] BOOTSTRAP TEST (n={args.bootstrap}, block={args.block}):")
+                for key, label in metric_keys:
+                    print(f"  {label}: {_summary(collected[key])}")
 
         extras: List[str] = []
         if not math.isnan(metrics.get("ic_c_int_y_vol", math.nan)):
