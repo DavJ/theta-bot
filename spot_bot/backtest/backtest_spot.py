@@ -30,10 +30,11 @@ def _max_drawdown(equity_curve: pd.Series) -> float:
 def _build_regime_features(ohlcv_df: pd.DataFrame, window: int = 24) -> pd.DataFrame:
     close = ohlcv_df["close"].astype(float)
     returns = close.pct_change().fillna(0.0)
-    rolling_mean = returns.rolling(window, min_periods=1).mean()
+    rolling_mean = returns.rolling(window, min_periods=1).mean().fillna(0.0)
     rolling_std = returns.rolling(window, min_periods=1).std(ddof=0).fillna(0.0)
+    concentration = returns.abs().rolling(window, min_periods=1).mean().fillna(0.0)
     regime_features = pd.DataFrame(
-        {"S": rolling_mean, "C": rolling_std, "rv": rolling_std},
+        {"S": rolling_mean, "C": concentration, "rv": rolling_std},
         index=ohlcv_df.index,
     )
     return regime_features

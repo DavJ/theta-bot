@@ -43,12 +43,18 @@ class MeanReversionStrategy(Strategy):
         ema = prices.ewm(span=self.ema_span, adjust=False).mean()
         latest_price = float(prices.iloc[-1])
         latest_ema = float(ema.iloc[-1])
-        rolling_std_value = prices.rolling(self.std_lookback, min_periods=1).std(ddof=0).iloc[-1]
-        if pd.isna(rolling_std_value) or rolling_std_value <= 0.0:
+        if len(prices) < 2:
+            rolling_std = 1e-8
+        else:
+            rolling_std_value = prices.rolling(self.std_lookback, min_periods=1).std(ddof=0).iloc[-1]
+            if pd.isna(rolling_std_value) or rolling_std_value <= 0.0:
+                alt_std = float(np.std(prices.values))
+                rolling_std = alt_std if alt_std > 0.0 else 1e-8
+            else:
+                rolling_std = float(rolling_std_value)
+        if rolling_std <= 0.0:
             alt_std = float(np.std(prices.values))
             rolling_std = alt_std if alt_std > 0.0 else 1e-8
-        else:
-            rolling_std = float(rolling_std_value)
         return (latest_price - latest_ema) / rolling_std, latest_price, latest_ema
 
     def generate_intent(self, features_df: pd.DataFrame) -> Intent:
