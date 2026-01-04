@@ -108,10 +108,12 @@ def _run_backtest_core(
     equity_series = pd.Series(equity_curve, index=timestamps)
     position_series = pd.Series(position_history, index=timestamps)
     time_in_market = float(np.mean(exposure_history)) if exposure_history else 0.0
-    turnover = turnover_value / initial_equity if initial_equity else 0.0
+    turnover = turnover_value / initial_equity if initial_equity != 0.0 else 0.0
 
     metrics = {
-        "final_return": float(equity_series.iloc[-1] / initial_equity - 1.0) if not equity_series.empty else 0.0,
+        "final_return": float(equity_series.iloc[-1] / initial_equity - 1.0)
+        if (not equity_series.empty and initial_equity != 0.0)
+        else 0.0,
         "max_drawdown": _max_drawdown(equity_series),
         "time_in_market": time_in_market,
         "turnover": float(turnover),

@@ -39,13 +39,14 @@ class MeanReversionStrategy(Strategy):
                 return features_df[col].astype(float)
         raise ValueError("features_df must contain a 'close' or 'price' column.")
 
-    def _compute_zscore(self, prices: pd.Series) -> float:
+    def _compute_zscore(self, prices: pd.Series) -> tuple[float, float, float]:
         ema = prices.ewm(span=self.ema_span, adjust=False).mean()
         latest_price = float(prices.iloc[-1])
         latest_ema = float(ema.iloc[-1])
         rolling_std = float(prices.rolling(self.std_lookback, min_periods=1).std(ddof=0).iloc[-1] or 0.0)
         if rolling_std <= 0.0:
-            rolling_std = float(np.std(prices.values)) or 1e-8
+            alt_std = float(np.std(prices.values))
+            rolling_std = alt_std if alt_std > 0.0 else 1e-8
         return (latest_price - latest_ema) / rolling_std, latest_price, latest_ema
 
     def generate_intent(self, features_df: pd.DataFrame) -> Intent:

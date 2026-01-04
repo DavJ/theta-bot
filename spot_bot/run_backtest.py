@@ -9,6 +9,8 @@ import pandas as pd
 
 from spot_bot.backtest.backtest_spot import run_mean_reversion_backtests
 
+PRICE_NOISE_STD = 0.0005
+
 
 def _load_ohlcv(csv_path: Optional[str], bars: int) -> pd.DataFrame:
     if csv_path:
@@ -28,9 +30,9 @@ def _load_ohlcv(csv_path: Optional[str], bars: int) -> pd.DataFrame:
     base = 20000 + np.linspace(0, 500, bars)
     noise = np.sin(np.linspace(0, 6.28, bars)) * 50
     close = base + noise
-    open_ = close * (1 + np.random.normal(0, 0.0005, size=bars))
-    high = np.maximum(open_, close) * (1 + np.abs(np.random.normal(0, 0.0005, size=bars)))
-    low = np.minimum(open_, close) * (1 - np.abs(np.random.normal(0, 0.0005, size=bars)))
+    open_ = close * (1 + np.random.normal(0, PRICE_NOISE_STD, size=bars))
+    high = np.maximum(open_, close) * (1 + np.abs(np.random.normal(0, PRICE_NOISE_STD, size=bars)))
+    low = np.minimum(open_, close) * (1 - np.abs(np.random.normal(0, PRICE_NOISE_STD, size=bars)))
     volume = np.full(bars, 1.0)
     return pd.DataFrame({"open": open_, "high": high, "low": low, "close": close, "volume": volume}, index=idx)
 
