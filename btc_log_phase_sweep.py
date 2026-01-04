@@ -350,6 +350,49 @@ def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Ser
     raise ValueError(f"Unknown psi mode: {mode}")
 
 
+def add_residualized_internal_phase(
+    features: pd.DataFrame, conc_window: int, train_end: int | None
+) -> tuple[float | None, float | None]:
+    """
+    Fit psi ~ a + b * concentration on the TRAIN slice and add residualized psi_perp.
+
+    Adds columns: psi_perp, cos_psi_perp, sin_psi_perp, c_int_resid.
+    Returns the fitted coefficients (a, b) when available.
+    """
+    if "psi" not in features.columns or "concentration" not in features.columns:
+        return None, None
+    n = len(features)
+    if train_end is None:
+        train_end = n
+    psi = pd.to_numeric(features["psi"], errors="coerce")
+    conc = pd.to_numeric(features["concentration"], errors="coerce")
+    mask = (~psi.isna()) & (~conc.isna())
+    idx = np.arange(n)
+    train_mask = mask.to_numpy() & (idx < int(train_end))
+    if not train_mask.any():
+        return None, None
+    X = np.column_stack([np.ones(train_mask.sum()), conc.to_numpy(dtype=float)[train_mask]])
+    y = psi.to_numpy(dtype=float)[train_mask]
+    coef, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+    a, b = float(coef[0]), float(coef[1])
+    psi_hat = a + b * conc
+    psi_perp = psi - psi_hat
+    psi_phase = (psi_perp % 1.0).to_numpy(dtype=float)
+    cos_psi_perp, sin_psi_perp = phase_embedding(psi_phase)
+    c_int_resid = rolling_internal_concentration(
+        features["cos_phi"].to_numpy(dtype=float),
+        features["sin_phi"].to_numpy(dtype=float),
+        cos_psi_perp,
+        sin_psi_perp,
+        conc_window,
+    )
+    features["psi_perp"] = psi_perp
+    features["cos_psi_perp"] = cos_psi_perp
+    features["sin_psi_perp"] = sin_psi_perp
+    features["c_int_resid"] = c_int_resid
+    return a, b
+
+
 def compute_features(
     x: pd.Series, df: pd.DataFrame, args: argparse.Namespace, psi_series: pd.Series | None = None
 ) -> pd.DataFrame:
@@ -725,6 +768,11 @@ def parse_args() -> argparse.Namespace:
         help="Rolling window for ψ estimation (Hilbert/PCA/Cepstrum).",
     )
     parser.add_argument(
+        "--psi-residualize",
+        action="store_true",
+        help="Residualize ψ against scale concentration (psi_perp = psi - (a + b*C)) using TRAIN only.",
+    )
+    parser.add_argument(
         "--cepstrum-min-bin",
         type=int,
         default=2,
@@ -807,6 +855,20 @@ def main() -> None:
     for cand in _candidate_list(args):
         x = build_candidate_series(df, cand, args)
         features = compute_features(x, df, args, psi_series=psi_series)
+        if args.split is not None:
+            split_idx = int(len(features) * float(args.split))
+            train_end = max(0, split_idx - embargo)
+            test_start = min(len(features), split_idx + embargo)
+        else:
+            split_idx = None
+            train_end = len(features)
+            test_start = len(features)
+        features_resid = None
+        if args.psi_residualize and "psi" in features.columns:
+            features_resid = features.copy()
+            add_residualized_internal_phase(
+                features_resid, conc_window=int(getattr(args, "conc_window", 256)), train_end=train_end
+            )
 
         metrics = evaluate_candidate(features, targets)
         metrics["candidate"] = cand
@@ -822,11 +884,8 @@ def main() -> None:
         results.append(metrics)
 
         if args.split is not None:
-            split_idx = int(len(features) * float(args.split))
-            train_end = max(0, split_idx - embargo)
             train_feats = features.iloc[:train_end]
             train_targets = targets.iloc[:train_end]
-            test_start = min(len(features), split_idx + embargo)
             test_feats = features.iloc[test_start:]
             test_targets = targets.iloc[test_start:]
 
@@ -836,6 +895,21 @@ def main() -> None:
             test_metrics = (
                 evaluate_candidate(test_feats, test_targets) if len(test_feats) > 0 else None
             )
+            train_metrics_resid = None
+            test_metrics_resid = None
+            if (
+                features_resid is not None
+                and "c_int_resid" in features_resid.columns
+                and train_end > 0
+            ):
+                train_feats_resid = features_resid.iloc[:train_end].copy()
+                test_feats_resid = features_resid.iloc[test_start:].copy()
+                train_feats_resid["c_int"] = train_feats_resid["c_int_resid"]
+                test_feats_resid["c_int"] = test_feats_resid["c_int_resid"]
+                train_metrics_resid = evaluate_candidate(train_feats_resid, train_targets)
+                test_metrics_resid = (
+                    evaluate_candidate(test_feats_resid, test_targets) if len(test_feats_resid) > 0 else None
+                )
 
             def _fmt_section(name: str, m: Dict[str, object]) -> str:
                 if m is None:
@@ -862,6 +936,9 @@ def main() -> None:
 
             print(f"[{cand}] TRAIN: {_fmt_section('Train', train_metrics)}")
             print(f"[{cand}] TEST:  {_fmt_section('Test', test_metrics)}")
+            if train_metrics_resid is not None or test_metrics_resid is not None:
+                print(f"[{cand}] TRAIN (psi_resid): {_fmt_section('Train', train_metrics_resid)}")
+                print(f"[{cand}] TEST  (psi_resid): {_fmt_section('Test', test_metrics_resid)}")
             if test_metrics is not None and args.bootstrap > 0:
                 rng = np.random.default_rng()
 

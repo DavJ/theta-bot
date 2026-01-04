@@ -7,6 +7,7 @@ import pytest
 from scipy import signal
 
 from btc_log_phase_sweep import (
+    add_residualized_internal_phase,
     build_candidate_series,
     build_targets,
     compute_features,
@@ -194,6 +195,28 @@ def test_c_int_computed_when_psi_enabled():
     c_int_vals = features["c_int"].dropna()
     assert not c_int_vals.empty
     assert ((c_int_vals >= 0.0) & (c_int_vals <= 1.0)).all()
+
+
+def test_psi_residualization_uses_train_fit_for_c_int():
+    n = 6
+    conc_window = 2
+    concentration = np.linspace(0.0, 0.5, n)
+    psi = 0.3 + 0.2 * concentration
+    phi = np.zeros(n)
+    features = pd.DataFrame(
+        {
+            "phi": phi,
+            "cos_phi": np.cos(2 * np.pi * phi),
+            "sin_phi": np.sin(2 * np.pi * phi),
+            "concentration": concentration,
+            "psi": psi,
+        }
+    )
+    add_residualized_internal_phase(features, conc_window=conc_window, train_end=3)
+    assert "psi_perp" in features.columns
+    assert np.allclose(features["psi_perp"].iloc[:3], 0.0, atol=1e-8)
+    assert "c_int_resid" in features.columns
+    assert math.isfinite(features["c_int_resid"].iloc[-1])
 
 
 def test_different_psi_modes_produce_different_series():
