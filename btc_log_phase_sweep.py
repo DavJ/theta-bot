@@ -18,14 +18,9 @@ from scipy import signal
 from sklearn.decomposition import PCA
 from sklearn.metrics import roc_auc_score
 
-from btc_log_phase import (
-    fetch_ohlcv_binance,
-    log_phase,
-    phase_embedding,
-    risk_filter_backtest,
-    rolling_phase_concentration,
-    uniformity_test,
-)
+from btc_log_phase import fetch_ohlcv_binance, risk_filter_backtest, uniformity_test
+from theta_features.cepstrum import EPS_LOG, cepstral_phase, rolling_cepstral_phase
+from theta_features.log_phase_core import log_phase, phase_embedding, rolling_phase_concentration
 
 DEFAULT_CANDIDATES = [
     "price",
@@ -37,7 +32,6 @@ DEFAULT_CANDIDATES = [
 ]
 
 EPS_BUCKET = 1e-12
-EPS_LOG = 1e-12
 ZERO_STD_REPLACEMENT = 1.0
 AUC_TOP_QUANTILE = 0.8  # 80th percentile threshold (top 20%)
 
@@ -253,58 +247,16 @@ def _cepstral_phase(
     topk: int | None = None,
     domain: str = "linear",
 ) -> pd.Series:
-    arr = series.to_numpy(dtype=float)
-    n = len(arr)
-    out = np.full(n, np.nan, dtype=float)
-    min_bin = max(1, int(min_bin))
-    max_frac = float(max_frac)
-    domain = (domain or "linear").lower()
-
-    def _logtime_resample(seg: np.ndarray) -> np.ndarray:
-        w = len(seg)
-        idx = np.unique(np.floor(np.exp(np.linspace(np.log(1.0), np.log(w), w))).astype(int) - 1)
-        idx = np.clip(idx, 0, w - 1)
-        warped = seg[idx]
-        if len(warped) == 0:
-            return np.zeros(w, dtype=float)
-        if len(warped) == 1:
-            return np.full(w, warped[0], dtype=float)
-        if len(warped) < w:
-            x_src = np.linspace(0.0, 1.0, num=len(warped))
-            x_tgt = np.linspace(0.0, 1.0, num=w)
-            warped = np.interp(x_tgt, x_src, warped)
-        return warped
-    for i in range(window - 1, n):
-        window_arr = arr[i - window + 1 : i + 1]
-        if np.isnan(window_arr).any():
-            continue
-        seg = window_arr
-        if domain == "logtime":
-            seg = _logtime_resample(seg)
-        spectrum = np.fft.fft(seg)
-        log_mag = np.log(np.abs(spectrum) + EPS_LOG)
-        cepstrum = np.fft.ifft(log_mag)
-        candidate_max = min(int(window * max_frac), window // 2, len(cepstrum))
-        max_bin = max(candidate_max, min_bin + 1)
-        # clamp again after enforcing minimum to avoid overruns when min_bin is large
-        max_bin = min(max_bin, len(cepstrum))
-        if min_bin >= max_bin:
-            continue
-        candidate_slice = cepstrum[min_bin:max_bin]
-        mags = np.abs(candidate_slice)
-        # When topk=1 or None, fall back to the single dominant bin
-        if topk is not None and topk >= 2:
-            k = min(topk, len(candidate_slice))
-            idxs = np.argpartition(mags, -k)[-k:]
-            angles = np.angle(candidate_slice[idxs])
-            weights = mags[idxs]
-            combined = np.sum(weights * np.exp(1j * angles))
-            ang = float(np.angle(combined))
-        else:
-            best_idx = int(np.argmax(mags))
-            ang = float(np.angle(candidate_slice[best_idx]))
-        out[i] = (ang / (2 * np.pi)) % 1.0
-    return pd.Series(out, index=series.index)
+    """Backward-compatible wrapper around rolling_cepstral_phase."""
+    return rolling_cepstral_phase(
+        series,
+        window=window,
+        min_bin=min_bin,
+        max_frac=max_frac,
+        topk=topk,
+        domain=domain,
+        eps=EPS_LOG,
+    )
 
 
 def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Series | None:
