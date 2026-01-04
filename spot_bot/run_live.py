@@ -98,6 +98,7 @@ def main() -> None:
     cfg_path = pathlib.Path(args.config)
     cfg = _load_config(cfg_path)
     logger = SQLiteLogger(args.db) if args.db else None
+    latest_equity = logger.latest_equity() if logger else None
 
     symbol = cfg.get("symbol", "BTC/USDT")
     timeframe = cfg.get("timeframe", "1h")
@@ -131,8 +132,9 @@ def main() -> None:
     intent = strategy.generate_intent(features)
 
     latest_price = float(df["close"].iloc[-1])
-    equity_usdt = float(cfg.get("initial_equity", 1000.0))
-    current_btc = 0.0
+    default_usdt = float(cfg.get("initial_equity", 1000.0))
+    equity_usdt = float(latest_equity.get("equity_usdt", default_usdt)) if latest_equity else default_usdt
+    current_btc = float(latest_equity.get("btc", 0.0)) if latest_equity else 0.0
     broker = None
     execution_result = None
 
@@ -141,7 +143,8 @@ def main() -> None:
             fee_rate=fee_rate,
             min_notional=float(cfg.get("min_notional", 10.0)),
             max_exposure=max_exposure,
-            starting_usdt=cfg.get("initial_equity", 1000.0),
+            starting_usdt=latest_equity.get("usdt", cfg.get("initial_equity", 1000.0)) if latest_equity else cfg.get("initial_equity", 1000.0),
+            starting_btc=latest_equity.get("btc", 0.0) if latest_equity else 0.0,
         )
         broker = PaperBroker(broker_cfg)
         equity_snapshot = broker.mark_to_market(latest_price)

@@ -79,7 +79,14 @@ class CCXTExecutor:
             return True
         try:
             balances = self.exchange.fetch_balance()
-            free_usdt = balances.get("free", {}).get("USDT") or balances.get("USDT", {}).get("free")
+            free_usdt = None
+            free_block = balances.get("free")
+            if isinstance(free_block, dict):
+                free_usdt = free_block.get("USDT")
+            if free_usdt is None:
+                spot_entry = balances.get("USDT")
+                if isinstance(spot_entry, dict):
+                    free_usdt = spot_entry.get("free")
             return free_usdt is None or float(free_usdt) >= self.config.min_balance_reserve_usdt
         except Exception:
             return True
