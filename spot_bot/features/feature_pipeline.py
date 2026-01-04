@@ -6,8 +6,9 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from btc_log_phase import log_phase, phase_embedding, rolling_phase_concentration
-from btc_log_phase_sweep import EPS_LOG, _cepstral_phase, rolling_internal_concentration
+from theta_features.cepstrum import EPS_LOG, rolling_cepstral_phase
+from theta_features.log_phase_core import log_phase, phase_embedding, rolling_phase_concentration
+from btc_log_phase_sweep import rolling_internal_concentration
 
 
 @dataclass(frozen=True)
@@ -43,13 +44,14 @@ def _compute_psi(log_rv: pd.Series, cfg: FeatureConfig) -> pd.Series:
     if mode != "cepstrum":
         raise ValueError(f"Unsupported psi_mode: {cfg.psi_mode}")
     domain = (cfg.cepstrum_domain or "linear").lower()
-    return _cepstral_phase(
+    return rolling_cepstral_phase(
         log_rv,
         window=int(cfg.psi_window),
         min_bin=int(cfg.cepstrum_min_bin),
         max_frac=float(cfg.cepstrum_max_frac),
         topk=cfg.cepstrum_topk,
         domain=domain,
+        eps=EPS_LOG,
     )
 
 

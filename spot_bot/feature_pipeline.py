@@ -1,19 +1,12 @@
-"""
-Feature pipeline for Spot Bot 2.0.
-
-Transforms raw market data into model-ready features, including psi_logtime
-representations used by mean reversion and Kalman stages.
-"""
-
-from typing import Any
+from spot_bot.features.feature_pipeline import FeatureConfig, compute_features
 
 
 class FeaturePipeline:
-    """Builds reusable feature sets consumed by strategies and the regime engine."""
+    """Thin wrapper around spot_bot.features.feature_pipeline for backward compatibility."""
 
-    def transform(self, market_data: Any) -> Any:
-        """
-        Convert raw market data into engineered features.
-        This is where psi_logtime and other domain-specific transforms will live.
-        """
-        raise NotImplementedError("Feature transformation is not implemented yet.")
+    def transform(self, market_data, config: FeatureConfig | None = None):
+        cfg = config or FeatureConfig()
+        return compute_features(market_data, cfg)
+
+
+__all__ = ["FeatureConfig", "compute_features", "FeaturePipeline"]

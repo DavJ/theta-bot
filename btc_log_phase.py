@@ -13,11 +13,20 @@ import argparse
 import math
 from typing import Tuple
 
-import ccxt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import kstest
+
+from theta_features.binance_data import fetch_ohlcv_ccxt
+from theta_features.log_phase_core import (
+    circ_dist,
+    frac,
+    log_phase,
+    max_drawdown,
+    phase_embedding,
+    rolling_phase_concentration,
+)
 
 
 def fetch_ohlcv_binance(
@@ -28,62 +37,7 @@ def fetch_ohlcv_binance(
 
     Columns: ts, open, high, low, close, volume, dt (UTC datetime).
     """
-    exchange = ccxt.binance({"enableRateLimit": True})
-    tf_ms = exchange.parse_timeframe(timeframe) * 1000
-    since = exchange.milliseconds() - (limit_total + 10) * tf_ms
-    data = []
-
-    while len(data) < limit_total:
-        limit = min(1000, limit_total - len(data))
-        batch = exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
-        if not batch:
-            break
-        data.extend(batch)
-        since = batch[-1][0] + tf_ms
-
-    df = pd.DataFrame(
-        data, columns=["ts", "open", "high", "low", "close", "volume"]
-    ).drop_duplicates(subset="ts")
-    df = df.sort_values("ts").reset_index(drop=True)
-    df["dt"] = pd.to_datetime(df["ts"], unit="ms", utc=True)
-    return df
-
-
-def frac(x: np.ndarray | float) -> np.ndarray:
-    """Fractional part in [0,1) for real inputs."""
-    arr = np.asarray(x, dtype=float)
-    return arr - np.floor(arr)
-
-
-def log_phase(x: np.ndarray | float, base: float = 10.0, eps: float = 1e-12) -> np.ndarray:
-    """Phase on [0,1) using fractional part of log-base returns."""
-    arr = np.asarray(x, dtype=float)
-    arr = np.maximum(arr, eps)
-    return frac(np.log(arr) / math.log(base))
-
-
-def circ_dist(a: float, b: float) -> float:
-    """Circular distance on S1."""
-    d = abs(a - b)
-    return min(d, 1.0 - d)
-
-
-def phase_embedding(phi: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Map phase to unit circle coordinates (cos, sin)."""
-    phi_arr = np.asarray(phi, dtype=float)
-    angles = 2 * np.pi * phi_arr
-    return np.cos(angles), np.sin(angles)
-
-
-def rolling_phase_concentration(phi: np.ndarray, window: int = 256) -> np.ndarray:
-    """Rolling mean resultant length |E[e^{i*2*pi*phi}]|."""
-    phi_series = pd.Series(phi, dtype=float)
-    angles = 2 * np.pi * phi_series
-    cos_part = np.cos(angles)
-    sin_part = np.sin(angles)
-    mean_cos = cos_part.rolling(window=window, min_periods=window).mean()
-    mean_sin = sin_part.rolling(window=window, min_periods=window).mean()
-    return np.sqrt(mean_cos**2 + mean_sin**2).to_numpy()
+    return fetch_ohlcv_ccxt(symbol=symbol, timeframe=timeframe, limit_total=limit_total)
 
 
 def uniformity_test(phi: np.ndarray) -> Tuple[float, float]:
@@ -94,15 +48,6 @@ def uniformity_test(phi: np.ndarray) -> Tuple[float, float]:
         return math.nan, math.nan
     stat, pvalue = kstest(phi_arr, "uniform")
     return float(stat), float(pvalue)
-
-
-def max_drawdown(equity: np.ndarray) -> float:
-    equity_arr = np.asarray(equity, dtype=float)
-    if equity_arr.size == 0:
-        return math.nan
-    running_max = np.maximum.accumulate(equity_arr)
-    dd = equity_arr / running_max - 1.0
-    return float(dd.min())
 
 
 def risk_filter_backtest(df_feat: pd.DataFrame, thr: float = 0.20):
