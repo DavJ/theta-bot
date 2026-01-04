@@ -4,6 +4,7 @@ from argparse import Namespace
 import numpy as np
 import pandas as pd
 import pytest
+from scipy import signal
 
 from btc_log_phase_sweep import (
     build_candidate_series,
@@ -11,6 +12,7 @@ from btc_log_phase_sweep import (
     compute_features,
     compute_internal_phase,
     evaluate_candidate,
+    _cepstral_phase,
     rolling_torus_concentration,
 )
 
@@ -256,3 +258,41 @@ def test_cepstrum_parameters_affect_output_and_stay_in_range():
     overlap = psi_default.dropna().index.intersection(psi_tuned_vals.index)
     assert not overlap.empty
     assert not np.allclose(psi_default.loc[overlap], psi_tuned.loc[overlap])
+
+
+def test_cepstrum_logtime_stays_in_range():
+    idx = pd.date_range("2024-02-01", periods=30, freq="h")
+    close = np.linspace(90.0, 110.0, len(idx)) + 0.5 * np.sin(np.linspace(0, 4 * np.pi, len(idx)))
+    df = pd.DataFrame(
+        {
+            "close": close,
+            "high": close + 0.5,
+            "low": close - 0.5,
+            "volume": np.linspace(1.0, 2.0, len(idx)),
+            "dt": idx,
+        }
+    )
+    args = Namespace(
+        base=10.0,
+        conc_window=6,
+        rv_window=4,
+        psi_window=8,
+        psi_mode="cepstrum",
+        cepstrum_domain="logtime",
+    )
+    psi_logtime = compute_internal_phase(df, args)
+    psi_vals = psi_logtime.dropna()
+    assert not psi_vals.empty
+    assert ((psi_vals >= 0.0) & (psi_vals < 1.0)).all()
+
+
+def test_cepstrum_logtime_differs_from_linear_on_chirp():
+    window = 32
+    t = np.linspace(0.0, 1.0, 80)
+    chirp = signal.chirp(t, f0=0.5, f1=6.0, t1=1.0, method="logarithmic")
+    series = pd.Series(chirp)
+    psi_linear = _cepstral_phase(series, window=window, domain="linear")
+    psi_logtime = _cepstral_phase(series, window=window, domain="logtime")
+    overlap = psi_linear.dropna().index.intersection(psi_logtime.dropna().index)
+    assert not overlap.empty
+    assert not np.allclose(psi_linear.loc[overlap], psi_logtime.loc[overlap])
