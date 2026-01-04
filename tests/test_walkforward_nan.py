@@ -7,7 +7,7 @@ from theta_bot_averaging.validation import run_walkforward
 def test_walkforward_handles_feature_nans(tmp_path):
     import numpy as np
 
-    idx = pd.date_range("2024-01-01", periods=150, freq="H")
+    idx = pd.date_range("2024-01-01", periods=150, freq="h")
     t = np.linspace(0, 6 * np.pi, len(idx))
     prices = 100 + np.sin(t) + 0.5 * np.sin(0.5 * t)
     volume = 100 + np.abs(np.cos(t)) * 10

@@ -6,7 +6,7 @@ from spot_bot.backtest.backtest_spot import run_mean_reversion_backtests
 
 def test_mean_reversion_backtest_smoke():
     bars = 40
-    idx = pd.date_range("2024-01-01", periods=bars, freq="H")
+    idx = pd.date_range("2024-01-01", periods=bars, freq="h")
     base = 20000 + np.linspace(0, 200, bars)
     close = base + np.sin(np.linspace(0, 3.14, bars)) * 20
     ohlcv = pd.DataFrame(
