@@ -38,10 +38,12 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
   `python spot_bot/run_regime.py --csv path/to/BTCUSDT_1h.csv --db bot.db`
 - Backtest with simple fees/slippage and plots:  
   `python spot_bot/run_backtest.py --csv path/to/BTCUSDT_1h.csv --slippage-bps 1 --save-plots plots/`
-- Live loop (defaults to dryrun; paper simulates fills):  
-  `python spot_bot/run_live.py --mode dryrun --config spot_bot/config.yaml --cache data/latest.csv --db bot.db`
-- Live execution requires explicit opt-in:  
-  `python spot_bot/run_live.py --mode live --i-understand-live-risk --config spot_bot/config.yaml --db bot.db`
+- Live loop dryrun (no trades, logs optional):  
+  `python spot_bot/run_live.py --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --cache data/latest.csv`
+- Paper trading (simulated fills at close, restartable from DB):  
+  `python spot_bot/run_live.py --mode paper --db bot.db --initial-usdt 1000 --fee-rate 0.001 --max-exposure 0.3`
+- Live execution requires explicit opt-in flag:  
+  `python spot_bot/run_live.py --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h`
 
 ### Manual Testing Steps
 

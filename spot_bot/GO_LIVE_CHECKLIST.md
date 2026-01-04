@@ -2,35 +2,35 @@
 
 1. **Dry run sanity**
    - Install deps: `pip install -r requirements.txt`
-   - Update `spot_bot/config.yaml` with symbol/timeframe limits.
-   - Run once in dryrun mode:  
-     `python spot_bot/run_live.py --mode dryrun --config spot_bot/config.yaml --cache data/latest.csv --db bot.db`
-   - Confirm single-line summary prints risk state, target exposure, and equity.
+   - Update `spot_bot/config.yaml` (symbol, timeframe, max_exposure, fee_rate, min_notional).
+   - Run once in dryrun mode (no trades, optional DB for logs):  
+     `python spot_bot/run_live.py --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --cache data/latest.csv`
+   - Confirm summary prints risk state, intent exposure, target exposure, and equity.
 
 2. **Paper trading rehearsal**
-   - Start with fresh balances in `config.yaml` (initial_equity) or carry forward from `bot.db`.
-   - Run paper mode:  
-     `python spot_bot/run_live.py --mode paper --config spot_bot/config.yaml --cache data/latest.csv --db bot.db`
-   - Verify `bot.db` has `bars`, `features`, `decisions`, `intents`, `executions`, and `equity` entries.
-   - Inspect balances from the summary; ensure exposure < `max_exposure`.
+   - Start with `--initial-usdt` or reuse balances loaded from `bot.db`.
+   - Run paper mode (fills at close, fees applied):  
+     `python spot_bot/run_live.py --mode paper --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --fee-rate 0.001 --max-exposure 0.3 --min-notional 10`
+   - Verify `bot.db` contains `bars`, `features`, `decisions`, `intents`, `executions`, and `equity`.
+   - Re-run with the same data; it should exit with “No new closed bar.”
 
 3. **Safety parameters**
-   - `max_exposure`, `min_notional`, `fee_rate` in `config.yaml`.
-   - Live-only guards: `max_notional_per_trade`, `max_trades_per_day`, `max_turnover_per_day`, `slippage_bps_limit`, `min_usdt_reserve`.
-   - Adjust `state-file`/`--cache` to avoid duplicate bar processing.
+   - Spot sizing only: `max_exposure` clamp, `min_notional`, `fee_rate`, optional `slippage_bps`.
+   - Live-only guards come from executor config: `max_notional_per_trade`, `max_trades_per_day`, `max_turnover_per_day`, `slippage_bps_limit`, `min_usdt_reserve`.
+   - Keep DB on durable storage; WAL mode enabled by default.
 
 4. **Monitoring**
-   - Watch latest row in `bot.db` tables for anomalies.
-   - Track equity drift, executed qty, and risk_state timeline.
-   - Keep an eye on log output; dryrun/paper should never raise.
+   - Inspect the latest rows in `bars`, `features`, `decisions`, `intents`, `executions`, and `equity` after each run.
+   - Track equity drift and risk_state timeline; paper mode should never create negative balances.
+   - Use the single-line summary for quick checks (ts, price, S/C, psi, rv, risk, exposures, equity).
 
 5. **Going live (explicit opt-in)**
-   - Ensure API keys are configured for ccxt outside of source control.
-   - Run with acknowledgement:  
-     `python spot_bot/run_live.py --mode live --i-understand-live-risk --config spot_bot/config.yaml --db bot.db`
-   - Confirm ccxt connectivity and that slippage/reserve guards block abnormal fills.
+   - Ensure API keys are configured for ccxt outside source control.
+   - Run with acknowledgement flag:  
+     `python spot_bot/run_live.py --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h --limit-total 2000`
+   - Confirm ccxt connectivity; slippage/reserve guards should block abnormal fills.
 
 6. **Stopping safely**
-   - Stop the loop/process.
-   - Run one final dryrun to record a flat target exposure.
+   - Stop the loop/process gracefully.
+   - Run one final dryrun to record a flat target exposure if needed.
    - Archive the SQLite DB snapshot for audit.

@@ -1,8 +1,9 @@
 symbol: "BTC/USDT"
 timeframe: "1h"
-limit_total: 500
+limit_total: 2000
 max_exposure: 0.3
 fee_rate: 0.001
+slippage_bps: 0.0
 max_notional_per_trade: 300.0
 max_trades_per_day: 10
 max_turnover_per_day: 2000.0
