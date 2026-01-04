@@ -760,8 +760,9 @@ def main() -> None:
     targets = build_targets(df, args)
     results = []
     # Default fallback of 24 matches parse_args defaults for target_window/horizon
-    max_lookahead = max(int(getattr(args, "target_window", 24)), int(getattr(args, "horizon", 24)))
-    embargo = int(args.embargo) if args.embargo is not None else int(getattr(args, "horizon", 24))
+    max_lookahead = max(int(args.target_window), int(args.horizon))
+    embargo_raw = args.embargo if args.embargo is not None else args.horizon
+    embargo = max(int(embargo_raw), max_lookahead)
 
     for cand in _candidate_list(args):
         x = build_candidate_series(df, cand, args)
@@ -782,7 +783,7 @@ def main() -> None:
 
         if args.split is not None:
             split_idx = int(len(features) * float(args.split))
-            train_end = max(0, split_idx - max(embargo, max_lookahead))
+            train_end = max(0, split_idx - embargo)
             train_feats = features.iloc[:train_end]
             train_targets = targets.iloc[:train_end]
             test_start = min(len(features), split_idx + embargo)
@@ -827,10 +828,10 @@ def main() -> None:
                 def _sample_indices(n: int, block: int) -> np.ndarray:
                     if n == 0:
                         return np.array([], dtype=int)
-                    blk = min(n, max(1, int(block)))
+                    blk = min(n, max(1, block))
                     idxs: List[int] = []
                     while len(idxs) < n:
-                        start = int(rng.integers(0, max(1, n - blk + 1)))
+                        start = rng.integers(0, max(1, n - blk + 1))
                         idxs.extend(range(start, min(n, start + blk)))
                     return np.array(idxs[:n], dtype=int)
 
