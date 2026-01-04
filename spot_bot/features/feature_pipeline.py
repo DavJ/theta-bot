@@ -7,8 +7,12 @@ import numpy as np
 import pandas as pd
 
 from theta_features.cepstrum import EPS_LOG, rolling_cepstral_phase
-from theta_features.log_phase_core import log_phase, phase_embedding, rolling_phase_concentration
-from btc_log_phase_sweep import rolling_internal_concentration
+from theta_features.log_phase_core import (
+    log_phase,
+    phase_embedding,
+    rolling_internal_concentration,
+    rolling_phase_concentration,
+)
 
 
 @dataclass(frozen=True)

@@ -19,6 +19,7 @@ except ImportError:  # pragma: no cover - defensive import for optional dependen
     _load_dataset = None
 
 from spot_bot.features import FeatureConfig, compute_features
+from spot_bot.persist import SQLiteLogger
 from spot_bot.regime.regime_engine import RegimeEngine
 
 
@@ -48,6 +49,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Symbol to download (if no CSV provided)")
     parser.add_argument("--interval", type=str, default="1h", help="Interval to download (if no CSV provided)")
     parser.add_argument("--limit", type=int, default=500, help="Number of candles to download")
+    parser.add_argument("--db", type=str, default=None, help="Optional SQLite database to log results.")
     parser.add_argument("--base", type=float, default=FeatureConfig.base, help="Log-phase base (default: 10)")
     parser.add_argument("--rv-window", type=int, default=FeatureConfig.rv_window, help="Rolling window for RV")
     parser.add_argument(
@@ -76,6 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    logger = SQLiteLogger(args.db) if args.db else None
 
     df = load_ohlcv(args.csv, args.symbol, args.interval, args.limit)
     feat_cfg = FeatureConfig(
@@ -105,6 +108,20 @@ def main() -> None:
     }
     engine = RegimeEngine(config)
     decision = engine.decide(features)
+
+    if logger:
+        bars_records = df.reset_index().rename(columns={"timestamp": "timestamp"}).to_dict(orient="records")
+        logger.log_bars(bars_records)
+        feat_records = (
+            features.reset_index()
+            .rename(columns={"index": "timestamp"})
+            .reindex(columns=["timestamp", "rv", "C", "psi", "C_int", "S"])
+            .to_dict(orient="records")
+        )
+        logger.log_features(feat_records)
+        latest_ts = features.index[-1]
+        logger.log_decision(timestamp=latest_ts, risk_state=decision.risk_state, risk_budget=decision.risk_budget, reason=decision.reason)
+        logger.close()
 
     print("\n=== Regime Decision ===")
     print(f"Risk state : {decision.risk_state}")

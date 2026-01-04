@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 
 from spot_bot.backtest.backtest_spot import run_mean_reversion_backtests
+from spot_bot.features import FeatureConfig, compute_features
+from spot_bot.persist import SQLiteLogger
 
 PRICE_NOISE_STD = 0.0005
 
@@ -48,10 +50,20 @@ def main() -> None:
     parser.add_argument("--csv", type=str, default=None, help="Path to OHLCV CSV with a 'close' column.")
     parser.add_argument("--output", type=str, default="backtest_equity.png", help="Optional output plot path.")
     parser.add_argument("--bars", type=int, default=240, help="Synthetic bar count if CSV not provided.")
+    parser.add_argument("--slippage-bps", type=float, default=0.5, help="Simple slippage penalty in basis points.")
+    parser.add_argument(
+        "--save-plots", type=str, default=None, help="Directory prefix to save diagnostic plots (equity, exposure, S/C_int)."
+    )
+    parser.add_argument("--db", type=str, default=None, help="Optional SQLite database for logging.")
     args = parser.parse_args()
 
+    logger = SQLiteLogger(args.db) if args.db else None
     ohlcv = _load_ohlcv(args.csv, args.bars)
-    results = run_mean_reversion_backtests(ohlcv)
+    feat_cfg = FeatureConfig()
+    results = run_mean_reversion_backtests(ohlcv, logger=logger, slippage_bps=args.slippage_bps, feature_config=feat_cfg)
+    summary = pd.DataFrame({name: res.metrics for name, res in results.items()}).T
+    print("\nSummary metrics:")
+    print(summary.to_string(float_format=lambda x: f"{x:.4f}"))
 
     for name, res in results.items():
         print(f"\n{name.upper()} RESULTS")
@@ -74,8 +86,57 @@ def main() -> None:
             plt.savefig(args.output)
             print(f"Saved equity plot to {args.output}")
         plt.close()
+
+        if args.save_plots:
+            plots_dir = pathlib.Path(args.save_plots)
+            plots_dir.mkdir(parents=True, exist_ok=True)
+            exp_fig = plt.figure(figsize=(10, 3))
+            for name, res in results.items():
+                if res.exposure is not None and not res.exposure.empty:
+                    plt.plot(res.exposure.index, res.exposure.values, label=f"{name} exposure")
+            plt.legend()
+            plt.title("Exposure over time")
+            plt.tight_layout()
+            exp_fig.savefig(plots_dir / "exposure.png")
+            plt.close(exp_fig)
+
+            risk_fig = plt.figure(figsize=(10, 2))
+            for name, res in results.items():
+                if res.risk_state is not None:
+                    encoded = res.risk_state.map({"OFF": 0, "REDUCE": 0.5, "ON": 1.0})
+                    plt.plot(encoded.index, encoded.values, label=f"{name} risk_state")
+            plt.legend()
+            plt.title("Risk state timeline")
+            plt.tight_layout()
+            risk_fig.savefig(plots_dir / "risk_state.png")
+            plt.close(risk_fig)
+
+            features = compute_features(ohlcv, feat_cfg)
+            if not features.empty:
+                fig_s, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+                ax[0].plot(features.index, features.get("S", pd.Series(dtype=float)), label="S")
+                ax[0].legend()
+                ax[1].plot(features.index, features.get("C_int", pd.Series(dtype=float)), label="C_int")
+                ax[1].legend()
+                plt.tight_layout()
+                fig_s.savefig(plots_dir / "features.png")
+                plt.close(fig_s)
     except ImportError:
         print("matplotlib not installed; skipping plot.")
+    finally:
+        if logger:
+            logger.log_bars(ohlcv.reset_index().rename(columns={"index": "timestamp"}).to_dict(orient="records"))
+            last_close = float(ohlcv["close"].iloc[-1]) if "close" in ohlcv.columns else 0.0
+            for name, res in results.items():
+                if not res.equity_curve.empty:
+                    last_ts = res.equity_curve.index[-1]
+                    logger.log_equity(
+                        timestamp=last_ts,
+                        equity_usdt=res.equity_curve.iloc[-1],
+                        btc=res.positions.iloc[-1],
+                        usdt=float(res.equity_curve.iloc[-1] - res.positions.iloc[-1] * last_close),
+                    )
+            logger.close()
 
 
 if __name__ == "__main__":
