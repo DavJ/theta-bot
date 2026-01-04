@@ -1,24 +1,29 @@
-# Logtime (Mellin-Approx) Cepstrum Research Note
+# Scale-Invariant Cepstral Phase for Volatility Regime Assessment (BTC/USDT 1h)
+
+**Abstract.** This note examines whether cepstral internal phase features yield non-directional information about volatility regimes in BTC/USDT 1h data. A linear-time cepstrum and a logtime (Mellin-approximate) cepstrum extract toroidal phases that are aggregated into torus concentration \(C_{\text{int}}\) and a rank-based ensemble \(S\) with log-phase concentration \(C\). Embargoed out-of-sample tests show that the logtime cepstral phase reduces redundancy with \(C\) and improves ensemble AUC (0.618 vs 0.615 baseline), whereas the linear cepstral phase does not. Evaluation targets volatility proxies and absolute returns only; price-direction prediction is intentionally excluded. The study is exploratory and restricted to a BTC/USDT 1h sandbox, so universality is not claimed. Results indicate applicability as a risk/regime layer rather than standalone alpha.
 
 ## 0) Executive summary
-- Scale-invariant (logtime/Mellin-approx) cepstral phase ψ reduces redundancy with log-phase concentration C and improves ensemble S out-of-sample versus linear cepstrum.
-- Linear cepstrum ψ is stable but adds limited orthogonal information; logtime ψ adds incremental regime signal.
-- Targets are volatility proxies (y_vol) and absolute returns (y_absret); no direct price-direction prediction.
-- Practical use is as a risk/regime layer (position sizing, exposure gating), not standalone alpha.
-- Embargoed OOS tests on BTC/USDT 1h show S(logtime) AUC 0.618 > C AUC 0.615, while S(linear) AUC 0.598 < C AUC 0.615.
-- Longer ψ windows (e.g., 512) degrade C_int stability; overly broad/top-k cepstral aggregation can hurt when band limits are tight.
+**Findings**
+- Logtime (Mellin-approx) cepstral phase \(\psi\) reduces redundancy with \(C\) and raises embargoed out-of-sample ensemble \(S\) AUC to 0.618 versus \(C\) at 0.615, while linear \(\psi\) lowers \(S\) AUC to 0.598.
+- Linear-time cepstral \(\psi\) is stable yet contributes limited orthogonal signal; logtime \(\psi\) adds incremental regime information.
+- Targets are volatility proxies (\(y_{\text{vol}}\)) and absolute returns (\(y_{\text{absret}}\)); no direct price-direction modeling is attempted.
+- Longer \(\psi\) windows (e.g., 512) destabilize \(C_{\text{int}}\); broad or top-k cepstral aggregation harms results when quefrency bands are already tight.
+
+**Implications**
+- The signals are suited to risk/regime use (position sizing, exposure gating) and are not proposed as standalone directional alpha.
+- Evidence is specific to BTC/USDT 1h under embargoed splits and should not be generalized without further testing.
 
 ## 1) Problem framing
-- Goal: explore scale-aware, phase-based representations for volatility regimes on BTC/USDT 1h (research sandbox).
-- Signals aim at next-horizon volatility proxies (y_vol) and absolute returns (y_absret), not price direction.
-- Evaluate whether internal cepstral phase ψ adds regime information beyond scale concentration C.
+- Scope: exploratory, non-directional assessment of scale-aware, phase-based representations for volatility regimes.
+- Sandbox: BTC/USDT 1h (Binance) is used solely as a controlled setting, without asserting cross-asset or cross-horizon universality.
+- Objective: test whether internal cepstral phase \(\psi\) adds volatility-regime information beyond log-phase concentration \(C\) for targets \(y_{\text{vol}}\) and \(y_{\text{absret}}\).
 
 ## 2) Definitions and notation
-Let \(p_t\) be close price and
+Let \(p_t\) denote close price and define log return
 \[
 r_t = \log\frac{p_t}{p_{t-1}}.
 \]
-Example realized-volatility proxy over window \(w\):
+A realized-volatility proxy over window \(w\) is
 \[
 RV_t = \sqrt{\sum_{i=0}^{w-1} r_{t-i}^2 } .
 \]
@@ -28,46 +33,45 @@ Phase mapping (scale removal):
 \operatorname{frac}(u) = u - \lfloor u \rfloor \in [0,1), \quad
 \phi_t = 2\pi \, \operatorname{frac}\!\left( \log_b(x_t) \right),
 \]
-where \(x_t\) is a volatility feature (e.g., \(RV_t\)), base \(b>1\).
+where \(x_t\) is a volatility feature (e.g., \(RV_t\)) and \(b>1\).
 
 Circular embedding:
 \[
 z_t = e^{i\phi_t} = \cos\phi_t + i\sin\phi_t.
 \]
 
-Rolling concentration over window \(W\):
+Rolling log-phase concentration over window \(W\):
 \[
-R_t = \left| \frac{1}{W} \sum_{k=0}^{W-1} z_{t-k} \right|, \qquad C_t := R_t.
+C_t = \left| \frac{1}{W} \sum_{k=0}^{W-1} z_{t-k} \right|.
 \]
-Interpretation: high \(C_t\) = aligned phases (low dispersion); low \(C_t\) = dispersed regimes.
 
-## 3) Cepstral internal phase ψ (linear-time)
+## 3) Cepstral internal phase \(\psi\) (linear-time cepstrum)
 For each rolling window of length \(N\):
-1. Windowed series \(s[n],\ n=0..N-1\) (e.g., normalized RV segment).
+1. Windowed series \(s[n],\ n=0..N-1\) (normalized volatility segment).
 2. FFT: \(S[k] = \text{FFT}(s)[k]\).
-3. Log magnitude: \(L[k] = \log(|S[k]| + \varepsilon)\) with \(\varepsilon = 10^{-12}\) (EPS_LOG in implementation).
+3. Log magnitude: \(L[k] = \log(|S[k]| + \varepsilon)\) with \(\varepsilon = 10^{-12}\).
 4. Cepstrum: \(c[n] = \text{IFFT}(L)[n]\).
-5. Dominant quefrency in band \(n \in [n_{\min}, n_{\max}]\), where \(n_{\min}\) is set by `cepstrum_min_bin` (default 2) and \(n_{\max} = \lfloor \text{max\_frac} \cdot N \rfloor\):
+5. Dominant quefrency in band \(n \in [n_{\min}, n_{\max}]\), with \(n_{\min} =\) `cepstrum_min_bin` and \(n_{\max} = \lfloor \text{max\_frac} \cdot N \rfloor\):
 \[
 n^* = \arg\max_{n_{\min} \le n \le n_{\max}} |c[n]|.
 \]
-6. Internal phase:
+6. Internal cepstral phase (toroidal):
 \[
 \psi_t = \operatorname{frac}\!\left( \frac{\arg(c[n^*])}{2\pi} \right) \in [0,1),
 \]
-where \(\arg(\cdot)\) is taken in \((-\pi,\pi]\); dividing by \(2\pi\) and taking the fractional part yields a toroidal phase in \([0,1)\).
+where \(\arg(\cdot)\) is taken in \((-\pi,\pi]\); using the argument preserves the orientation of the dominant quefrency component while mapping it to a periodic phase.
 
 ## 4) Logtime (Mellin-approx) cepstrum
-Key modification: logarithmic time warping before cepstrum to emphasize scale invariance.
-1. Log-spaced indices for window \(N\) (as implemented):
+Modification: logarithmic time warping before the cepstrum to approximate scale invariance (approximate Mellin behavior, not a full Mellin transform).
+1. Log-spaced indices for window \(N\):
 \[
 i_k = \left\lfloor \exp\!\big(\ell_k\big) \right\rfloor - 1,\quad \ell_k \in \text{linspace}(\log 1.0, \log N, N),
 \]
 clipped to \([0, N-1]\) and deduplicated via `np.unique` before interpolation.
 2. Logtime sample: \(s_{\text{log}}[k] = s[i_k]\).
-3. Resample \(s_{\text{log}}\) back to length \(N\) via linear interpolation to obtain \(\hat{s}[n]\).
-4. Apply the same cepstrum steps on \(\hat{s}[n]\) to extract \(\psi_{\text{logtime},t}\).
-Intuition: approximates Mellin/scale-invariant analysis using FFT on log-time.
+3. Resample \(s_{\text{log}}\) to length \(N\) via linear interpolation to obtain \(\hat{s}[n]\).
+4. Apply the linear-time cepstrum steps to \(\hat{s}[n]\) to extract \(\psi_{\text{logtime},t}\).
+The logtime variant yields a cepstral phase that is more scale-invariant and less redundant with \(C\).
 
 ## 5) Torus internal concentration \(C_{\text{int}}\) and ensemble \(S\)
 Embed scale phase and internal phase:
@@ -80,22 +84,20 @@ C_{\text{int},t} = \frac{1}{2} \left\| \frac{1}{W} \sum_{k=0}^{W-1} \begin{bmatr
 \cos\phi_{t-k} \\ \sin\phi_{t-k} \\ \cos(2\pi\psi_{t-k}) \\ \sin(2\pi\psi_{t-k})
 \end{bmatrix} \right\|,
 \]
-where the norm of a fully aligned 4D unit vector reaches 2, so the factor \(1/2\) scales the resultant to \([0,1]\) as implemented.
+where the norm of a fully aligned 4D unit vector reaches 2; the factor \(1/2\) scales the resultant to \([0,1]\) as implemented.
 
-Ensemble score (non-directional):
+Rank-based, non-directional ensemble:
 \[
 S_t = \frac{1}{2}\Big(\operatorname{rank}(C_t) + \operatorname{rank}(C_{\text{int},t})\Big).
 \]
+Ranks are computed cross-sectionally, so \(S_t\) aggregates concentrations without directional exposure.
 
-## 6) Evaluation protocol
-- Data: BTC/USDT 1h from Binance (ccxt), OHLCV pagination, default limit_total=6000.
-- Split: chronological train/test, split ratio 0.7 with embargo = max(horizon, target_window) (e.g., 24 bars).
-- Targets: \(y_{\text{vol}}\) (forward volatility proxy), \(y_{\text{absret}}\) (forward absolute return).
-- Metrics:
-  - IC (Spearman/Pearson as implemented) vs \(y_{\text{vol}}\), \(y_{\text{absret}}\).
-  - AUC for classifying high/low \(y_{\text{vol}}\) (thresholding per implementation).
-  - Bucket ratio: top quantile vs bottom quantile of target conditioned on signal.
-- Price direction is not modeled; signals are regime/risk only.
+## 6) Evaluation protocol (methods)
+- Data: BTC/USDT 1h (Binance via ccxt), OHLCV pagination with `limit_total=6000`.
+- Split: chronological train/test with ratio 0.7 and an embargo equal to \(\max(\text{horizon}, \text{target\_window})\) (e.g., 24 bars) applied around the split.
+- Targets: forward volatility proxy \(y_{\text{vol}}\) and forward absolute return \(y_{\text{absret}}\); price-direction targets are intentionally excluded.
+- Metrics: Spearman/Pearson IC versus \(y_{\text{vol}}\) and \(y_{\text{absret}}\); AUC for high/low \(y_{\text{vol}}\) classification; bucket ratio (top vs bottom quantile of target conditioned on signal).
+- Signals: non-directional regime/risk scores only; no directional forecasting is attempted.
 
 ## 7) Empirical results (embargoed train/test)
 
@@ -108,14 +110,16 @@ S_t = \frac{1}{2}\Big(\operatorname{rank}(C_t) + \operatorname{rank}(C_{\text{in
 | Logtime  | TRAIN | 0.658 | 0.613     | 0.630 |
 | Logtime  | TEST  | 0.615 | 0.604     | 0.618 |
 
-Window sensitivity notes:
-- Worse (linear, OOS): \(S_{\text{AUC}} = 0.598 < C_{\text{AUC}} = 0.615\).
-- Better (logtime, OOS): \(S_{\text{AUC}} = 0.618 > C_{\text{AUC}} = 0.615\).
-- Very long \(\psi_{\text{window}}=512\) degrades \(C_{\text{int}}\) stability.
-- Top-k cepstral averaging can worsen results, especially when the quefrency band is already restricted (min_bin/max_frac).
+Comparative statements under embargoed out-of-sample testing:
+- Linear domain: \(S_{\text{AUC}} = 0.598\) is lower than \(C_{\text{AUC}} = 0.615\), indicating no ensemble gain.
+- Logtime domain: \(S_{\text{AUC}} = 0.618\) exceeds \(C_{\text{AUC}} = 0.615\), indicating a modest ensemble gain.
+- Extended \(\psi\) windows (e.g., 512) reduce \(C_{\text{int}}\) stability.
+- Top-k cepstral averaging deteriorates performance when quefrency bands are already constrained by \(n_{\min}\) and \(n_{\max}\).
 
-## 8) Key conclusion
-The cepstral internal phase does not predict price direction; it captures volatility regime structure. Logtime/Mellin-approx cepstrum yields a \(\psi\) that is less redundant with \(C\) and improves embargoed OOS ensemble performance. The signal is best used as a risk/regime component (e.g., position sizing, exposure gating), not as standalone trading alpha.
+## 8) Conclusions
+Demonstrated: logtime cepstral internal phase yields a less redundant signal with \(C\) and improves embargoed out-of-sample ensemble AUC for volatility-regime targets in BTC/USDT 1h. Linear cepstral phase does not improve ensemble performance under the same protocol.
+
+Not demonstrated: directional alpha or universal cross-asset validity. The evidence is limited to a non-directional, volatility-focused sandbox.
 
 ## 9) Reproducibility (commands)
 - Linear cepstrum embargo run:
@@ -140,7 +144,7 @@ python btc_log_phase_sweep.py --symbol BTC/USDT --timeframe 1h --limit-total 600
 ```
 
 ## 10) Next steps
-- Residualize \(\psi\) against \(C\) to test orthogonality.
-- Test dissipative sources (drv, vol-of-vol).
-- Validate across timeframes/assets.
-- Add transaction-cost/execution modeling after stability is confirmed.
+- Residualize \(\psi\) against \(C\) to quantify orthogonality and incremental information.
+- Probe dissipative sources (e.g., realized variance of returns, volatility-of-volatility) within the same embargoed protocol.
+- Validate across additional timeframes and assets with identical splits before any deployment consideration.
+- Incorporate transaction-cost and execution constraints only after stability is confirmed across assets/timeframes.
