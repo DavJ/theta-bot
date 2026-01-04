@@ -40,7 +40,7 @@ def latest_closed_ohlcv(df: pd.DataFrame, timeframe: str, now: Optional[datetime
     For live data, the last bar may be in-progress; drop it if it's not closed yet.
     """
     if df is None:
-        return df
+        return pd.DataFrame()
     if df.empty:
         return df
 
