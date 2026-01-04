@@ -34,8 +34,8 @@ class MeanReversionStrategy(Strategy):
         self.max_exposure = float(max_exposure)
 
     def _safe_std(self, prices: pd.Series) -> float:
-        alt_std = float(np.std(prices.values))
-        return alt_std if alt_std > 0.0 else 1e-8
+        fallback_std = float(np.std(prices.values))
+        return fallback_std if fallback_std > 0.0 else 1e-8
 
     def _extract_price(self, features_df: pd.DataFrame) -> pd.Series:
         for col in ("close", "Close", "price"):
@@ -50,7 +50,8 @@ class MeanReversionStrategy(Strategy):
         if len(prices) < 2:
             rolling_std = 1e-8
         else:
-            rolling_std_value = prices.rolling(self.std_lookback, min_periods=1).std(ddof=0).iloc[-1]
+            recent_prices = prices.tail(self.std_lookback)
+            rolling_std_value = recent_prices.std(ddof=0)
             if pd.isna(rolling_std_value) or rolling_std_value <= 0.0:
                 rolling_std = self._safe_std(prices)
             else:
