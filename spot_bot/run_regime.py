@@ -18,6 +18,7 @@ try:
 except ImportError:  # pragma: no cover - defensive import for optional dependency
     _load_dataset = None
 
+from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.regime.regime_engine import RegimeEngine
 
 
@@ -41,32 +42,31 @@ def load_ohlcv(csv: Optional[str], symbol: str, interval: str, limit: int) -> pd
     return df
 
 
-def compute_features(df: pd.DataFrame, window: int) -> pd.DataFrame:
-    returns = df["close"].pct_change()
-    rolling_mean = returns.rolling(window).mean()
-    rolling_std = returns.rolling(window).std()
-    rolling_abs_mean = returns.abs().rolling(window).mean()
-    cumulative = returns.rolling(window).sum()
-
-    features = pd.DataFrame(
-        {
-            "S": rolling_mean,
-            "C": rolling_abs_mean,
-            "C_int": cumulative,
-            "rv": rolling_std,
-        },
-        index=df.index,
-    )
-    return features.dropna()
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run regime engine on latest bar.")
     parser.add_argument("--csv", type=str, help="Path to OHLCV CSV (uses loader utilities)")
     parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Symbol to download (if no CSV provided)")
     parser.add_argument("--interval", type=str, default="1h", help="Interval to download (if no CSV provided)")
     parser.add_argument("--limit", type=int, default=500, help="Number of candles to download")
-    parser.add_argument("--window", type=int, default=48, help="Rolling window for feature computation")
+    parser.add_argument("--base", type=float, default=FeatureConfig.base, help="Log-phase base (default: 10)")
+    parser.add_argument("--rv-window", type=int, default=FeatureConfig.rv_window, help="Rolling window for RV")
+    parser.add_argument(
+        "--conc-window", type=int, default=FeatureConfig.conc_window, help="Rolling window for concentration"
+    )
+    parser.add_argument("--psi-window", type=int, default=FeatureConfig.psi_window, help="Rolling window for psi")
+    parser.add_argument(
+        "--cepstrum-domain",
+        type=str,
+        default=FeatureConfig.cepstrum_domain,
+        choices=["linear", "logtime"],
+        help="Cepstrum domain (linear or logtime)",
+    )
+    parser.add_argument(
+        "--cepstrum-min-bin", type=int, default=FeatureConfig.cepstrum_min_bin, help="Minimum cepstrum bin (>=1)"
+    )
+    parser.add_argument(
+        "--cepstrum-max-frac", type=float, default=FeatureConfig.cepstrum_max_frac, help="Max fraction of window"
+    )
     parser.add_argument("--s-off", dest="s_off", type=float, default=-0.05, help="Score threshold for OFF")
     parser.add_argument("--s-on", dest="s_on", type=float, default=0.1, help="Score threshold for ON/REDUCE")
     parser.add_argument("--rv-off", dest="rv_off", type=float, default=0.05, help="Vol threshold for OFF")
@@ -78,7 +78,21 @@ def main() -> None:
     args = build_parser().parse_args()
 
     df = load_ohlcv(args.csv, args.symbol, args.interval, args.limit)
-    features = compute_features(df, window=args.window)
+    feat_cfg = FeatureConfig(
+        base=args.base,
+        rv_window=args.rv_window,
+        conc_window=args.conc_window,
+        psi_window=args.psi_window,
+        cepstrum_domain=args.cepstrum_domain,
+        cepstrum_min_bin=args.cepstrum_min_bin,
+        cepstrum_max_frac=args.cepstrum_max_frac,
+    )
+    features = compute_features(df, cfg=feat_cfg)
+    features = features.dropna(subset=["S", "C"])
+    if features.empty:
+        raise ValueError(
+            "Insufficient data to compute regime features; increase data length or reduce rv/conc/psi windows."
+        )
 
     config = {
         "s_off": args.s_off,
@@ -99,6 +113,14 @@ def main() -> None:
     print("Diagnostics:")
     for k, v in decision.diagnostics.items():
         print(f"  - {k}: {v}")
+    latest = features.iloc[-1]
+    print("Features (latest):")
+    print(
+        f"  S={latest['S']:.4f}, C={latest['C']:.4f}, "
+        f"C_int={latest.get('C_int', float('nan')):.4f}, "
+        f"rv={latest.get('rv', float('nan')):.4f}, "
+        f"psi={latest.get('psi', float('nan')):.4f}"
+    )
 
 
 if __name__ == "__main__":
