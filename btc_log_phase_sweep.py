@@ -366,19 +366,25 @@ def add_residualized_internal_phase(
         train_end = n
     psi = pd.to_numeric(features["psi"], errors="coerce")
     conc = pd.to_numeric(features["concentration"], errors="coerce")
+    psi_values = psi.to_numpy(dtype=float)
+    conc_values = conc.to_numpy(dtype=float)
     mask = (~psi.isna()) & (~conc.isna())
     idx = np.arange(n)
-    train_mask = mask.to_numpy() & (idx < int(train_end))
+    train_mask = mask.to_numpy(dtype=bool) & (idx < int(train_end))
     if not train_mask.any():
         return None, None
-    X = np.column_stack([np.ones(train_mask.sum()), conc.to_numpy(dtype=float)[train_mask]])
-    y = psi.to_numpy(dtype=float)[train_mask]
-    coef, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+    train_conc = conc_values[train_mask]
+    X = np.column_stack([np.ones(train_mask.sum()), train_conc])
+    y = psi_values[train_mask]
+    lstsq_result = np.linalg.lstsq(X, y, rcond=None)
+    coef = lstsq_result[0]
+    if not np.all(np.isfinite(coef)):
+        return None, None
     a, b = float(coef[0]), float(coef[1])
     psi_hat = a + b * conc
     psi_perp = psi - psi_hat
-    psi_phase = (psi_perp % 1.0).to_numpy(dtype=float)
-    cos_psi_perp, sin_psi_perp = phase_embedding(psi_phase)
+    psi_perp_mod = (psi_perp % 1.0).to_numpy(dtype=float)
+    cos_psi_perp, sin_psi_perp = phase_embedding(psi_perp_mod)
     c_int_resid = rolling_internal_concentration(
         features["cos_phi"].to_numpy(dtype=float),
         features["sin_phi"].to_numpy(dtype=float),
@@ -851,6 +857,7 @@ def main() -> None:
     max_lookahead = max(int(args.target_window), int(args.horizon))
     embargo_raw = args.embargo if args.embargo is not None else args.horizon
     embargo = max(int(embargo_raw), max_lookahead)
+    conc_window = int(args.conc_window)
 
     for cand in _candidate_list(args):
         x = build_candidate_series(df, cand, args)
@@ -867,7 +874,7 @@ def main() -> None:
         if args.psi_residualize and "psi" in features.columns:
             features_resid = features.copy()
             add_residualized_internal_phase(
-                features_resid, conc_window=int(getattr(args, "conc_window", 256)), train_end=train_end
+                features_resid, conc_window=conc_window, train_end=train_end
             )
 
         metrics = evaluate_candidate(features, targets)
@@ -888,13 +895,12 @@ def main() -> None:
             train_targets = targets.iloc[:train_end]
             test_feats = features.iloc[test_start:]
             test_targets = targets.iloc[test_start:]
+            has_test = len(test_feats) > 0
 
             train_metrics = (
                 evaluate_candidate(train_feats, train_targets) if train_end > 0 else None
             )
-            test_metrics = (
-                evaluate_candidate(test_feats, test_targets) if len(test_feats) > 0 else None
-            )
+            test_metrics = evaluate_candidate(test_feats, test_targets) if has_test else None
             train_metrics_resid = None
             test_metrics_resid = None
             if (
@@ -902,14 +908,11 @@ def main() -> None:
                 and "c_int_resid" in features_resid.columns
                 and train_end > 0
             ):
-                train_feats_resid = features_resid.iloc[:train_end].copy()
-                test_feats_resid = features_resid.iloc[test_start:].copy()
-                train_feats_resid["c_int"] = train_feats_resid["c_int_resid"]
-                test_feats_resid["c_int"] = test_feats_resid["c_int_resid"]
+                rename_map = {"c_int_resid": "c_int"}
+                train_feats_resid = features_resid.iloc[:train_end].rename(columns=rename_map)
+                test_feats_resid = features_resid.iloc[test_start:].rename(columns=rename_map)
                 train_metrics_resid = evaluate_candidate(train_feats_resid, train_targets)
-                test_metrics_resid = (
-                    evaluate_candidate(test_feats_resid, test_targets) if len(test_feats_resid) > 0 else None
-                )
+                test_metrics_resid = evaluate_candidate(test_feats_resid, test_targets) if has_test else None
 
             def _fmt_section(name: str, m: Dict[str, object]) -> str:
                 if m is None:
@@ -938,7 +941,7 @@ def main() -> None:
             print(f"[{cand}] TEST:  {_fmt_section('Test', test_metrics)}")
             if train_metrics_resid is not None or test_metrics_resid is not None:
                 print(f"[{cand}] TRAIN (psi_resid): {_fmt_section('Train', train_metrics_resid)}")
-                print(f"[{cand}] TEST  (psi_resid): {_fmt_section('Test', test_metrics_resid)}")
+                print(f"[{cand}] TEST (psi_resid): {_fmt_section('Test', test_metrics_resid)}")
             if test_metrics is not None and args.bootstrap > 0:
                 rng = np.random.default_rng()
 
