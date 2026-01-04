@@ -73,7 +73,7 @@ def cepstral_phase(
         best_idx = int(np.argmax(mags))
         ang = float(np.angle(candidate_slice[best_idx]))
     phi = (ang / (2 * np.pi)) % 1.0
-    if phi >= 1.0:
+    if phi >= 1.0 - np.finfo(float).eps:
         phi = math.nextafter(1.0, 0.0)
     return phi
 
