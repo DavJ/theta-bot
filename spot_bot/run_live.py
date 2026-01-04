@@ -33,20 +33,28 @@ def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
     return pd.Timedelta(**{unit_map[unit]: value})
 
 
-def latest_closed_ohlcv(df: pd.DataFrame, timeframe: str, now: datetime | None = None) -> pd.DataFrame:
+def latest_closed_ohlcv(df: pd.DataFrame, timeframe: str, now: Optional[datetime] = None) -> pd.DataFrame:
     """
     Return df possibly truncated so the last row is a CLOSED bar.
     Assumes df is time-ordered and timestamps are UTC-aware or UTC-naive consistently.
     For live data, the last bar may be in-progress; drop it if it's not closed yet.
     """
-    if df is None or df.empty:
+    if df is None:
+        return df
+    if df.empty:
         return df
 
     tf_delta = _timeframe_to_timedelta(timeframe)
     now_ts = pd.Timestamp(now or datetime.now(timezone.utc))
     now_utc = now_ts.tz_convert("UTC") if now_ts.tzinfo else now_ts.tz_localize("UTC")
 
-    last_ts_raw = df.index[-1] if isinstance(df.index, pd.DatetimeIndex) else df.iloc[-1].get("timestamp")
+    if isinstance(df.index, pd.DatetimeIndex):
+        last_ts_raw = df.index[-1]
+    elif "timestamp" in df.columns:
+        last_ts_raw = df["timestamp"].iloc[-1]
+    else:
+        raise ValueError("DataFrame must have a datetime index or 'timestamp' column.")
+
     last_ts = pd.to_datetime(last_ts_raw, utc=True)
     last_close = last_ts + tf_delta
 
@@ -271,8 +279,6 @@ def main() -> None:
 
     logger = SQLiteLogger(args.db) if args.db else None
     try:
-        if logger:
-            logger.init()
         last_equity = logger.get_latest_equity() if logger else None
 
         symbol = args.symbol or cfg.get("symbol", "BTC/USDT")
@@ -301,7 +307,7 @@ def main() -> None:
         latest_ts = df.index[-1]
         latest_ts_int = _to_epoch_ms(latest_ts)
         if logger and logger.get_last_ts() == latest_ts_int:
-            print("No new closed bar.")
+            print("No new closed bar since last run.")
             return
 
         feat_cfg = FeatureConfig(
