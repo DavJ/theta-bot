@@ -37,8 +37,8 @@ def _load_ohlcv(csv_path: Optional[str], bars: int) -> pd.DataFrame:
     base_low = np.minimum(open_, close)
     high = base_high * (1 + spread_noise)
     low = np.maximum(0.0, base_low * (1 - spread_noise))
-    high = np.maximum(high, np.maximum(open_, close))
-    low = np.minimum(low, np.minimum(open_, close))
+    high = np.maximum.reduce([high, open_, close])
+    low = np.minimum.reduce([low, open_, close])
     volume = np.full(bars, 1.0)
     return pd.DataFrame({"open": open_, "high": high, "low": low, "close": close, "volume": volume}, index=idx)
 
