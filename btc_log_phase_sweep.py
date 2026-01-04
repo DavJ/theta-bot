@@ -226,9 +226,12 @@ def _stable_complex_log(spectrum: np.ndarray) -> np.ndarray:
     return np.log(np.abs(spectrum) + EPS_LOG) + 1j * np.angle(spectrum)
 
 
-def _extract_cepstrum_params(args: argparse.Namespace) -> tuple[int, float, int | None]:
+def _extract_cepstrum_params(args: argparse.Namespace) -> tuple[int, float, int | None, str]:
     min_bin = max(1, int(getattr(args, "cepstrum_min_bin", 2)))
     max_frac = float(getattr(args, "cepstrum_max_frac", 0.25))
+    domain = str(getattr(args, "cepstrum_domain", "linear") or "linear").lower()
+    if domain not in {"linear", "logtime"}:
+        raise ValueError("--cepstrum-domain/--cepstrum_domain must be 'linear' or 'logtime'.")
     topk_raw = getattr(args, "cepstrum_topk", None)
     if topk_raw is None:
         topk: int | None = None
@@ -239,22 +242,46 @@ def _extract_cepstrum_params(args: argparse.Namespace) -> tuple[int, float, int 
             raise ValueError("--cepstrum-topk/--cepstrum_topk must be an integer or omitted.") from e
         if topk < 1:
             topk = None
-    return min_bin, max_frac, topk
+    return min_bin, max_frac, topk, domain
 
 
 def _cepstral_phase(
-    series: pd.Series, window: int, min_bin: int = 2, max_frac: float = 0.25, topk: int | None = None
+    series: pd.Series,
+    window: int,
+    min_bin: int = 2,
+    max_frac: float = 0.25,
+    topk: int | None = None,
+    domain: str = "linear",
 ) -> pd.Series:
     arr = series.to_numpy(dtype=float)
     n = len(arr)
     out = np.full(n, np.nan, dtype=float)
     min_bin = max(1, int(min_bin))
     max_frac = float(max_frac)
+    domain = (domain or "linear").lower()
+
+    def _logtime_resample(seg: np.ndarray) -> np.ndarray:
+        w = len(seg)
+        idx = np.unique(np.floor(np.exp(np.linspace(np.log(1.0), np.log(w), w))).astype(int) - 1)
+        idx = np.clip(idx, 0, w - 1)
+        warped = seg[idx]
+        if len(warped) == 0:
+            return np.zeros(w, dtype=float)
+        if len(warped) == 1:
+            return np.full(w, warped[0], dtype=float)
+        if len(warped) < w:
+            x_src = np.linspace(0.0, 1.0, num=len(warped))
+            x_tgt = np.linspace(0.0, 1.0, num=w)
+            warped = np.interp(x_tgt, x_src, warped)
+        return warped
     for i in range(window - 1, n):
         window_arr = arr[i - window + 1 : i + 1]
         if np.isnan(window_arr).any():
             continue
-        spectrum = np.fft.fft(window_arr)
+        seg = window_arr
+        if domain == "logtime":
+            seg = _logtime_resample(seg)
+        spectrum = np.fft.fft(seg)
         log_mag = np.log(np.abs(spectrum) + EPS_LOG)
         cepstrum = np.fft.ifft(log_mag)
         candidate_max = min(int(window * max_frac), window // 2, len(cepstrum))
@@ -315,8 +342,10 @@ def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Ser
         lr = np.log(df["close"] / df["close"].shift(1))
         rv = lr.rolling(window=rv_window, min_periods=rv_window).std()
         log_rv = np.log(np.abs(rv) + EPS_LOG)
-        min_bin, max_frac, topk = _extract_cepstrum_params(args)
-        return _cepstral_phase(log_rv, window, min_bin=min_bin, max_frac=max_frac, topk=topk)
+        min_bin, max_frac, topk, domain = _extract_cepstrum_params(args)
+        return _cepstral_phase(
+            log_rv, window, min_bin=min_bin, max_frac=max_frac, topk=topk, domain=domain
+        )
 
     raise ValueError(f"Unknown psi mode: {mode}")
 
@@ -570,6 +599,7 @@ def _plot_candidate(
     eq_bh: np.ndarray,
     eq_filtered: np.ndarray,
     save: bool = False,
+    cepstrum_domain: str | None = None,
 ) -> None:
     import matplotlib.pyplot as plt
 
@@ -584,7 +614,10 @@ def _plot_candidate(
         axes[1].plot(df["dt"], features["psi"], color="slateblue", linewidth=1.0)
         axes[1].set_ylim(0, 1)
         axes[1].set_ylabel("psi")
-        axes[1].set_title(f"Internal phase ψ - {candidate}")
+        if cepstrum_domain:
+            axes[1].set_title(f"Internal phase ψ - {candidate} (cepstrum-domain={cepstrum_domain})")
+        else:
+            axes[1].set_title(f"Internal phase ψ - {candidate}")
 
     conc_ax = axes[1 + int(psi_present)]
     if "c_int" in features.columns or "torus_concentration" in features.columns:
@@ -696,6 +729,13 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=2,
         help="Minimum quefrency bin (exclusive of DC) considered for cepstral ψ.",
+    )
+    parser.add_argument(
+        "--cepstrum-domain",
+        type=str,
+        default="linear",
+        choices=["linear", "logtime"],
+        help="Cepstrum domain: linear (default) or logtime (Mellin-approx).",
     )
     parser.add_argument(
         "--cepstrum-max-frac",
@@ -900,7 +940,15 @@ def main() -> None:
         )
 
         if args.save_plots:
-            _plot_candidate(df, features, cand, eq_bh, eq_filtered, save=True)
+            _plot_candidate(
+                df,
+                features,
+                cand,
+                eq_bh,
+                eq_filtered,
+                save=True,
+                cepstrum_domain=getattr(args, "cepstrum_domain", None),
+            )
 
     ranked = rank_candidates(results)
     if not ranked.empty:
