@@ -8,17 +8,32 @@ from typing import Optional
 
 import pandas as pd
 
-from download_market_data import download_binance_data
-from theta_bot_averaging.data import load_dataset
+try:
+    from download_market_data import download_binance_data as _download_binance_data
+except ImportError:  # pragma: no cover - defensive import for optional dependency
+    _download_binance_data = None
+
+try:
+    from theta_bot_averaging.data import load_dataset as _load_dataset
+except ImportError:  # pragma: no cover - defensive import for optional dependency
+    _load_dataset = None
 
 from spot_bot.regime.regime_engine import RegimeEngine
 
 
 def load_ohlcv(csv: Optional[str], symbol: str, interval: str, limit: int) -> pd.DataFrame:
     if csv:
-        df = load_dataset(csv)
+        if _load_dataset is None:
+            raise ImportError(
+                "theta_bot_averaging.data.load_dataset (shipped with this repo) is required when using --csv"
+            )
+        df = _load_dataset(csv)
     else:
-        raw = download_binance_data(symbol=symbol, interval=interval, limit=limit)
+        if _download_binance_data is None:
+            raise ImportError(
+                "download_market_data.download_binance_data (shipped with this repo) is required when downloading data"
+            )
+        raw = _download_binance_data(symbol=symbol, interval=interval, limit=limit)
         raw["timestamp"] = pd.to_datetime(raw["timestamp"], utc=True)
         raw = raw.set_index("timestamp")
         df = raw[["open", "high", "low", "close", "volume"]].copy()
@@ -30,12 +45,13 @@ def compute_features(df: pd.DataFrame, window: int) -> pd.DataFrame:
     returns = df["close"].pct_change()
     rolling_mean = returns.rolling(window).mean()
     rolling_std = returns.rolling(window).std()
+    rolling_abs_mean = returns.abs().rolling(window).mean()
     cumulative = returns.rolling(window).sum()
 
     features = pd.DataFrame(
         {
             "S": rolling_mean,
-            "C": rolling_std,
+            "C": rolling_abs_mean,
             "C_int": cumulative,
             "rv": rolling_std,
         },

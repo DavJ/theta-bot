@@ -9,6 +9,10 @@ import pandas as pd
 from .types import RegimeDecision
 from spot_bot.utils.normalization import clip01
 
+MIN_SPAN = 1e-6
+REDUCE_FACTOR = 0.8
+RV_COLUMNS = ("rv", "RV")
+
 
 class RegimeEngine:
     """
@@ -22,20 +26,23 @@ class RegimeEngine:
         cfg = config or {}
         self.s_off = float(cfg.get("s_off", -0.1))
         self.s_on = float(cfg.get("s_on", 0.2))
-        self.rv_off = float(cfg.get("rv_off", float("inf")))
+        rv_off_value = cfg.get("rv_off")
+        self.rv_off = float(rv_off_value) if rv_off_value is not None else None
+        if self.rv_off is not None and self.rv_off <= 0.0:
+            self.rv_off = None
         # Reduce threshold defaults below off threshold for a softer landing
-        default_rv_reduce = (
-            self.rv_off * 0.8 if self.rv_off not in (float("inf"), 0.0) else self.rv_off
-        )
-        self.rv_reduce = float(cfg.get("rv_reduce", default_rv_reduce))
+        if self.rv_off is not None:
+            default_rv_reduce: Optional[float] = self.rv_off * REDUCE_FACTOR
+        else:
+            default_rv_reduce = self.rv_off
+        rv_reduce_value = cfg.get("rv_reduce", default_rv_reduce)
+        self.rv_reduce = float(rv_reduce_value) if rv_reduce_value is not None else None
         self.s_budget_low = float(cfg.get("s_budget_low", self.s_off))
-        self.s_budget_high = float(cfg.get("s_budget_high", self.s_on if self.s_on > self.s_off else self.s_off + 1e-6))
-        rv_guard_default: Optional[float] = (
-            float(cfg.get("rv_guard"))
-            if "rv_guard" in cfg
-            else (self.rv_off if self.rv_off not in (float("inf"), 0.0) else None)
+        self.s_budget_high = float(
+            cfg.get("s_budget_high", self.s_on if self.s_on > self.s_off else self.s_off + MIN_SPAN)
         )
-        self.rv_guard = rv_guard_default
+        guard_raw = cfg.get("rv_guard")
+        self.rv_guard = float(guard_raw) if guard_raw is not None else self.rv_off
 
     def _validate_columns(self, features_df: pd.DataFrame) -> None:
         required = ["C", "S"]
@@ -51,7 +58,7 @@ class RegimeEngine:
         if latest.isna().get("S", False) or latest.isna().get("C", False):
             raise ValueError("Latest feature row contains NaN for required columns.")
 
-        rv_col = "rv" if "rv" in features_df.columns else "RV" if "RV" in features_df.columns else None
+        rv_col = next((col for col in RV_COLUMNS if col in features_df.columns), None)
         rv_val = float(latest[rv_col]) if rv_col is not None and pd.notna(latest[rv_col]) else None
 
         return {
@@ -84,7 +91,7 @@ class RegimeEngine:
         if S < self.s_off:
             risk_state = "OFF"
             reasons.append(f"S ({S:.4f}) < s_off ({self.s_off:.4f})")
-        if rv_val is not None and rv_val > self.rv_off:
+        if self.rv_off is not None and rv_val is not None and rv_val > self.rv_off:
             risk_state = "OFF"
             reasons.append(f"rv ({rv_val:.4f}) > rv_off ({self.rv_off:.4f})")
 
@@ -93,18 +100,18 @@ class RegimeEngine:
             reduce_conditions = []
             if S < self.s_on:
                 reduce_conditions.append(f"S ({S:.4f}) < s_on ({self.s_on:.4f})")
-            if rv_val is not None and rv_val > self.rv_reduce:
+            if self.rv_reduce is not None and rv_val is not None and rv_val > self.rv_reduce:
                 reduce_conditions.append(f"rv ({rv_val:.4f}) > rv_reduce ({self.rv_reduce:.4f})")
             if reduce_conditions:
                 risk_state = "REDUCE"
                 reasons.extend(reduce_conditions)
 
         # Risk budget mapping from score with optional volatility guard
-        span = max(self.s_budget_high - self.s_budget_low, 1e-9)
+        span = max(self.s_budget_high - self.s_budget_low, MIN_SPAN)
         budget_raw = (S - self.s_budget_low) / span
         budget = clip01(budget_raw)
         vol_guard = 1.0
-        if rv_val is not None and self.rv_guard not in (None, 0.0, float("inf")):
+        if rv_val is not None and self.rv_guard is not None and abs(self.rv_guard) > MIN_SPAN:
             vol_guard = clip01(1.0 - (rv_val / self.rv_guard))
             budget *= vol_guard
 
