@@ -759,7 +759,7 @@ def main() -> None:
     psi_series = compute_internal_phase(df, args)
     targets = build_targets(df, args)
     results = []
-    # Default fallback of 24 aligns with parser defaults for target_window/horizon
+    # Default fallback of 24 matches parse_args defaults for target_window/horizon
     max_lookahead = max(int(getattr(args, "target_window", 24)), int(getattr(args, "horizon", 24)))
     embargo = int(args.embargo) if args.embargo is not None else int(getattr(args, "horizon", 24))
 
@@ -827,7 +827,7 @@ def main() -> None:
                 def _sample_indices(n: int, block: int) -> np.ndarray:
                     if n == 0:
                         return np.array([], dtype=int)
-                    blk = max(1, int(block))
+                    blk = min(n, max(1, int(block)))
                     idxs: List[int] = []
                     while len(idxs) < n:
                         start = int(rng.integers(0, max(1, n - blk + 1)))
