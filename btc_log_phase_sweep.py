@@ -759,7 +759,7 @@ def main() -> None:
     psi_series = compute_internal_phase(df, args)
     targets = build_targets(df, args)
     results = []
-    # Default fallback of 24 matches parse_args defaults for target_window/horizon
+    # max_lookahead captures the largest future window implied by target_window or horizon
     max_lookahead = max(int(args.target_window), int(args.horizon))
     embargo_raw = args.embargo if args.embargo is not None else args.horizon
     embargo = max(int(embargo_raw), max_lookahead)
@@ -829,6 +829,8 @@ def main() -> None:
                     if n == 0:
                         return np.array([], dtype=int)
                     blk = min(n, max(1, block))
+                    if blk == n:
+                        return np.arange(n, dtype=int)
                     idxs: List[int] = []
                     while len(idxs) < n:
                         start = rng.integers(0, max(1, n - blk + 1))
