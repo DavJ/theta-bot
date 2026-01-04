@@ -5,7 +5,7 @@ from theta_bot_averaging.backtest import run_backtest
 
 
 def test_transaction_costs_applied():
-    idx = pd.date_range("2024-01-01", periods=3, freq="H")
+    idx = pd.date_range("2024-01-01", periods=3, freq="h")
     df = pd.DataFrame(
         {
             "future_return": [0.01, 0.0, -0.01],

@@ -5,7 +5,7 @@ from spot_bot.features import FeatureConfig, compute_features
 
 
 def _synthetic_ohlcv(rows: int = 40) -> pd.DataFrame:
-    idx = pd.date_range("2024-01-01", periods=rows, freq="H")
+    idx = pd.date_range("2024-01-01", periods=rows, freq="h")
     base = np.linspace(100.0, 120.0, rows)
     close = base + np.sin(np.linspace(0, np.pi, rows)) * 0.5
     return pd.DataFrame(

@@ -5,7 +5,7 @@ from theta_bot_averaging.data import build_targets
 
 
 def test_future_return_alignment_no_leakage():
-    idx = pd.date_range("2024-01-01", periods=5, freq="H")
+    idx = pd.date_range("2024-01-01", periods=5, freq="h")
     close = [100.0, 102.0, 101.0, 103.0, 104.0]
     df = pd.DataFrame(
         {

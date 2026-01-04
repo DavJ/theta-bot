@@ -39,7 +39,7 @@ def test_vol_burst_no_leakage():
     for _ in range(5):
         close_values.append(close_values[-1] * (1 + np.random.uniform(-0.001, 0.001)))
     
-    idx = pd.date_range("2024-01-01", periods=len(close_values), freq="H")
+    idx = pd.date_range("2024-01-01", periods=len(close_values), freq="h")
     close = pd.Series(close_values, index=idx)
     
     # Compute labels with horizon=5
@@ -67,7 +67,7 @@ def test_vol_burst_future_window_correctness():
     # Simple series: [100, 110, 120, 130, 100, 90, 80, 70]
     # This gives clear return patterns we can verify
     close_values = [100.0, 110.0, 120.0, 130.0, 100.0, 90.0, 80.0, 70.0]
-    idx = pd.date_range("2024-01-01", periods=len(close_values), freq="H")
+    idx = pd.date_range("2024-01-01", periods=len(close_values), freq="h")
     close = pd.Series(close_values, index=idx)
     
     horizon = 3
@@ -110,7 +110,7 @@ def test_vol_burst_no_past_contamination():
     close_values_1 = [50.0, 60.0, 70.0, 100.0, 110.0, 120.0, 130.0]  # Low early prices
     close_values_2 = [200.0, 210.0, 220.0, 100.0, 110.0, 120.0, 130.0]  # High early prices
     
-    idx = pd.date_range("2024-01-01", periods=len(close_values_1), freq="H")
+    idx = pd.date_range("2024-01-01", periods=len(close_values_1), freq="h")
     close_1 = pd.Series(close_values_1, index=idx)
     close_2 = pd.Series(close_values_2, index=idx)
     
@@ -144,7 +144,7 @@ def test_vol_burst_threshold_computation():
     for _ in range(50):
         close_values.append(close_values[-1] * (1 + np.random.uniform(-0.01, 0.01)))
     
-    idx = pd.date_range("2024-01-01", periods=len(close_values), freq="H")
+    idx = pd.date_range("2024-01-01", periods=len(close_values), freq="h")
     close = pd.Series(close_values, index=idx)
     
     horizon = 5
@@ -172,7 +172,7 @@ def test_vol_burst_index_alignment():
     Verify that returned labels and future_vol have correct index alignment.
     """
     close_values = [100.0, 102.0, 101.0, 105.0, 103.0, 107.0, 106.0, 110.0]
-    idx = pd.date_range("2024-01-01", periods=len(close_values), freq="H")
+    idx = pd.date_range("2024-01-01", periods=len(close_values), freq="h")
     close = pd.Series(close_values, index=idx)
     
     horizon = 3

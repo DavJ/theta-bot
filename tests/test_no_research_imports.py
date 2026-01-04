@@ -8,7 +8,7 @@ from spot_bot.features.feature_pipeline import FeatureConfig, compute_features
 def test_feature_pipeline_avoids_research_imports():
     sys.modules.pop("btc_log_phase_sweep", None)
 
-    idx = pd.date_range("2024-01-01", periods=4, freq="H")
+    idx = pd.date_range("2024-01-01", periods=4, freq="h")
     df = pd.DataFrame(
         {
             "open": [1.0, 1.1, 1.2, 1.3],

@@ -5,6 +5,8 @@ import argparse
 import pathlib
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
+import re
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -19,6 +21,46 @@ from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 
 
 DEFAULT_FEATURE_CFG = FeatureConfig()
+
+
+def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
+    match = re.fullmatch(r"(\d+)([mhd])", timeframe.strip(), flags=re.IGNORECASE)
+    if not match:
+        raise ValueError(f"Unsupported timeframe: {timeframe}")
+    value = int(match.group(1))
+    unit = match.group(2).lower()
+    unit_map = {"m": "minutes", "h": "hours", "d": "days"}
+    return pd.Timedelta(**{unit_map[unit]: value})
+
+
+def latest_closed_ohlcv(df: pd.DataFrame, timeframe: str, now: Optional[datetime] = None) -> pd.DataFrame:
+    """
+    Return df possibly truncated so the last row is a CLOSED bar.
+    Assumes df is time-ordered and timestamps are UTC-aware or UTC-naive consistently.
+    For live data, the last bar may be in-progress; drop it if it's not closed yet.
+    """
+    if df is None:
+        return pd.DataFrame()
+    if df.empty:
+        return df
+
+    tf_delta = _timeframe_to_timedelta(timeframe)
+    now_ts = pd.Timestamp(now or datetime.now(timezone.utc))
+    now_utc = now_ts.tz_convert("UTC") if now_ts.tzinfo else now_ts.tz_localize("UTC")
+
+    if isinstance(df.index, pd.DatetimeIndex):
+        last_ts_raw = df.index[-1]
+    elif "timestamp" in df.columns:
+        last_ts_raw = df["timestamp"].iloc[-1]
+    else:
+        raise ValueError("DataFrame must have a datetime index or 'timestamp' column.")
+
+    last_ts = pd.to_datetime(last_ts_raw, utc=True)
+    last_close = last_ts + tf_delta
+
+    if now_utc < last_close:
+        return df.iloc[:-1]
+    return df
 
 
 def _to_epoch_ms(ts: Any) -> int:
@@ -236,188 +278,197 @@ def main() -> None:
         sys.exit(1)
 
     logger = SQLiteLogger(args.db) if args.db else None
-    last_equity = logger.get_latest_equity() if logger else None
-
-    symbol = args.symbol or cfg.get("symbol", "BTC/USDT")
-    timeframe = args.timeframe or cfg.get("timeframe", "1h")
-    limit_total = int(args.limit_total or cfg.get("limit_total", 2000))
-    max_exposure = float(args.max_exposure or cfg.get("max_exposure", 0.3))
-    fee_rate = float(args.fee_rate or cfg.get("fee_rate", 0.001))
-    min_notional = float(args.min_notional or cfg.get("min_notional", 10.0))
-    step_size = args.step_size
-
-    if args.csv:
-        df = pd.read_csv(args.csv, parse_dates=["timestamp"])
-        df = df.set_index("timestamp")
-    else:
-        df = _load_or_fetch(args.mode, symbol, timeframe, limit_total, args.cache)
-
-    if df.empty:
-        print("No data available.")
-        sys.exit(1)
-
-    latest_ts_int = _to_epoch_ms(df.index[-1])
-    if logger and logger.get_last_ts() == latest_ts_int:
-        print("No new closed bar; exiting.")
-        return
-
-    feat_cfg = FeatureConfig(
-        base=args.base,
-        rv_window=args.rv_window,
-        conc_window=args.conc_window,
-        psi_window=args.psi_window,
-        cepstrum_domain=args.cepstrum_domain,
-        cepstrum_min_bin=args.cepstrum_min_bin,
-        cepstrum_max_frac=args.cepstrum_max_frac,
-    )
-
-    regime_cfg = {
-        "s_off": args.s_off if args.s_off is not None else cfg.get("s_off"),
-        "s_on": args.s_on if args.s_on is not None else cfg.get("s_on"),
-        "rv_off": args.rv_off if args.rv_off is not None else cfg.get("rv_off"),
-        "rv_reduce": args.rv_reduce if args.rv_reduce is not None else cfg.get("rv_reduce"),
-        "rv_guard": args.rv_guard if args.rv_guard is not None else cfg.get("rv_guard"),
-    }
-    regime_cfg = {k: v for k, v in regime_cfg.items() if v is not None}
-    regime_engine = RegimeEngine(regime_cfg)
-    strategy = MeanReversionStrategy()
-
-    balances = {
-        "usdt": last_equity["usdt"] if last_equity else float(args.initial_usdt),
-        "btc": last_equity["btc"] if last_equity else 0.0,
-    }
-
-    broker = None
-    if args.mode == "paper":
-        broker = PaperBroker.from_logger(
-            logger=logger,
-            fee_rate=fee_rate,
-            min_notional=min_notional,
-            fallback_usdt=balances["usdt"],
-            step_size=step_size,
-        )
-
     try:
-        result = compute_step(
-            ohlcv_df=df,
-            feature_cfg=feat_cfg,
-            regime_engine=regime_engine,
-            strategy=strategy,
-            max_exposure=max_exposure,
-            fee_rate=fee_rate,
-            balances=balances,
-            mode=args.mode,
-            broker=broker,
-            slippage_bps=args.slippage_bps,
-        )
-    except ValueError as exc:
-        print(str(exc))
-        sys.exit(1)
+        last_equity = logger.get_latest_equity() if logger else None
 
-    execution_result = result.execution
-    current_btc = result.equity["btc"]
-    equity_usdt = result.equity["equity_usdt"]
+        symbol = args.symbol or cfg.get("symbol", "BTC/USDT")
+        timeframe = args.timeframe or cfg.get("timeframe", "1h")
+        limit_total = int(args.limit_total or cfg.get("limit_total", 2000))
+        max_exposure = float(args.max_exposure or cfg.get("max_exposure", 0.3))
+        fee_rate = float(args.fee_rate or cfg.get("fee_rate", 0.001))
+        min_notional = float(args.min_notional or cfg.get("min_notional", 10.0))
+        step_size = args.step_size
 
-    if args.mode == "live":
-        if not args.i_understand_live_risk:
-            print("Refusing to run live mode without --i-understand-live-risk.")
-            sys.exit(1)
-        try:
-            from spot_bot.execution.ccxt_executor import CCXTExecutor, ExecutorConfig
-        except Exception as exc:  # pragma: no cover - optional dependency
-            print(f"Live execution unavailable: {exc}")
-            sys.exit(1)
-        exec_cfg = ExecutorConfig(
-            symbol=symbol,
-            max_notional_per_trade=cfg.get("max_notional_per_trade", 300.0),
-            max_trades_per_day=cfg.get("max_trades_per_day", 10),
-            max_turnover_per_day=cfg.get("max_turnover_per_day", 2000.0),
-            slippage_bps_limit=cfg.get("slippage_bps_limit", 10.0),
-            min_balance_reserve_usdt=cfg.get("min_usdt_reserve", 50.0),
-            fee_rate=fee_rate,
-            min_notional=min_notional,
-        )
-        executor = CCXTExecutor(exec_cfg)
-        if abs(result.delta_btc) > 0:
-            side = "buy" if result.delta_btc > 0 else "sell"
-            execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
-            if execution_result.get("status") == "filled":
-                qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
-                _apply_fill_to_balances(balances, side, qty, result.close, fee_rate)
-            current_btc = balances["btc"]
-            equity_usdt = balances["usdt"] + current_btc * result.close
-
-    action = "HOLD"
-    if abs(result.delta_btc) > 0:
-        action = "BUY" if result.delta_btc > 0 else "SELL"
-        if execution_result and execution_result.get("status") not in ("filled", "partial"):
-            action = f"{action}-rejected"
-
-    summary = (
-        f"{result.ts} | mode={args.mode} price={result.close:.2f} "
-        f"S={result.features_row.get('S', float('nan')):.4f} "
-        f"C={result.features_row.get('C', float('nan')):.4f} "
-        f"C_int={result.features_row.get('C_int', float('nan')):.4f} "
-        f"psi={result.features_row.get('psi', float('nan')):.4f} "
-        f"rv={result.features_row.get('rv', float('nan')):.4f} "
-        f"risk={result.decision.risk_state} budget={result.decision.risk_budget:.3f} "
-        f"intent={result.intent.desired_exposure:.3f} target_exp={result.target_exposure:.3f} "
-        f"delta_btc={result.delta_btc:.6f} equity={equity_usdt:.2f} action={action}"
-    )
-    print(summary)
-
-    if logger:
-        latest_bar = df.tail(1).reset_index()
-        bar_row = latest_bar.iloc[0]
-        ts_value = bar_row.get("timestamp", bar_row.get("index"))
-        logger.upsert_bar(
-            ts=ts_value,
-            open=bar_row["open"],
-            high=bar_row["high"],
-            low=bar_row["low"],
-            close=bar_row["close"],
-            volume=bar_row["volume"],
-        )
-        logger.upsert_features(
-            ts=result.ts,
-            rv=result.features_row.get("rv"),
-            C=result.features_row.get("C"),
-            psi=result.features_row.get("psi"),
-            C_int=result.features_row.get("C_int"),
-            S=result.features_row.get("S"),
-        )
-        logger.upsert_decision(
-            ts=result.ts, risk_state=result.decision.risk_state, risk_budget=result.decision.risk_budget, reason=result.decision.reason
-        )
-        logger.upsert_intent(ts=result.ts, desired_exposure=result.target_exposure, reason=result.intent.reason)
-
-        if execution_result:
-            qty_value = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
-            price_value = float(execution_result.get("price") or execution_result.get("avg_price") or result.close)
+        if args.csv:
+            df = pd.read_csv(args.csv, parse_dates=["timestamp"])
+            df = df.set_index("timestamp")
         else:
-            qty_value = 0.0
-            price_value = result.close
+            df = _load_or_fetch(args.mode, symbol, timeframe, limit_total, args.cache)
 
-        if execution_result and qty_value > 0:
-            logger.insert_execution(
-                ts=result.ts,
-                mode=args.mode,
-                side="buy" if result.delta_btc > 0 else "sell",
-                qty=qty_value,
-                price=price_value,
-                fee=float(execution_result.get("fee", execution_result.get("fee_est", 0.0))),
-                order_id=str(execution_result.get("order_id", "")),
-                status=execution_result.get("status", "filled"),
-                meta={"delta_btc": result.delta_btc},
+        if df.empty:
+            print("No data available.")
+            sys.exit(1)
+
+        df = latest_closed_ohlcv(df, timeframe)
+        if df.empty:
+            print("No new closed bar.")
+            return
+
+        latest_ts = df.index[-1]
+        latest_ts_int = _to_epoch_ms(latest_ts)
+        if logger and logger.get_last_ts() == latest_ts_int:
+            print("No new closed bar since last run.")
+            return
+
+        feat_cfg = FeatureConfig(
+            base=args.base,
+            rv_window=args.rv_window,
+            conc_window=args.conc_window,
+            psi_window=args.psi_window,
+            cepstrum_domain=args.cepstrum_domain,
+            cepstrum_min_bin=args.cepstrum_min_bin,
+            cepstrum_max_frac=args.cepstrum_max_frac,
+        )
+
+        regime_cfg = {
+            "s_off": args.s_off if args.s_off is not None else cfg.get("s_off"),
+            "s_on": args.s_on if args.s_on is not None else cfg.get("s_on"),
+            "rv_off": args.rv_off if args.rv_off is not None else cfg.get("rv_off"),
+            "rv_reduce": args.rv_reduce if args.rv_reduce is not None else cfg.get("rv_reduce"),
+            "rv_guard": args.rv_guard if args.rv_guard is not None else cfg.get("rv_guard"),
+        }
+        regime_cfg = {k: v for k, v in regime_cfg.items() if v is not None}
+        regime_engine = RegimeEngine(regime_cfg)
+        strategy = MeanReversionStrategy()
+
+        balances = {
+            "usdt": last_equity["usdt"] if last_equity else float(args.initial_usdt),
+            "btc": last_equity["btc"] if last_equity else 0.0,
+        }
+
+        broker = None
+        if args.mode == "paper":
+            broker = PaperBroker.from_logger(
+                logger=logger,
+                fee_rate=fee_rate,
+                min_notional=min_notional,
+                fallback_usdt=balances["usdt"],
+                step_size=step_size,
             )
 
-        logger.upsert_equity(
-            ts=result.ts,
-            equity_usdt=equity_usdt,
-            btc=current_btc,
-            usdt=float(equity_usdt - current_btc * result.close),
+        try:
+            result = compute_step(
+                ohlcv_df=df,
+                feature_cfg=feat_cfg,
+                regime_engine=regime_engine,
+                strategy=strategy,
+                max_exposure=max_exposure,
+                fee_rate=fee_rate,
+                balances=balances,
+                mode=args.mode,
+                broker=broker,
+                slippage_bps=args.slippage_bps,
+            )
+        except ValueError as exc:
+            print(str(exc))
+            sys.exit(1)
+
+        execution_result = result.execution
+        current_btc = result.equity["btc"]
+        equity_usdt = result.equity["equity_usdt"]
+
+        if args.mode == "live":
+            if not args.i_understand_live_risk:
+                print("Refusing to run live mode without --i-understand-live-risk.")
+                sys.exit(1)
+            try:
+                from spot_bot.execution.ccxt_executor import CCXTExecutor, ExecutorConfig
+            except Exception as exc:  # pragma: no cover - optional dependency
+                print(f"Live execution unavailable: {exc}")
+                sys.exit(1)
+            exec_cfg = ExecutorConfig(
+                symbol=symbol,
+                max_notional_per_trade=cfg.get("max_notional_per_trade", 300.0),
+                max_trades_per_day=cfg.get("max_trades_per_day", 10),
+                max_turnover_per_day=cfg.get("max_turnover_per_day", 2000.0),
+                slippage_bps_limit=cfg.get("slippage_bps_limit", 10.0),
+                min_balance_reserve_usdt=cfg.get("min_usdt_reserve", 50.0),
+                fee_rate=fee_rate,
+                min_notional=min_notional,
+            )
+            executor = CCXTExecutor(exec_cfg)
+            if abs(result.delta_btc) > 0:
+                side = "buy" if result.delta_btc > 0 else "sell"
+                execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
+                if execution_result.get("status") == "filled":
+                    qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
+                    _apply_fill_to_balances(balances, side, qty, result.close, fee_rate)
+                current_btc = balances["btc"]
+                equity_usdt = balances["usdt"] + current_btc * result.close
+
+        action = "HOLD"
+        if abs(result.delta_btc) > 0:
+            action = "BUY" if result.delta_btc > 0 else "SELL"
+            if execution_result and execution_result.get("status") not in ("filled", "partial"):
+                action = f"{action}-rejected"
+
+        summary = (
+            f"{result.ts} | mode={args.mode} price={result.close:.2f} "
+            f"S={result.features_row.get('S', float('nan')):.4f} "
+            f"C={result.features_row.get('C', float('nan')):.4f} "
+            f"C_int={result.features_row.get('C_int', float('nan')):.4f} "
+            f"psi={result.features_row.get('psi', float('nan')):.4f} "
+            f"rv={result.features_row.get('rv', float('nan')):.4f} "
+            f"risk={result.decision.risk_state} budget={result.decision.risk_budget:.3f} "
+            f"intent={result.intent.desired_exposure:.3f} target_exp={result.target_exposure:.3f} "
+            f"delta_btc={result.delta_btc:.6f} equity={equity_usdt:.2f} action={action}"
         )
-        logger.close()
+        print(summary)
+
+        if logger:
+            latest_bar = df.tail(1).reset_index()
+            bar_row = latest_bar.iloc[0]
+            ts_value = bar_row.get("timestamp", bar_row.get("index"))
+            logger.upsert_bar(
+                ts=ts_value,
+                open=bar_row["open"],
+                high=bar_row["high"],
+                low=bar_row["low"],
+                close=bar_row["close"],
+                volume=bar_row["volume"],
+            )
+            logger.upsert_features(
+                ts=result.ts,
+                rv=result.features_row.get("rv"),
+                C=result.features_row.get("C"),
+                psi=result.features_row.get("psi"),
+                C_int=result.features_row.get("C_int"),
+                S=result.features_row.get("S"),
+            )
+            logger.upsert_decision(
+                ts=result.ts, risk_state=result.decision.risk_state, risk_budget=result.decision.risk_budget, reason=result.decision.reason
+            )
+            logger.upsert_intent(ts=result.ts, desired_exposure=result.target_exposure, reason=result.intent.reason)
+
+            if execution_result:
+                qty_value = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
+                price_value = float(execution_result.get("price") or execution_result.get("avg_price") or result.close)
+            else:
+                qty_value = 0.0
+                price_value = result.close
+
+            if execution_result and qty_value > 0:
+                logger.insert_execution(
+                    ts=result.ts,
+                    mode=args.mode,
+                    side="buy" if result.delta_btc > 0 else "sell",
+                    qty=qty_value,
+                    price=price_value,
+                    fee=float(execution_result.get("fee", execution_result.get("fee_est", 0.0))),
+                    order_id=str(execution_result.get("order_id", "")),
+                    status=execution_result.get("status", "filled"),
+                    meta={"delta_btc": result.delta_btc},
+                )
+
+            logger.upsert_equity(
+                ts=result.ts,
+                equity_usdt=equity_usdt,
+                btc=current_btc,
+                usdt=float(equity_usdt - current_btc * result.close),
+            )
+    finally:
+        if logger:
+            logger.close()
 
 
 if __name__ == "__main__":

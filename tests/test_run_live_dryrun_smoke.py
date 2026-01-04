@@ -9,7 +9,7 @@ from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 
 
 def _build_synthetic_ohlcv(rows: int = 300) -> pd.DataFrame:
-    idx = pd.date_range("2024-01-01", periods=rows, freq="H")
+    idx = pd.date_range("2024-01-01", periods=rows, freq="h")
     base = 20000 + np.linspace(0, 100, rows)
     close = base + np.sin(np.linspace(0, 6.28, rows)) * 50
     open_ = close * 0.999

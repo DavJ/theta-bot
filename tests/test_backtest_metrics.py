@@ -4,7 +4,7 @@ from theta_bot_averaging.backtest import run_backtest
 
 
 def test_trade_count_and_turnover():
-    idx = pd.date_range("2024-01-01", periods=5, freq="H")
+    idx = pd.date_range("2024-01-01", periods=5, freq="h")
     df = pd.DataFrame(
         {
             "future_return": [0.0, 0.0, 0.0, 0.0, 0.0],

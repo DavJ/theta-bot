@@ -16,7 +16,7 @@ from theta_bot_averaging.data import build_targets
 
 def test_future_return_computation():
     """Verify future_return is computed correctly: (close[t+horizon]/close[t]) - 1"""
-    idx = pd.date_range("2024-01-01", periods=5, freq="H")
+    idx = pd.date_range("2024-01-01", periods=5, freq="h")
     close = [100.0, 110.0, 105.0, 115.0, 120.0]
     df = pd.DataFrame(
         {
@@ -50,7 +50,7 @@ def test_future_return_computation():
 
 def test_label_sign_correctness():
     """Verify that labels have correct signs relative to future returns"""
-    idx = pd.date_range("2024-01-01", periods=6, freq="H")
+    idx = pd.date_range("2024-01-01", periods=6, freq="h")
     
     # Construct prices to create specific future returns
     # We want: large positive return, small positive, zero, small negative, large negative
@@ -93,7 +93,7 @@ def test_label_sign_correctness():
 
 def test_label_threshold_boundaries():
     """Test label assignment at exact threshold boundaries"""
-    idx = pd.date_range("2024-01-01", periods=7, freq="H")
+    idx = pd.date_range("2024-01-01", periods=7, freq="h")
     
     # Prices chosen to create returns exactly at and near thresholds
     # threshold = 100 bps = 0.01
@@ -153,7 +153,7 @@ def test_label_inversion_check():
     Critical test: Verify that positive future returns get positive labels
     and negative future returns get negative labels (no inversion).
     """
-    idx = pd.date_range("2024-01-01", periods=4, freq="H")
+    idx = pd.date_range("2024-01-01", periods=4, freq="h")
     
     # Clear cases: large moves
     close = [100.0, 150.0, 100.0, 50.0]
@@ -196,7 +196,7 @@ def test_class_mean_returns_ordering():
     negative future returns, then the mean return for that class
     should be negative.
     """
-    idx = pd.date_range("2024-01-01", periods=10, freq="H")
+    idx = pd.date_range("2024-01-01", periods=10, freq="h")
     
     # Create data with clear up/down moves
     close = [100.0, 115.0, 110.0, 125.0, 120.0, 135.0, 130.0, 85.0, 90.0, 80.0]
