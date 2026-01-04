@@ -1,21 +1,81 @@
-"""
-Mean reversion strategy placeholder for Spot Bot 2.0.
+from __future__ import annotations
 
-Phase B pairs this with risk gating based on regime classification and
-psi_logtime-aware features from the pipeline.
-"""
+from typing import Optional
 
-from typing import Any, Optional
+import numpy as np
+import pandas as pd
 
-from .base import Strategy
+from spot_bot.utils.normalization import clip01
+
+from .base import Intent, Strategy
 
 
 class MeanReversionStrategy(Strategy):
-    """Generates long/flat intents based on mean reversion signals and gating."""
+    """
+    Simple long/flat mean-reversion intent generator.
 
-    def __init__(self, lookback: Optional[int] = None) -> None:
-        self.lookback = lookback
+    Uses z-score of price relative to an EMA to size long exposure.
+    """
 
-    def generate_signal(self, features: Any, regime_state: Any = None) -> Any:
-        """Create a gated mean reversion signal."""
-        raise NotImplementedError("Mean reversion logic is not implemented yet.")
+    def __init__(
+        self,
+        ema_span: int = 20,
+        std_lookback: int = 30,
+        entry_z: float = 0.5,
+        full_z: float = 2.0,
+        min_exposure: float = 0.2,
+        max_exposure: float = 1.0,
+    ) -> None:
+        self.ema_span = int(ema_span)
+        self.std_lookback = int(std_lookback)
+        self.entry_z = float(entry_z)
+        self.full_z = float(full_z)
+        self.min_exposure = float(min_exposure)
+        self.max_exposure = float(max_exposure)
+
+    def _extract_price(self, features_df: pd.DataFrame) -> pd.Series:
+        for col in ("close", "Close", "price"):
+            if col in features_df.columns:
+                return features_df[col].astype(float)
+        raise ValueError("features_df must contain a 'close' or 'price' column.")
+
+    def _compute_zscore(self, prices: pd.Series) -> float:
+        ema = prices.ewm(span=self.ema_span, adjust=False).mean()
+        latest_price = float(prices.iloc[-1])
+        latest_ema = float(ema.iloc[-1])
+        rolling_std = float(prices.rolling(self.std_lookback, min_periods=1).std(ddof=0).iloc[-1] or 0.0)
+        if rolling_std <= 0.0:
+            rolling_std = float(np.std(prices.values)) or 1e-8
+        return (latest_price - latest_ema) / rolling_std, latest_price, latest_ema
+
+    def generate_intent(self, features_df: pd.DataFrame) -> Intent:
+        if features_df is None or features_df.empty:
+            return Intent(desired_exposure=0.0, reason="No features available", diagnostics={})
+
+        prices = self._extract_price(features_df).dropna()
+        if prices.empty:
+            return Intent(desired_exposure=0.0, reason="No price data", diagnostics={})
+
+        zscore, latest_price, latest_ema = self._compute_zscore(prices)
+        signal_strength = max(0.0, -zscore)  # long when price is below EMA
+
+        if signal_strength <= self.entry_z:
+            desired_exposure = 0.0
+            reason = "No mean reversion signal"
+        else:
+            capped_strength = min(signal_strength, self.full_z)
+            scale = (capped_strength - self.entry_z) / max(self.full_z - self.entry_z, 1e-8)
+            raw_exposure = self.min_exposure + (self.max_exposure - self.min_exposure) * scale
+            desired_exposure = clip01(raw_exposure)
+            reason = "Mean reversion long bias"
+
+        diagnostics = {
+            "zscore": zscore,
+            "signal_strength": signal_strength,
+            "latest_price": latest_price,
+            "latest_ema": latest_ema,
+            "entry_z": self.entry_z,
+            "full_z": self.full_z,
+        }
+
+        return Intent(desired_exposure=desired_exposure, reason=reason, diagnostics=diagnostics)
