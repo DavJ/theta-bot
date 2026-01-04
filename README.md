@@ -1,6 +1,6 @@
 # Theta Bot - Complex-Time Theta Transform Trading Engine
 
-A predictive trading engine based on Complex Consciousness Theory (CCT) and Unified Biquaternion Theory (UBT), using Jacobi theta functions for market prediction.
+A predictive trading engine grounded in Complex Consciousness Theory (CCT) and Unified Biquaternion Theory (UBT). It uses Jacobi theta functions for market prediction and applies complex-time (C) and log-time phase (psi_logtime) representations to detect regimes and manage risk. The canonical production path follows a Spot Bot 2.0 (long/flat) architecture with pluggable alpha strategies: mean reversion first, then Kalman mean/trend.
 
 ## Status
 
