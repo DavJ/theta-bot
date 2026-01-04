@@ -1,20 +1,15 @@
-"""
-Strategy interface for Spot Bot 2.0 long/flat decisions.
+from dataclasses import dataclass
+from typing import Any, Dict, Protocol
 
-Strategies consume features and optional regime context to produce target
-positions or intents that downstream sizing and execution can act upon.
-"""
-
-from abc import ABC, abstractmethod
-from typing import Any
+import pandas as pd
 
 
-class Strategy(ABC):
-    """Abstract long/flat strategy contract."""
+@dataclass(frozen=True)
+class Intent:
+    desired_exposure: float  # 0..1, fraction of equity in asset (BTC)
+    reason: str
+    diagnostics: Dict[str, Any]
 
-    @abstractmethod
-    def generate_signal(self, features: Any, regime_state: Any = None) -> Any:
-        """
-        Produce a desired position or intent given current features and regime.
-        Should output an object that can be interpreted by the sizer/position manager.
-        """
+
+class Strategy(Protocol):
+    def generate_intent(self, features_df: pd.DataFrame) -> Intent: ...
