@@ -9,6 +9,7 @@ and orchestration for both backtests and live operation.
 from .data_providers import DataProvider, HistoricalDataProvider, LiveDataProvider
 from .feature_pipeline import FeaturePipeline
 from .regime_engine import RegimeEngine
+from .regime import RegimeDecision
 from .strategies.base import Strategy
 from .strategies.mean_reversion import MeanReversionStrategy
 from .strategies.kalman import KalmanStrategy
@@ -24,6 +25,7 @@ __all__ = [
     "LiveDataProvider",
     "FeaturePipeline",
     "RegimeEngine",
+    "RegimeDecision",
     "Strategy",
     "MeanReversionStrategy",
     "KalmanStrategy",
