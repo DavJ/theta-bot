@@ -22,7 +22,8 @@ def _max_drawdown(equity_curve: pd.Series) -> float:
     if equity_curve.empty:
         return 0.0
     peak = equity_curve.cummax()
-    drawdown = (equity_curve - peak) / peak.replace(0, np.nan)
+    safe_peak = peak.where(peak > 0, 1e-8)
+    drawdown = (equity_curve - peak) / safe_peak
     return float(drawdown.min())
 
 

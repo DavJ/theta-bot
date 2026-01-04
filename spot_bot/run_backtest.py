@@ -30,9 +30,13 @@ def _load_ohlcv(csv_path: Optional[str], bars: int) -> pd.DataFrame:
     base = 20000 + np.linspace(0, 500, bars)
     noise = np.sin(np.linspace(0, 6.28, bars)) * 50
     close = base + noise
-    open_ = close * (1 + np.random.normal(0, PRICE_NOISE_STD, size=bars))
-    high = np.maximum(open_, close) * (1 + np.abs(np.random.normal(0, PRICE_NOISE_STD, size=bars)))
-    low = np.minimum(open_, close) * (1 - np.abs(np.random.normal(0, PRICE_NOISE_STD, size=bars)))
+    open_noise = np.random.normal(0, PRICE_NOISE_STD, size=bars)
+    spread_noise = np.abs(np.random.normal(0, PRICE_NOISE_STD, size=bars))
+    open_ = close * (1 + open_noise)
+    base_high = np.maximum(open_, close)
+    base_low = np.minimum(open_, close)
+    high = base_high * (1 + spread_noise)
+    low = np.maximum(0.0, base_low * (1 - spread_noise))
     volume = np.full(bars, 1.0)
     return pd.DataFrame({"open": open_, "high": high, "low": low, "close": close, "volume": volume}, index=idx)
 
