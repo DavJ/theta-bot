@@ -11,7 +11,8 @@ EPS_LOG = 1e-12
 
 def frac01(x: float, eps: float = np.finfo(float).eps) -> float:
     """
-    Wrap x into [0, 1) with a stable modulus and clamp values extremely close to 1.0 back to 0.
+    Wrap x into [0, 1) with a stable modulus (robust to negative inputs) and clamp values extremely
+    close to 1.0 back to 0.
     """
     y = ((float(x) % 1.0) + 1.0) % 1.0
     if y >= 1.0 - eps:
@@ -88,7 +89,9 @@ def cepstral_phase(
     if topk is not None and topk >= 2:
         k = min(topk, len(candidate_slice))
         idxs = np.argpartition(mags, -k)[-k:]
-        combined = np.sum(candidate_slice[idxs])
+        angles = np.angle(candidate_slice[idxs])
+        weights = mags[idxs]
+        combined = np.sum(weights * np.exp(1j * angles))
         ang = float(np.angle(combined))
     else:
         best_idx = int(np.argmax(mags))
