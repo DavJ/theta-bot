@@ -11,6 +11,7 @@ from theta_features.log_phase_core import (  # noqa: F401
     rolling_phase_concentration,
 )
 from theta_features.cepstrum import cepstral_phase, rolling_cepstral_phase  # noqa: F401
+from theta_features.scale_phase import compute_scale_phase  # noqa: F401
 
 __all__ = [
     "circ_dist",
@@ -23,4 +24,5 @@ __all__ = [
     "rolling_phase_concentration",
     "cepstral_phase",
     "rolling_cepstral_phase",
+    "compute_scale_phase",
 ]

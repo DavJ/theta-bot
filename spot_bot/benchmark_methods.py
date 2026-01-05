@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Multi-Pair Multi-Method Benchmark Runner
+Multi-Pair Multi-Method Benchmark Runner using scale-phase psi.
 
-This script compares multiple bot "methods" (different FeatureConfig parameter combinations)
-across multiple trading pairs and outputs clear summary tables showing which configurations
-perform best.
+This script compares different FeatureConfig parameter combinations
+across multiple trading pairs and outputs clear summary tables showing
+which configurations perform best.
 
 FUNCTIONALITY:
 - Load OHLCV data from CSVs (one per trading pair)
-- Compare different psi_mode variants (baseline mode) or run parameter grids (grid mode)
+- Compare scale-phase variants (baseline mode) or run parameter grids (grid mode)
 - Evaluate each (pair, method) combination via backtest
 - Compute comprehensive metrics: Sharpe ratio, volatility, max drawdown, turnover, etc.
 - Rank methods using composite score
@@ -16,22 +16,11 @@ FUNCTIONALITY:
 - Support walk-forward validation for robustness testing
 
 METHODS:
-Baseline mode compares 4 psi_mode variants with default parameters:
-1. psi_mode=cepstrum
-2. psi_mode=complex_cepstrum
-3. psi_mode=mellin_cepstrum
-4. psi_mode=mellin_complex_cepstrum
+Baseline mode compares a single psi_mode: scale_phase.
 
 Grid mode runs a small parameter grid to keep runtime reasonable:
 - psi_window: [128, 256]
-- mellin_sigma: [0.0, 0.25]
-- psi_min_bin: [2, 4]
-- psi_max_frac: [0.15, 0.2]
-- mellin_detrend_phase: [True]
-- psi_phase_agg: ["peak"]
-
-For FFT modes (cepstrum, complex_cepstrum), only psi_window varies.
-For Mellin modes, all applicable parameters are varied.
+- base: [10.0, 2.0]
 
 COMPOSITE SCORING:
 score = sharpe - 0.5*abs(max_drawdown) - 0.05*turnover_norm
@@ -182,72 +171,39 @@ def generate_baseline_configs() -> List[Dict[str, Any]]:
     """
     Generate baseline method configurations.
     
-    Returns 4 configs, one for each psi_mode variant, all other params at defaults.
+    Returns a single config for scale-phase psi at default parameters.
     
     Returns:
         List of configuration dictionaries
     """
-    psi_modes = [
-        "cepstrum",
-        "complex_cepstrum",
-        "mellin_cepstrum",
-        "mellin_complex_cepstrum",
-    ]
-    
-    configs = []
-    for psi_mode in psi_modes:
-        config = {"psi_mode": psi_mode}
-        configs.append(config)
-    
-    return configs
+    return [{"psi_mode": "scale_phase"}]
 
 
 def generate_grid_configs() -> List[Dict[str, Any]]:
     """
     Generate parameter grid configurations.
     
-    Runs a small grid to keep runtime reasonable:
-    - For FFT modes (cepstrum, complex_cepstrum): vary only psi_window
-    - For Mellin modes: vary multiple parameters
+    Runs a small grid over scale-phase parameters to keep runtime reasonable:
+    - psi_window: [128, 256]
+    - base: [10.0, 2.0]
     
     Returns:
         List of configuration dictionaries
     """
     configs = []
-    
-    # FFT modes: only vary psi_window
-    fft_modes = ["cepstrum", "complex_cepstrum"]
-    psi_windows_fft = [128, 256]
-    
-    for psi_mode in fft_modes:
-        for psi_window in psi_windows_fft:
-            config = {
-                "psi_mode": psi_mode,
-                "psi_window": psi_window,
-            }
-            configs.append(config)
-    
-    # Mellin modes: vary multiple parameters
-    mellin_modes = ["mellin_cepstrum", "mellin_complex_cepstrum"]
-    
     param_grid = {
         "psi_window": [128, 256],
-        "mellin_sigma": [0.0, 0.25],
-        "psi_min_bin": [2, 4],
-        "psi_max_frac": [0.15, 0.2],
-        "mellin_detrend_phase": [True],
-        "psi_phase_agg": ["peak"],
+        "base": [10.0, 2.0],
     }
-    
+
     keys = list(param_grid.keys())
     values = [param_grid[k] for k in keys]
-    
-    for psi_mode in mellin_modes:
-        for combo in itertools.product(*values):
-            config = {"psi_mode": psi_mode}
-            config.update(dict(zip(keys, combo)))
-            configs.append(config)
-    
+
+    for combo in itertools.product(*values):
+        config = {"psi_mode": "scale_phase"}
+        config.update(dict(zip(keys, combo)))
+        configs.append(config)
+
     return configs
 
 
@@ -708,7 +664,7 @@ def main() -> None:
         "--mode",
         choices=["baseline", "grid"],
         default="baseline",
-        help="Comparison mode: baseline (4 psi_mode variants) or grid (parameter search)",
+        help="Comparison mode: baseline (single scale_phase config) or grid (parameter search)",
     )
     
     # Walk-forward validation

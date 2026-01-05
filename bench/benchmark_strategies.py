@@ -33,7 +33,7 @@ from spot_bot.strategies import KalmanRiskStrategy, MeanRevGatedStrategy, apply_
 
 
 DEFAULT_SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "AVAX/USDT"]
-DEFAULT_PSI_MODES = ["none", "mellin_cepstrum", "mellin_complex_cepstrum"]
+DEFAULT_PSI_MODES = ["scale_phase", "none"]
 ANNUAL_HOURS = 24 * 365
 
 

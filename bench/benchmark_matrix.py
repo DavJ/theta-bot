@@ -31,7 +31,7 @@ from bench.benchmark_pairs import (
 )
 
 
-DEFAULT_PSI_MODES = ["none", "mellin_cepstrum", "mellin_complex_cepstrum"]
+DEFAULT_PSI_MODES = ["scale_phase", "none"]
 DEFAULT_METHODS = ["C", "S"]
 WINDOW_SAMPLE_COUNT = 3
 
