@@ -136,8 +136,10 @@ def compute_equity_metrics(
 
     ret_series = equity.pct_change().dropna()
     periods_per_year = _bars_per_year(timeframe, equity.index)
-    final_return = float(equity.iloc[-1] - 1.0)
-    cagr = float(equity.iloc[-1] ** (periods_per_year / max(len(equity), 1)) - 1.0)
+    initial_equity = 1.0
+    final_equity = float(equity.iloc[-1])
+    final_return = float(final_equity / initial_equity - 1.0)
+    cagr = float((final_equity / initial_equity) ** (periods_per_year / max(len(equity), 1)) - 1.0)
     volatility = float(ret_series.std(ddof=0) * np.sqrt(periods_per_year)) if not ret_series.empty else 0.0
     sharpe = (
         float(ret_series.mean() * periods_per_year / (ret_series.std(ddof=0) + 1e-12))
