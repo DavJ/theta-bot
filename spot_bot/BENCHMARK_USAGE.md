@@ -150,6 +150,12 @@ This formula ensures we prefer methods with:
 - Low drawdowns
 - Reasonable trading frequency
 
+## Bench scripts (features & research)
+
+- `bench/benchmark_pairs.py` now computes exposure-based equity curves (closed bars only) and supports transaction costs via `--fee-rate`, `--slippage-bps`, and exposure caps via `--max-exposure`. Per-symbol equity curves are saved to `bench_out/equity_<SYMBOL>.csv`.
+- `bench/benchmark_matrix.py` runs all symbol × method × psi-mode combinations (methods: `C` for concentration-only gating, `S` for ensemble score) and writes a single summary CSV plus rolling-window stats (`bench_out/benchmark_matrix.csv`, `bench_out/benchmark_windows.csv`).
+- `bench/render_research_note.py` renders a reproducible markdown note from the matrix + windows CSVs, including the exact CLI used.
+
 ## Timeframe Annualization
 
 The script correctly annualizes metrics based on the timeframe:

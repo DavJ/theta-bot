@@ -15,8 +15,12 @@ Usage example:
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 from pathlib import Path
+from typing import Tuple
+
+import numpy as np
 import pandas as pd
 
 
@@ -28,6 +32,130 @@ DEFAULT_SYMBOLS = [
     "XRP/USDT",
     "AVAX/USDT",
 ]
+
+
+def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
+    match = re.fullmatch(r"(\d+)([mhd])", timeframe.strip(), flags=re.IGNORECASE)
+    if not match:
+        raise ValueError(f"Unsupported timeframe: {timeframe}")
+    value = int(match.group(1))
+    unit = match.group(2).lower()
+    unit_map = {"m": "minutes", "h": "hours", "d": "days"}
+    return pd.Timedelta(**{unit_map[unit]: value})
+
+
+def _bars_per_year(timeframe: str, index: pd.Index | None) -> float:
+    try:
+        delta = _timeframe_to_timedelta(timeframe)
+        if delta.total_seconds() > 0:
+            return float(pd.Timedelta(days=365) / delta)
+    except Exception:
+        pass
+    if isinstance(index, pd.DatetimeIndex) and len(index) > 1:
+        delta = index.to_series().diff().median()
+        if pd.notna(delta) and delta.total_seconds() > 0:
+            return float(pd.Timedelta(days=365) / delta)
+    return 24 * 365.0
+
+
+def max_drawdown(equity: pd.Series) -> float:
+    if equity.empty:
+        return 0.0
+    peak = equity.cummax()
+    safe_peak = peak.where(peak > 0, 1e-8)
+    dd = (equity - peak) / safe_peak
+    return float(dd.min())
+
+
+def compute_equity_curve(
+    df: pd.DataFrame,
+    exposure: pd.Series,
+    *,
+    fee_rate: float,
+    slippage_bps: float,
+    max_exposure: float,
+    initial_equity: float = 1.0,
+) -> Tuple[pd.Series, float, pd.Series]:
+    if df is None or df.empty:
+        empty = pd.Series(dtype=float)
+        return empty, 0.0, empty
+
+    closes = pd.to_numeric(df["close"], errors="coerce")
+    # Use closed-bar exposure_t applied to forward return (t -> t+1)
+    returns = closes.pct_change().shift(-1).fillna(0.0)
+    exp = pd.to_numeric(exposure, errors="coerce").fillna(0.0).clip(lower=0.0)
+    exp = exp.clip(upper=max_exposure)
+
+    if len(closes) < 2:
+        empty = pd.Series(dtype=float, index=closes.index)
+        return empty, 0.0, exp.iloc[:0]
+
+    n_steps = len(closes) - 1
+    turnover = 0.0
+    equity = float(initial_equity)
+    prev_exp = 0.0
+    fee_mult = fee_rate + slippage_bps / 10000.0
+    equity_vals = []
+    equity_index = []
+
+    for i in range(n_steps):
+        exp_t = float(exp.iloc[i]) if i < len(exp) else 0.0
+        exp_t = min(max(exp_t, 0.0), max_exposure)
+        delta = exp_t - prev_exp
+        turnover += abs(delta)
+        equity -= equity * abs(delta) * fee_mult
+
+        ret = float(returns.iloc[i]) if pd.notna(returns.iloc[i]) else 0.0
+        equity *= 1.0 + exp_t * ret
+
+        equity_vals.append(equity)
+        equity_index.append(df.index[i + 1])
+        prev_exp = exp_t
+
+    equity_series = pd.Series(equity_vals, index=equity_index, dtype=float)
+    used_exp = exp.iloc[:n_steps].copy()
+    return equity_series, turnover, used_exp
+
+
+def compute_equity_metrics(
+    equity: pd.Series,
+    exposure: pd.Series,
+    turnover: float,
+    *,
+    timeframe: str,
+) -> dict:
+    if equity is None or equity.empty:
+        return {
+            "final_return": 0.0,
+            "cagr": 0.0,
+            "volatility": 0.0,
+            "sharpe": 0.0,
+            "max_drawdown": 0.0,
+            "turnover": 0.0,
+            "time_in_market": 0.0,
+        }
+
+    ret_series = equity.pct_change().dropna()
+    periods_per_year = _bars_per_year(timeframe, equity.index)
+    initial_equity = 1.0
+    final_equity = float(equity.iloc[-1])
+    final_return = float(final_equity / initial_equity - 1.0)
+    cagr = float((final_equity / initial_equity) ** (periods_per_year / max(len(equity), 1)) - 1.0)
+    volatility = float(ret_series.std(ddof=0) * np.sqrt(periods_per_year)) if not ret_series.empty else 0.0
+    sharpe = (
+        float(ret_series.mean() * periods_per_year / (ret_series.std(ddof=0) + 1e-12))
+        if not ret_series.empty
+        else 0.0
+    )
+    return {
+        "final_return": final_return,
+        "cagr": cagr,
+        "volatility": volatility,
+        "sharpe": sharpe,
+        "max_drawdown": max_drawdown(equity),
+        "turnover": float(turnover),
+        "time_in_market": float((exposure.abs() > 1e-12).mean()) if len(exposure) else 0.0,
+    }
 
 
 def run_features_export(
@@ -44,6 +172,9 @@ def run_features_export(
     rv_window: int,
     conc_window: int,
     base: float,
+    fee_rate: float,
+    slippage_bps: float,
+    max_exposure: float,
 ) -> None:
     cmd = [
         "python",
@@ -73,6 +204,12 @@ def run_features_export(
         str(conc_window),
         "--base",
         str(base),
+        "--fee-rate",
+        str(fee_rate),
+        "--slippage-bps",
+        str(slippage_bps),
+        "--max-exposure",
+        str(max_exposure),
         "--csv-out",
         str(out_csv),
         "--csv-out-mode",
@@ -85,8 +222,19 @@ def run_features_export(
         raise RuntimeError(f"Feature export failed for {symbol} (exit {res.returncode})")
 
 
-def summarize_features_csv(symbol: str, csv_path: Path) -> dict:
+def summarize_features_csv(
+    symbol: str,
+    csv_path: Path,
+    *,
+    timeframe: str,
+    max_exposure: float,
+    fee_rate: float,
+    slippage_bps: float,
+) -> tuple[dict, pd.Series, pd.Series]:
     df = pd.read_csv(csv_path)
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+        df = df.set_index("timestamp")
     row = {"symbol": symbol, "rows": int(len(df))}
 
     # Core sanity metrics
@@ -150,19 +298,40 @@ def summarize_features_csv(symbol: str, csv_path: Path) -> dict:
         g = rv.groupby(q, observed=True).mean()
         row["rv_S_q0"] = float(g.iloc[0])
         row["rv_S_q4"] = float(g.iloc[-1])
-
-    if "S" in df.columns and "rv" in df.columns:
-        S = pd.to_numeric(df["S"], errors="coerce")
-        rv = pd.to_numeric(df["rv"], errors="coerce")
-        q = pd.qcut(S, 5, duplicates="drop")
-        g = rv.groupby(q, observed=True).mean()
-        row["rv_S_low"] = float(g.iloc[0])   # nejnižší kvantil S
-        row["rv_S_high"] = float(g.iloc[-1]) # nejvyšší kvantil S
+        row["rv_S_low"] = float(g.iloc[0])
+        row["rv_S_high"] = float(g.iloc[-1])
     else:
-        row["rv_S_low"] = None
-        row["rv_S_high"] = None
+        row["rv_S_q0"] = row["rv_S_q4"] = None
+        row["rv_S_low"] = row["rv_S_high"] = None
 
-    return row
+    equity = pd.Series(dtype=float)
+    exp_used = pd.Series(dtype=float)
+    if "close" in df.columns and exp_col:
+        equity, turnover, exp_used = compute_equity_curve(
+            df,
+            df[exp_col],
+            fee_rate=fee_rate,
+            slippage_bps=slippage_bps,
+            max_exposure=max_exposure,
+        )
+        metrics = compute_equity_metrics(equity, exp_used, turnover, timeframe=timeframe)
+        row.update(metrics)
+        row["final_equity"] = float(equity.iloc[-1]) if not equity.empty else 1.0
+    else:
+        row.update(
+            {
+                "final_return": None,
+                "cagr": None,
+                "volatility": None,
+                "sharpe": None,
+                "max_drawdown": None,
+                "turnover": None,
+                "time_in_market": None,
+                "final_equity": None,
+            }
+        )
+
+    return row, equity, exp_used
 
 
 def main() -> None:
@@ -182,6 +351,9 @@ def main() -> None:
     ap.add_argument("--rv-window", type=int, default=24)
     ap.add_argument("--conc-window", type=int, default=256)
     ap.add_argument("--base", type=float, default=10.0)
+    ap.add_argument("--fee-rate", type=float, default=0.001)
+    ap.add_argument("--slippage-bps", type=float, default=0.0)
+    ap.add_argument("--max-exposure", type=float, default=0.3)
 
     args = ap.parse_args()
 
@@ -207,9 +379,32 @@ def main() -> None:
             rv_window=args.rv_window,
             conc_window=args.conc_window,
             base=args.base,
+            fee_rate=args.fee_rate,
+            slippage_bps=args.slippage_bps,
+            max_exposure=args.max_exposure,
         )
 
-        rows.append(summarize_features_csv(sym, csv_path))
+        summary_row, equity, exp_used = summarize_features_csv(
+            sym,
+            csv_path,
+            timeframe=args.timeframe,
+            max_exposure=args.max_exposure,
+            fee_rate=args.fee_rate,
+            slippage_bps=args.slippage_bps,
+        )
+        rows.append(summary_row)
+
+        if not equity.empty:
+            eq_out = workdir / f"equity_{safe}.csv"
+            eq_df = pd.DataFrame(
+                {
+                    "timestamp": equity.index,
+                    "equity": equity.values,
+                    "exposure": exp_used.reindex(equity.index, fill_value=0.0),
+                }
+            )
+            eq_df.to_csv(eq_out, index=False)
+            print(f"Saved equity curve for {sym}: {eq_out}")
 
     summary = pd.DataFrame(rows)
 
@@ -236,6 +431,7 @@ def main() -> None:
         "ON", "REDUCE", "OFF",
         "rv_ON", "rv_REDUCE", "rv_OFF",
         "exposure_col", "exposure_mean", "exposure_frac_on",
+        "final_equity", "final_return", "cagr", "volatility", "sharpe", "max_drawdown", "turnover", "time_in_market",
         "score"
     ]
     cols = [c for c in cols if c in summary.columns]
