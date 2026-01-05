@@ -6,7 +6,13 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from theta_features.cepstrum import EPS_LOG, rolling_cepstral_phase, rolling_complex_cepstral_phase
+from theta_features.cepstrum import (
+    EPS_LOG,
+    rolling_cepstral_phase,
+    rolling_complex_cepstral_phase,
+    rolling_mellin_cepstral_phase,
+    rolling_mellin_complex_cepstral_phase,
+)
 from theta_features.log_phase_core import (
     log_phase,
     phase_embedding,
@@ -26,6 +32,15 @@ class FeatureConfig:
     cepstrum_min_bin: int = 4
     cepstrum_max_frac: float = 0.2
     cepstrum_topk: Optional[int] = None
+    # Mellin transform parameters
+    mellin_grid_n: int = 256
+    mellin_sigma: float = 0.0
+    mellin_eps: float = 1e-12
+    mellin_detrend_phase: bool = True
+    psi_min_bin: int = 2
+    psi_max_frac: float = 0.25
+    psi_phase_agg: str = "peak"
+    psi_phase_power: float = 1.0
 
 
 def _resolve_timestamp(ohlcv_df: pd.DataFrame) -> pd.Series:
@@ -50,9 +65,11 @@ def _compute_psi_with_debug(log_rv: pd.Series, cfg: FeatureConfig) -> tuple[pd.S
     mode = str(cfg.psi_mode or "none").lower()
     if mode == "none":
         return pd.Series(np.nan, index=log_rv.index), None
-    if mode not in ("cepstrum", "complex_cepstrum"):
+    if mode not in ("cepstrum", "complex_cepstrum", "mellin_cepstrum", "mellin_complex_cepstrum"):
         raise ValueError(f"Unsupported psi_mode: {cfg.psi_mode}")
+    
     domain = (cfg.cepstrum_domain or "linear").lower()
+    
     if mode == "complex_cepstrum":
         return rolling_complex_cepstral_phase(
             log_rv,
@@ -63,6 +80,35 @@ def _compute_psi_with_debug(log_rv: pd.Series, cfg: FeatureConfig) -> tuple[pd.S
             eps=EPS_LOG,
             return_debug=True,
         )
+    elif mode == "mellin_cepstrum":
+        return rolling_mellin_cepstral_phase(
+            log_rv,
+            window=int(cfg.psi_window),
+            grid_n=int(cfg.mellin_grid_n),
+            sigma=float(cfg.mellin_sigma),
+            min_bin=int(cfg.psi_min_bin),
+            max_frac=float(cfg.psi_max_frac),
+            phase_agg=str(cfg.psi_phase_agg),
+            phase_power=float(cfg.psi_phase_power),
+            eps=float(cfg.mellin_eps),
+            return_debug=True,
+        )
+    elif mode == "mellin_complex_cepstrum":
+        return rolling_mellin_complex_cepstral_phase(
+            log_rv,
+            window=int(cfg.psi_window),
+            grid_n=int(cfg.mellin_grid_n),
+            sigma=float(cfg.mellin_sigma),
+            detrend_phase=bool(cfg.mellin_detrend_phase),
+            min_bin=int(cfg.psi_min_bin),
+            max_frac=float(cfg.psi_max_frac),
+            phase_agg=str(cfg.psi_phase_agg),
+            phase_power=float(cfg.psi_phase_power),
+            eps=float(cfg.mellin_eps),
+            return_debug=True,
+        )
+    
+    # Default to regular cepstrum
     return (
         rolling_cepstral_phase(
             log_rv,
