@@ -138,8 +138,8 @@ def complex_cepstral_phase(
     c_star = cepstrum[n_star]
     psi_angle = float(np.angle(c_star))
     psi = (psi_angle / (2 * np.pi)) % 1.0
-    if psi >= 1.0:
-        psi = 0.0
+    if psi >= 1.0 - np.finfo(float).eps:
+        psi = math.nextafter(1.0, 0.0)
     psi = min(max(psi, 0.0), 1.0 - 1e-12)
 
     if not return_debug:
@@ -225,7 +225,7 @@ def rolling_complex_cepstral_phase(
                 return_debug=True,
             )
             out[i] = psi_val
-            if dbg and debug_data is not None:
+            if debug_data is not None and dbg is not None and len(dbg) > 0:
                 for key in debug_data:
                     debug_data[key][i] = dbg.get(key, math.nan)
         else:
