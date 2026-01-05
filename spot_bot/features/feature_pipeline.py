@@ -113,8 +113,7 @@ def compute_features(ohlcv_df: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame
                 feature_data[col] = psi_debug[col]
 
     df_feat = pd.DataFrame(feature_data, index=close.index)
-    if "psi_mode" not in df_feat.columns:
-        df_feat["psi_mode"] = str(cfg.psi_mode)
+    df_feat["psi_mode"] = str(cfg.psi_mode)
     for col in ("psi_n_star", "psi_c_real", "psi_c_imag", "psi_c_abs", "psi_angle_rad"):
         if col not in df_feat.columns:
             df_feat[col] = np.nan

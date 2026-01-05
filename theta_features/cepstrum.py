@@ -138,9 +138,10 @@ def complex_cepstral_phase(
     c_star = cepstrum[n_star]
     psi_angle = float(np.angle(c_star))
     psi = (psi_angle / (2 * np.pi)) % 1.0
-    if psi >= 1.0 - np.finfo(float).eps:
+    eps_float = np.finfo(float).eps
+    if psi >= 1.0 - eps_float:
         psi = math.nextafter(1.0, 0.0)
-    psi = min(max(psi, 0.0), 1.0 - 1e-12)
+    psi = min(max(psi, 0.0), 1.0 - eps_float)
 
     if not return_debug:
         return psi
