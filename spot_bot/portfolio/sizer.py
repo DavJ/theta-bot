@@ -23,8 +23,10 @@ def compute_target_position(
         target_exposure = 0.0
     elif risk_state == "REDUCE":
         target_exposure = clip01(desired_exposure) * clip01(risk_budget)
-    else:
+    elif risk_state == "ON":
         target_exposure = clip01(desired_exposure) * clip01(risk_budget)
+    else:
+        target_exposure = 0.0
 
     target_exposure = min(float(max_exposure), target_exposure)
     return float(equity_usdt) * target_exposure / float(price)

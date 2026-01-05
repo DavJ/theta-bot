@@ -41,7 +41,7 @@ def _load_cached(path: Path) -> pd.DataFrame:
 def _fetch_ccxt(symbol: str, timeframe: str, limit_total: int) -> pd.DataFrame:
     try:
         from theta_features.binance_data import fetch_ohlcv_ccxt
-    except Exception as exc:  # pragma: no cover
+    except (ImportError, ModuleNotFoundError) as exc:  # pragma: no cover
         print("ccxt or theta_features not installed; install ccxt to download live data.")
         raise SystemExit(1) from exc
     df = fetch_ohlcv_ccxt(symbol=symbol, timeframe=timeframe, limit_total=limit_total)
@@ -115,11 +115,13 @@ def run_backtest(
 ) -> BacktestResult:
     prices = ohlcv["close"].astype(float)
     returns = _calc_returns(prices)
-    strategy = (
-        MeanRevGatedStrategy(max_exposure=max_exposure)
-        if strategy_name == "meanrev"
-        else KalmanRiskStrategy(mode=kalman_mode, max_exposure=max_exposure)
-    )
+    strategy_map = {
+        "meanrev": MeanRevGatedStrategy(max_exposure=max_exposure),
+        "kalman": KalmanRiskStrategy(mode=kalman_mode, max_exposure=max_exposure),
+    }
+    strategy = strategy_map.get(strategy_name)
+    if strategy is None:
+        raise ValueError(f"Unsupported strategy: {strategy_name}")
     feat = compute_features(ohlcv, cfg=feature_cfg)
     regime = RegimeEngine({})
     desired = []
