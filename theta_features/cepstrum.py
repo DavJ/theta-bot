@@ -60,9 +60,10 @@ def cepstral_phase(
     if arr.size == 0:
         return math.nan
     domain = (domain or "linear").lower()
-    phase_source = phase_source.lower()
-    if phase_source not in {"spectrum", "cepstrum"}:
+    phase_source_normalized = phase_source.lower()
+    if phase_source_normalized not in {"spectrum", "cepstrum"}:
         raise ValueError("phase_source must be 'spectrum' or 'cepstrum'.")
+    phase_source = phase_source_normalized
     min_bin = max(1, int(min_bin))
     max_frac = float(max_frac)
 
@@ -83,7 +84,7 @@ def cepstral_phase(
         candidate_slice = cepstrum[min_bin:max_bin]
     else:
         # Avoid the DC component when selecting the dominant spectral bin.
-        k_min = max(1, min_bin)
+        k_min = min_bin
         candidate_max = min(int(len(seg) * max_frac), len(spectrum) // 2)
         k_max = max(candidate_max, k_min + 1)
         k_max = min(k_max, len(spectrum))
