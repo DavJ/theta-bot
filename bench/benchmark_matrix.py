@@ -33,6 +33,7 @@ from bench.benchmark_pairs import (
 
 DEFAULT_PSI_MODES = ["none", "mellin_cepstrum", "mellin_complex_cepstrum"]
 DEFAULT_METHODS = ["C", "S"]
+WINDOW_SAMPLE_COUNT = 3
 
 
 def _parse_list(val: str) -> List[str]:
@@ -76,8 +77,8 @@ def _rolling_windows(equity: pd.Series, window_days: int, timeframe: str) -> Lis
         ret = float(seg.iloc[-1] / seg.iloc[0] - 1.0)
         dd = max_drawdown(seg)
         rows.append({"start": seg.index[0], "end": seg.index[-1], "return": ret, "maxdd": dd})
-    best = sorted(rows, key=lambda r: r["return"], reverse=True)[:3]
-    worst = sorted(rows, key=lambda r: r["return"])[:3]
+    best = sorted(rows, key=lambda r: r["return"], reverse=True)[:WINDOW_SAMPLE_COUNT]
+    worst = sorted(rows, key=lambda r: r["return"])[:WINDOW_SAMPLE_COUNT]
     return best + worst
 
 

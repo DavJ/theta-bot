@@ -81,6 +81,7 @@ def compute_equity_curve(
         return empty, 0.0, empty
 
     closes = pd.to_numeric(df["close"], errors="coerce")
+    # Use closed-bar exposure_t applied to forward return (t -> t+1)
     returns = closes.pct_change().shift(-1).fillna(0.0)
     exp = pd.to_numeric(exposure, errors="coerce").fillna(0.0).clip(lower=0.0)
     exp = exp.clip(upper=max_exposure)

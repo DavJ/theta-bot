@@ -27,6 +27,7 @@ def test_equity_curve_with_costs():
         max_exposure=1.0,
     )
     assert pytest.approx(turnover, rel=1e-9) == 1.0
+    # 10% gain on second bar minus 0.1% cost on the exposure change, then -9.09% move
     assert pytest.approx(equity.iloc[-1], rel=1e-6) == 0.90818181818
     assert len(exp_used) == len(equity)
 

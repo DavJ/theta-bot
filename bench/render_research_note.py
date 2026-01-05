@@ -72,7 +72,7 @@ def main() -> None:
     windows = pd.read_csv(windows_path) if windows_path.exists() else pd.DataFrame()
 
     top_sharpe, top_dd = _best_runs(matrix)
-    run_ids = list(pd.unique(pd.concat([top_sharpe["run_id"], top_dd["run_id"]], ignore_index=True)))
+    run_ids = sorted(set(top_sharpe.get("run_id", [])).union(set(top_dd.get("run_id", []))))
     benchmark_cmd = _load_cmd(args)
     render_cmd = "python bench/render_research_note.py " + " ".join(sys.argv[1:])
 
