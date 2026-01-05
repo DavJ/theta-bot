@@ -60,6 +60,7 @@ def cepstral_phase(
     if arr.size == 0:
         return math.nan
     domain = (domain or "linear").lower()
+    # Runtime guard for callers without static type checking; accept case-insensitive inputs.
     phase_source_normalized = phase_source.lower()
     if phase_source_normalized not in {"spectrum", "cepstrum"}:
         raise ValueError("phase_source must be 'spectrum' or 'cepstrum'.")
