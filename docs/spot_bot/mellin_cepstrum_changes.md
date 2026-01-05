@@ -163,3 +163,194 @@ features = compute_features(ohlcv_df, cfg)
 - Phase detrending uses simple linear regression
 - No multi-scale or hierarchical Mellin transforms yet
 - Rolling implementations are not vectorized
+
+## Tuning
+
+### Overview
+
+The `spot_bot/tune_mellin.py` script provides a reproducible parameter sweep and tuning framework for selecting optimal Mellin cepstrum parameters. It supports three tuning modes:
+
+1. **Regime mode**: Tunes parameters for `mellin_cepstrum` to optimize regime stability
+2. **Phase mode**: Tunes parameters for `mellin_complex_cepstrum` to optimize phase timing
+3. **Both mode**: Runs regime sweep first, then uses best configs as base for phase sweep
+
+### Usage
+
+Basic usage for regime parameter tuning:
+
+```bash
+python spot_bot/tune_mellin.py \
+  --csv path/to/ohlcv.csv \
+  --mode regime \
+  --top 5 \
+  --out-csv regime_results.csv
+```
+
+Tune phase parameters using a specific base configuration:
+
+```bash
+python spot_bot/tune_mellin.py \
+  --csv path/to/ohlcv.csv \
+  --mode phase \
+  --top 10 \
+  --out-csv phase_results.csv
+```
+
+Run comprehensive sweep with walk-forward validation:
+
+```bash
+python spot_bot/tune_mellin.py \
+  --csv path/to/ohlcv.csv \
+  --mode both \
+  --walk-forward \
+  --train-bars 1000 \
+  --test-bars 500 \
+  --slippage-bps 2.0 \
+  --fee-rate 0.001 \
+  --max-exposure 0.5 \
+  --out-csv full_results.csv
+```
+
+### Command-Line Arguments
+
+**Required:**
+- `--csv PATH`: Path to OHLCV CSV file with columns: timestamp, open, high, low, close, volume
+
+**Backtest Parameters:**
+- `--slippage-bps FLOAT`: Slippage in basis points (default: 0.0)
+- `--fee-rate FLOAT`: Transaction fee rate (default: 0.0005)
+- `--max-exposure FLOAT`: Maximum exposure fraction (default: 1.0)
+- `--initial-equity FLOAT`: Initial equity amount (default: 1000.0)
+
+**Output Parameters:**
+- `--out-csv PATH`: Path to save results CSV (optional)
+- `--top N`: Number of top configurations to print (default: 5)
+
+**Tuning Mode:**
+- `--mode {regime,phase,both}`: Tuning mode (default: regime)
+
+**Walk-Forward Validation:**
+- `--walk-forward`: Enable walk-forward validation
+- `--train-bars N`: Number of training bars (default: 1000)
+- `--test-bars N`: Number of test bars (default: 500)
+
+**Reproducibility:**
+- `--seed INT`: Random seed for reproducibility (default: 42)
+
+### Parameter Grids
+
+**Regime Mode** (`mellin_cepstrum`):
+- `psi_window`: [128, 256, 512]
+- `mellin_sigma`: [-0.5, 0.0, 0.5]
+- `mellin_grid_n`: [128, 256, 512]
+- `psi_min_bin`: [2, 4, 6]
+- `psi_max_frac`: [0.15, 0.2, 0.25, 0.3]
+
+Fixed: `psi_phase_agg="peak"`
+
+**Phase Mode** (`mellin_complex_cepstrum`):
+- `mellin_detrend_phase`: [True, False]
+- `psi_phase_agg`: ["peak", "cmean"]
+- `psi_phase_power`: [0.5, 1.0, 1.5, 2.0]
+- `mellin_eps`: [1e-14, 1e-12, 1e-10]
+
+Uses base configuration from regime mode or default values.
+
+### Interpreting Results
+
+The script outputs configurations ranked by:
+1. **Sharpe ratio** (descending): Higher is better - measures risk-adjusted returns
+2. **Max drawdown** (descending): Less negative is better - measures downside risk
+3. **Turnover** (ascending): Lower is better - reduces transaction costs
+
+**Key Metrics:**
+- `sharpe`: Annualized Sharpe ratio (assumes hourly bars, 24*365 periods/year)
+- `final_return`: Total return over the backtest period
+- `max_drawdown`: Maximum peak-to-trough decline
+- `volatility`: Annualized volatility of returns
+- `turnover`: Trading activity relative to initial equity
+- `trades`: Number of trades executed
+- `time_in_market`: Fraction of time with non-zero position
+
+**Walk-Forward Metrics** (when enabled):
+- `mean_sharpe`: Average Sharpe ratio across test folds
+- `mean_max_drawdown`: Average max drawdown across test folds
+- `num_folds`: Number of walk-forward folds evaluated
+
+### Output CSV Format
+
+The results CSV contains:
+- All configuration parameters (e.g., `psi_window`, `mellin_sigma`, etc.)
+- All performance metrics (e.g., `sharpe`, `max_drawdown`, `final_return`, etc.)
+- One row per configuration tested
+- Sorted by ranking criteria
+
+### Best Practices
+
+1. **Start with regime mode**: Find stable regime detection parameters first
+2. **Use walk-forward validation**: More robust than single backtest
+3. **Check multiple metrics**: Don't optimize for Sharpe alone - consider drawdown and turnover
+4. **Validate on held-out data**: Test best configs on separate time periods
+5. **Consider transaction costs**: Use realistic `--fee-rate` and `--slippage-bps`
+6. **Beware of overfitting**: More parameters → higher risk of curve-fitting
+
+### Example Output
+
+```
+================================================================================
+TOP 5 CONFIGURATIONS
+================================================================================
+
+Rank 1:
+  Metrics:
+    sharpe              :     1.2345
+    final_return        :     0.3456
+    max_drawdown        :    -0.0789
+    volatility          :     0.2345
+    turnover            :     2.3456
+    trades              :    45.0000
+  Configuration:
+    psi_mode            : mellin_cepstrum
+    psi_window          :        256
+    mellin_grid_n       :        256
+    mellin_sigma        :        0.0
+    psi_min_bin         :          4
+    psi_max_frac        :       0.25
+    psi_phase_agg       :       peak
+
+...
+```
+
+### Tips for Parameter Selection
+
+**psi_window**: Larger windows capture longer-term patterns but are slower to adapt
+- Use 128 for fast-changing markets
+- Use 256 for balanced performance
+- Use 512 for stable, slow-moving markets
+
+**mellin_sigma**: Controls frequency weighting
+- Negative values emphasize low frequencies (long-term trends)
+- Zero (default) provides balanced weighting
+- Positive values emphasize high frequencies (short-term patterns)
+
+**mellin_grid_n**: Higher values provide better frequency resolution but are slower
+- Use 128 for speed
+- Use 256 for balanced performance (recommended)
+- Use 512 for maximum precision
+
+**psi_min_bin** / **psi_max_frac**: Control the frequency band for phase extraction
+- Smaller min_bin includes lower frequencies
+- Larger max_frac includes higher frequencies
+- Typical range captures medium-frequency cycles
+
+**mellin_detrend_phase**: Removes linear trends from phase
+- True (default) often improves stability
+- False preserves raw phase information
+
+**psi_phase_agg**: How to aggregate phase from multiple frequency bins
+- "peak" uses the strongest frequency component (faster, simpler)
+- "cmean" uses circular mean weighted by magnitude (more robust, slower)
+
+**psi_phase_power**: Only affects "cmean" aggregation
+- Higher values give more weight to dominant components
+- Lower values spread weight more evenly
