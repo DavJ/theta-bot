@@ -4,13 +4,14 @@
    - Install deps: `pip install -r requirements.txt`
    - Update `spot_bot/config.yaml` (symbol, timeframe, max_exposure, fee_rate, min_notional).
    - Run once in dryrun mode (no trades, optional DB for logs):  
-     `python spot_bot/run_live.py --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --cache data/latest.csv`
+     `python -m spot_bot.run_live --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --cache data/latest.csv`
    - Confirm summary prints risk state, intent exposure, target exposure, and equity.
+   - Note: If running as a script instead of module mode, set `PYTHONPATH=.`.
 
 2. **Paper trading rehearsal**
    - Start with `--initial-usdt` or reuse balances loaded from `bot.db`.
    - Run paper mode (fills at close, fees applied):  
-     `python spot_bot/run_live.py --mode paper --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --fee-rate 0.001 --max-exposure 0.3 --min-notional 10`
+     `python -m spot_bot.run_live --mode paper --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --fee-rate 0.001 --max-exposure 0.3 --min-notional 10`
    - Verify `bot.db` contains `bars`, `features`, `decisions`, `intents`, `executions`, and `equity`.
    - Re-run with the same data; it should exit with “No new closed bar.”
 
@@ -27,7 +28,7 @@
 5. **Going live (explicit opt-in)**
    - Ensure API keys are configured for ccxt outside source control.
    - Run with acknowledgement flag:  
-     `python spot_bot/run_live.py --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h --limit-total 2000`
+     `python -m spot_bot.run_live --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h --limit-total 2000`
    - Confirm ccxt connectivity; slippage/reserve guards should block abnormal fills.
 
 6. **Stopping safely**

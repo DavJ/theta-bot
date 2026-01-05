@@ -8,6 +8,12 @@ from typing import Optional
 
 import pandas as pd
 
+if __package__ is None and __name__ == "__main__":
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 try:
     from download_market_data import download_binance_data as _download_binance_data
 except ImportError:  # pragma: no cover - defensive import for optional dependency
