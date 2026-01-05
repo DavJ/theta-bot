@@ -47,13 +47,13 @@ Stability scores (median window return − |p10 return| − |median drawdown|) f
 
 ## Reproducibility
 - Features-only pairs scan:  
-  ```bash
-  python bench/benchmark_pairs.py --limit-total 8000 --timeframe 1h --out bench_out/benchmark_pairs.csv
-  ```
+```bash
+  python -m bench.benchmark_pairs --limit-total 8000 --timeframe 1h --out bench_out/benchmark_pairs.csv
+```
 - Strategy PnL benchmark (both meanrev + Kalman, with optional windows):  
-  ```bash
-  python bench/benchmark_strategies.py --limit-total 8000 --timeframe 1h --out bench_out/benchmark_strategies.csv --pivot-out bench_out/benchmark_strategies_pivot.csv --window-days 30
-  ```
+```bash
+  python -m bench.benchmark_strategies --limit-total 8000 --timeframe 1h --out bench_out/benchmark_strategies.csv --pivot-out bench_out/benchmark_strategies_pivot.csv --window-days 30
+```
 - Single backtest example (supports `--strategy kalman`):  
   ```bash
   python -m spot_bot.run_backtest --csv path/to/ohlcv.csv --strategy kalman --kalman-q-level 1e-4 --kalman-q-trend 1e-6 --kalman-r 1e-3 --kalman-k 1.5 --kalman-min-bars 10
@@ -62,4 +62,3 @@ Stability scores (median window return − |p10 return| − |median drawdown|) f
   ```bash
   python -m spot_bot.run_live --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 1000 --csv-out bench_out/live_features.csv --csv-out-mode features
   ```
-

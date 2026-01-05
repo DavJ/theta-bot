@@ -9,7 +9,7 @@ What it does:
 - Prints a sorted table + optionally writes a summary CSV.
 
 Usage example:
-  python bench/benchmark_pairs.py --limit-total 8000 --out benchmark_summary.csv
+  python -m bench.benchmark_pairs --limit-total 8000 --out benchmark_summary.csv
 """
 
 from __future__ import annotations
