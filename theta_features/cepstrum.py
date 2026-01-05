@@ -12,7 +12,7 @@ EPS_LOG = 1e-12
 def frac01(x: float, eps: float = np.finfo(float).eps) -> float:
     """
     Wrap x into [0, 1) with a stable modulus (robust to negative inputs) and clamp values extremely
-    close to 1.0 back to 0.
+    close to 1.0 back to 0 so phase angles remain continuous on the unit circle.
 
     Args:
         x: Value to wrap into the unit interval.
@@ -60,7 +60,7 @@ def cepstral_phase(
     if arr.size == 0:
         return math.nan
     domain = (domain or "linear").lower()
-    phase_source = (phase_source or "spectrum").lower()
+    phase_source = phase_source.lower()
     if phase_source not in {"spectrum", "cepstrum"}:
         raise ValueError("phase_source must be 'spectrum' or 'cepstrum'.")
     min_bin = max(1, int(min_bin))

@@ -3,11 +3,13 @@ import pandas as pd
 
 from theta_features.cepstrum import rolling_cepstral_phase
 
+# Synthesize a dominant tone with a secondary harmonic and a slowly varying phase offset.
 WINDOW = 256
 PRIMARY_FREQ_BIN = 5
 SECONDARY_FREQ_BIN = 11
 SECONDARY_AMPLITUDE = 0.5
 PHASE_WALK_SCALE = 0.1
+# Ensure psi values explore the unit circle rather than collapsing to a few points.
 MIN_UNIQUE_VALUES = 20
 
 
