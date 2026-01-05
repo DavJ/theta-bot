@@ -92,10 +92,14 @@ def test_walkforward_dual_stream_runs(tmp_path):
     
     # Verify predictions file exists
     predictions_files = list(output_dir.rglob("predictions.parquet"))
-    assert len(predictions_files) > 0
+    if predictions_files:
+        preds_df = pd.read_parquet(predictions_files[0])
+    else:
+        predictions_files = list(output_dir.rglob("predictions.csv"))
+        assert len(predictions_files) > 0
+        preds_df = pd.read_csv(predictions_files[0], index_col=0, parse_dates=[0])
     
     # Load predictions and verify columns
-    preds_df = pd.read_parquet(predictions_files[0])
     assert "predicted_return" in preds_df.columns
     assert "signal" in preds_df.columns
     assert "future_return" in preds_df.columns

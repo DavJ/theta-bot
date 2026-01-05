@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
@@ -190,7 +191,20 @@ def run_walkforward(config_path: str) -> Dict:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     preds_df = pd.concat(predictions).sort_index()
-    preds_df.to_parquet(out_dir / "predictions.parquet")
+    parquet_fallback_reason = None
+    try:
+        preds_df.to_parquet(out_dir / "predictions.parquet")
+    except (ImportError, ModuleNotFoundError) as exc:
+        parquet_fallback_reason = (
+            f"Parquet engine missing ({type(exc).__name__}: {exc}); saving predictions as CSV instead of parquet."
+        )
+    except OSError as exc:  # pragma: no cover - defensive fallback
+        parquet_fallback_reason = (
+            f"Parquet write failed ({type(exc).__name__}: {exc}); saving predictions as CSV."
+        )
+    if parquet_fallback_reason:
+        warnings.warn(parquet_fallback_reason)
+        preds_df.to_csv(out_dir / "predictions.csv")
 
     backtest_res = run_backtest(
         preds_df,
