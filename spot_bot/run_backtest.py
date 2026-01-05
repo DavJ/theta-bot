@@ -60,6 +60,7 @@ def main() -> None:
     parser.add_argument("--bars", type=int, default=240, help="Synthetic bar count if CSV not provided.")
     parser.add_argument("--slippage-bps", type=float, default=0.5, help="Simple slippage penalty in basis points.")
     parser.add_argument("--strategy", type=str, choices=["meanrev", "kalman"], default="meanrev")
+    parser.add_argument("--kalman-mode", type=str, choices=["meanrev", "trend"], default="meanrev")
     parser.add_argument("--kalman-q-level", type=float, default=1e-4)
     parser.add_argument("--kalman-q-trend", type=float, default=1e-6)
     parser.add_argument("--kalman-r", type=float, default=1e-3)
