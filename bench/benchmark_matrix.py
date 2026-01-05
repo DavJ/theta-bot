@@ -36,7 +36,8 @@ try:
     )
 except ImportError as exc:  # pragma: no cover - guidance for direct execution
     raise ImportError(
-        "benchmark_matrix must be run as a module (python -m bench.benchmark_matrix ...)"
+        "bench.benchmark_matrix should be executed as a module (e.g., python -m bench.benchmark_matrix); "
+        f"original import error: {exc}"
     ) from exc
 
 

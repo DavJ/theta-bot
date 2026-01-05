@@ -44,7 +44,7 @@ def _parse_psi_modes(val: str) -> list[str]:
             continue
         if mode not in ALLOWED_PSI_MODES:
             raise argparse.ArgumentTypeError(
-                f"Unsupported psi mode '{raw}'. Allowed: {sorted(ALLOWED_PSI_MODES)}"
+                f"Unsupported psi mode '{raw.strip()}' (normalized: '{mode}'). Allowed: {', '.join(sorted(ALLOWED_PSI_MODES))}"
             )
         if mode not in modes:
             modes.append(mode)
@@ -240,12 +240,15 @@ def summarize_features_csv(
     max_exposure: float,
     fee_rate: float,
     slippage_bps: float,
+    psi_mode: str | None = None,
 ) -> tuple[dict, pd.Series, pd.Series]:
     df = pd.read_csv(csv_path)
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
         df = df.set_index("timestamp")
     row = {"symbol": symbol, "rows": int(len(df))}
+    if psi_mode is not None:
+        row["psi_mode"] = psi_mode
 
     # Core sanity metrics
     if "psi" in df.columns:
@@ -355,8 +358,7 @@ def main() -> None:
     # Fixed research params (keep constant across pairs)
     ap.add_argument(
         "--psi-modes",
-        type=_parse_psi_modes,
-        default=["none", "scale_phase"],
+        default="none,scale_phase",
         help="Comma-separated psi modes to evaluate. Allowed: none, scale_phase.",
     )
     ap.add_argument("--psi-window", type=int, default=256)
@@ -368,6 +370,7 @@ def main() -> None:
     ap.add_argument("--max-exposure", type=float, default=0.3)
 
     args = ap.parse_args()
+    psi_modes = _parse_psi_modes(args.psi_modes)
 
     symbols = [s.strip() for s in args.symbols.split(",") if s.strip()]
     workdir = Path(args.workdir)
@@ -376,7 +379,7 @@ def main() -> None:
     rows = []
     for sym in symbols:
         safe = sym.replace("/", "_")
-        for psi_mode in args.psi_modes:
+        for psi_mode in psi_modes:
             csv_path = workdir / f"features_{safe}_{psi_mode}.csv"
 
             run_features_export(
@@ -401,8 +404,8 @@ def main() -> None:
                 max_exposure=args.max_exposure,
                 fee_rate=args.fee_rate,
                 slippage_bps=args.slippage_bps,
+                psi_mode=psi_mode,
             )
-            summary_row["psi_mode"] = psi_mode
             rows.append(summary_row)
 
             if not equity.empty:
