@@ -136,12 +136,11 @@ class KalmanRiskStrategy:
 def apply_risk_gating(desired: float, risk_state: str, risk_budget: float) -> float:
     if risk_state == "OFF":
         return 0.0
-    if risk_state == "REDUCE":
-        return desired * clip01(risk_budget)
-    if risk_state == "ON":
+    if risk_state in ("REDUCE", "ON"):
         return desired * clip01(risk_budget)
     return 0.0
 
 
 def params_hash(params: dict) -> str:
+    """Public helper to produce a short, deterministic hash for strategy params."""
     return _hash_params(params)
