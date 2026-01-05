@@ -47,6 +47,7 @@ CSV_OUTPUT_COLUMNS = [
     "action",
 ]
 REQUIRED_BAR_COLUMNS = {"open", "high", "low", "close", "volume"}
+CSV_OUT_MODES = ("latest", "features")
 
 
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
@@ -253,6 +254,90 @@ def compute_step(
     )
 
 
+def _compute_feature_outputs(
+    ohlcv_df: pd.DataFrame,
+    feature_cfg: FeatureConfig,
+    regime_engine: RegimeEngine,
+    strategy: MeanReversionStrategy,
+    max_exposure: float,
+    equity_usdt: float,
+    tail_rows: Optional[int] = None,
+    latest_action: str = "",
+) -> pd.DataFrame:
+    features = compute_features(ohlcv_df, feature_cfg)
+    if features.empty:
+        return features.head(0)
+
+    # Add OHLCV columns for completeness
+    for col in ("open", "high", "low", "close", "volume"):
+        if col in ohlcv_df.columns:
+            features[col] = ohlcv_df[col]
+
+    valid = features.dropna(subset=["S", "C"]).copy()
+    if valid.empty:
+        return valid
+
+    closes = ohlcv_df["close"].astype(float)
+    closes_non_na = closes.dropna()
+    ema = closes.ewm(span=strategy.ema_span, adjust=False).mean()
+    rolling_std = closes.rolling(strategy.std_lookback).std(ddof=0)
+    fallback_std = closes.expanding().std(ddof=0).fillna(0.0)
+    safe_std = float(closes_non_na.std(ddof=0)) if not closes_non_na.empty else 0.0
+    if safe_std <= 0.0:
+        safe_std = 1e-8
+    fallback_std = fallback_std.where(fallback_std > 0.0, safe_std)
+    effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
+    effective_std = effective_std.replace(0.0, safe_std)
+    zscore = (closes - ema) / effective_std
+    signal_strength = (-zscore).clip(lower=0.0)
+    entry = strategy.entry_z
+    full = strategy.full_z
+    capped_strength = signal_strength.clip(upper=full)
+    scale = (capped_strength - entry) / max(full - entry, 1e-8)
+    raw_exposure = strategy.min_exposure + (strategy.max_exposure - strategy.min_exposure) * scale
+    desired_exposure_series = raw_exposure.where(signal_strength > entry, 0.0).clip(lower=0.0, upper=1.0)
+
+    equity = float(equity_usdt or 0.0)
+
+    rv_values = valid["rv"] if "rv" in valid.columns else pd.Series(index=valid.index, dtype=float)
+    risk_state_series = pd.Series("ON", index=valid.index)
+
+    off_mask = valid["S"] < regime_engine.s_off
+    if regime_engine.rv_off is not None:
+        off_mask = off_mask | (rv_values > regime_engine.rv_off)
+    risk_state_series = risk_state_series.mask(off_mask, "OFF")
+
+    reduce_mask = risk_state_series.eq("ON") & (valid["S"] < regime_engine.s_on)
+    if regime_engine.rv_reduce is not None:
+        reduce_mask = reduce_mask | (risk_state_series.eq("ON") & (rv_values > regime_engine.rv_reduce))
+    risk_state_series = risk_state_series.mask(reduce_mask, "REDUCE")
+
+    span = max(regime_engine.s_budget_high - regime_engine.s_budget_low, 1e-6)
+    budget_raw = (valid["S"] - regime_engine.s_budget_low) / span
+    risk_budget_series = budget_raw.clip(lower=0.0, upper=1.0)
+    if regime_engine.rv_guard is not None and abs(regime_engine.rv_guard) > 1e-6:
+        vol_guard = (1.0 - (rv_values / regime_engine.rv_guard)).clip(lower=0.0, upper=1.0)
+        risk_budget_series = (risk_budget_series * vol_guard).clip(lower=0.0, upper=1.0)
+
+    intent_series = desired_exposure_series.reindex(valid.index).fillna(0.0).clip(lower=0.0, upper=1.0)
+    target_exp_series = (intent_series * risk_budget_series).clip(lower=0.0, upper=float(max_exposure))
+    target_exp_series = target_exp_series.where(risk_state_series == "ON", 0.0)
+    target_btc_series = target_exp_series * equity / valid["close"]
+
+    valid["risk_state"] = risk_state_series
+    valid["risk_budget"] = risk_budget_series
+    valid["intent_exposure"] = intent_series
+    valid["target_exposure"] = target_exp_series.fillna(0.0)
+    valid["action"] = ""
+    if latest_action and not valid.empty:
+        valid.loc[valid.index[-1], "action"] = latest_action
+
+    if tail_rows is not None:
+        valid = valid.tail(tail_rows)
+
+    return valid
+
+
 def run_once_on_df(
     ohlcv_df: pd.DataFrame,
     feature_cfg: FeatureConfig,
@@ -293,7 +378,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-notional", dest="min_notional", type=float, default=10.0)
     parser.add_argument("--step-size", dest="step_size", type=float, default=None)
     parser.add_argument("--csv-in", dest="csv_in", type=str, default=None, help="Optional CSV input for offline testing.")
-    parser.add_argument("--csv-out", dest="csv_out", type=str, default=None, help="Optional CSV output to export latest result.")
+    parser.add_argument("--csv-out", dest="csv_out", type=str, default=None, help="Optional CSV output to export results.")
+    parser.add_argument(
+        "--csv-out-mode",
+        dest="csv_out_mode",
+        choices=list(CSV_OUT_MODES),
+        default="latest",
+        help="CSV export mode: latest (single row) or features (full feature table).",
+    )
+    parser.add_argument(
+        "--csv-out-tail", dest="csv_out_tail", type=int, default=None, help="Optional tail N rows when exporting features."
+    )
     parser.add_argument("--csv", type=str, default=None, help="(Deprecated) Use --csv-in/--csv-out instead.")
     parser.add_argument("--cache", type=str, default=None, help="Optional cache file for OHLCV.")
     parser.add_argument("--config", type=str, default=str(pathlib.Path(__file__).parent / "config.yaml"))
@@ -478,31 +573,54 @@ def main() -> None:
         bar_row = None
         ts_value = None
         if args.csv_out:
-            bar_row, ts_value = _latest_bar_row(df)
             out_path = pathlib.Path(args.csv_out)
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            export_row = {
-                "timestamp": ts_value,
-                "open": bar_row["open"],
-                "high": bar_row["high"],
-                "low": bar_row["low"],
-                "close": bar_row["close"],
-                "volume": bar_row["volume"],
-                "rv": result.features_row.get("rv"),
-                "C": result.features_row.get("C"),
-                "psi": result.features_row.get("psi"),
-                "C_int": result.features_row.get("C_int"),
-                "S": result.features_row.get("S"),
-                "risk_state": result.decision.risk_state,
-                "risk_budget": result.decision.risk_budget,
-                "intent_exposure": result.intent.desired_exposure,
-                "target_exposure": result.target_exposure,
-                "action": action,
-            }
-            with out_path.open("w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=CSV_OUTPUT_COLUMNS)
-                writer.writeheader()
-                writer.writerow(export_row)
+            if args.csv_out_mode == "features":
+                export_df = _compute_feature_outputs(
+                    ohlcv_df=df,
+                    feature_cfg=feat_cfg,
+                    regime_engine=regime_engine,
+                    strategy=strategy,
+                    max_exposure=max_exposure,
+                    equity_usdt=result.equity["equity_usdt"],
+                    tail_rows=args.csv_out_tail,
+                    latest_action=action,
+                )
+                if "timestamp" not in export_df.columns:
+                    export_df = export_df.reset_index()
+                    if export_df.columns.empty:
+                        export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
+                    else:
+                        timestamp_candidates = [c for c in export_df.columns if pd.api.types.is_datetime64_any_dtype(export_df[c])]
+                        timestamp_col = timestamp_candidates[0] if timestamp_candidates else export_df.columns[0]
+                        export_df = export_df.rename(columns={timestamp_col: "timestamp"})
+                    if "timestamp" not in export_df.columns:
+                        export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
+                export_df.to_csv(out_path, index=False)
+            else:
+                bar_row, ts_value = _latest_bar_row(df)
+                export_row = {
+                    "timestamp": ts_value,
+                    "open": bar_row["open"],
+                    "high": bar_row["high"],
+                    "low": bar_row["low"],
+                    "close": bar_row["close"],
+                    "volume": bar_row["volume"],
+                    "rv": result.features_row.get("rv"),
+                    "C": result.features_row.get("C"),
+                    "psi": result.features_row.get("psi"),
+                    "C_int": result.features_row.get("C_int"),
+                    "S": result.features_row.get("S"),
+                    "risk_state": result.decision.risk_state,
+                    "risk_budget": result.decision.risk_budget,
+                    "intent_exposure": result.intent.desired_exposure,
+                    "target_exposure": result.target_exposure,
+                    "action": action,
+                }
+                with out_path.open("w", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=CSV_OUTPUT_COLUMNS)
+                    writer.writeheader()
+                    writer.writerow(export_row)
 
         if logger:
             if bar_row is None or ts_value is None:
