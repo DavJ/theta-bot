@@ -49,3 +49,57 @@ def test_run_live_exports_csv(tmp_path):
     assert csv_out.exists()
     out_df = pd.read_csv(csv_out)
     assert set(CSV_OUTPUT_COLUMNS).issubset(set(out_df.columns))
+
+
+def test_run_live_exports_feature_table(tmp_path):
+    df = _build_synthetic_ohlcv()
+    csv_in = tmp_path / "input.csv"
+    df.reset_index().rename(columns={"index": "timestamp"}).to_csv(csv_in, index=False)
+
+    csv_out = tmp_path / "out" / "features.csv"
+    cmd = [
+        sys.executable,
+        "-m",
+        "spot_bot.run_live",
+        "--mode",
+        "dryrun",
+        "--csv-in",
+        str(csv_in),
+        "--csv-out",
+        str(csv_out),
+        "--rv-window",
+        "24",
+        "--conc-window",
+        "64",
+        "--psi-window",
+        "64",
+        "--csv-out-mode",
+        "features",
+        "--csv-out-tail",
+        "50",
+    ]
+
+    repo_root = Path(__file__).resolve().parents[1]
+    subprocess.run(cmd, check=True, cwd=repo_root)
+
+    assert csv_out.exists()
+    out_df = pd.read_csv(csv_out)
+    assert len(out_df) > 10
+    required_cols = {
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "rv",
+        "C",
+        "psi",
+        "C_int",
+        "S",
+        "risk_state",
+        "risk_budget",
+        "intent_exposure",
+        "target_exposure",
+    }
+    assert required_cols.issubset(out_df.columns)

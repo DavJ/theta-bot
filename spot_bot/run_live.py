@@ -47,6 +47,7 @@ CSV_OUTPUT_COLUMNS = [
     "action",
 ]
 REQUIRED_BAR_COLUMNS = {"open", "high", "low", "close", "volume"}
+CSV_OUT_MODES = ("latest", "features")
 
 
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
@@ -253,6 +254,69 @@ def compute_step(
     )
 
 
+def _compute_feature_outputs(
+    ohlcv_df: pd.DataFrame,
+    feature_cfg: FeatureConfig,
+    regime_engine: RegimeEngine,
+    strategy: MeanReversionStrategy,
+    max_exposure: float,
+    equity_usdt: float,
+    tail: Optional[int] = None,
+) -> pd.DataFrame:
+    features = compute_features(ohlcv_df, feature_cfg)
+    if features.empty:
+        return features
+
+    # Add OHLCV columns for completeness
+    for col in ("open", "high", "low", "close", "volume"):
+        if col in ohlcv_df.columns:
+            features[col] = ohlcv_df[col]
+
+    valid = features.dropna(subset=["S", "C"]).copy()
+    if valid.empty:
+        return valid
+
+    closes = ohlcv_df["close"]
+    risk_states = []
+    risk_budgets = []
+    intent_exposures = []
+    target_exposures = []
+
+    equity = float(equity_usdt or 0.0)
+
+    for ts in valid.index:
+        window_df = features.loc[:ts]
+        decision = regime_engine.decide(window_df)
+        intent = strategy.generate_intent(window_df)
+
+        price = float(closes.loc[ts])
+        target_btc = compute_target_position(
+            equity_usdt=equity,
+            price=price,
+            desired_exposure=float(intent.desired_exposure),
+            risk_budget=float(decision.risk_budget),
+            max_exposure=max_exposure,
+            risk_state=decision.risk_state,
+        )
+        target_exp = (target_btc * price / equity) if equity > 0 else 0.0
+
+        risk_states.append(decision.risk_state)
+        risk_budgets.append(decision.risk_budget)
+        intent_exposures.append(intent.desired_exposure)
+        target_exposures.append(target_exp)
+
+    valid["risk_state"] = risk_states
+    valid["risk_budget"] = risk_budgets
+    valid["intent_exposure"] = intent_exposures
+    valid["target_exposure"] = target_exposures
+    valid["action"] = ""
+
+    if tail:
+        valid = valid.tail(tail)
+
+    return valid
+
+
 def run_once_on_df(
     ohlcv_df: pd.DataFrame,
     feature_cfg: FeatureConfig,
@@ -293,7 +357,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-notional", dest="min_notional", type=float, default=10.0)
     parser.add_argument("--step-size", dest="step_size", type=float, default=None)
     parser.add_argument("--csv-in", dest="csv_in", type=str, default=None, help="Optional CSV input for offline testing.")
-    parser.add_argument("--csv-out", dest="csv_out", type=str, default=None, help="Optional CSV output to export latest result.")
+    parser.add_argument("--csv-out", dest="csv_out", type=str, default=None, help="Optional CSV output to export results.")
+    parser.add_argument(
+        "--csv-out-mode",
+        dest="csv_out_mode",
+        choices=list(CSV_OUT_MODES),
+        default="latest",
+        help="CSV export mode: latest (single row) or features (full feature table).",
+    )
+    parser.add_argument(
+        "--csv-out-tail", dest="csv_out_tail", type=int, default=None, help="Optional tail N rows when exporting features."
+    )
     parser.add_argument("--csv", type=str, default=None, help="(Deprecated) Use --csv-in/--csv-out instead.")
     parser.add_argument("--cache", type=str, default=None, help="Optional cache file for OHLCV.")
     parser.add_argument("--config", type=str, default=str(pathlib.Path(__file__).parent / "config.yaml"))
@@ -478,31 +552,44 @@ def main() -> None:
         bar_row = None
         ts_value = None
         if args.csv_out:
-            bar_row, ts_value = _latest_bar_row(df)
             out_path = pathlib.Path(args.csv_out)
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            export_row = {
-                "timestamp": ts_value,
-                "open": bar_row["open"],
-                "high": bar_row["high"],
-                "low": bar_row["low"],
-                "close": bar_row["close"],
-                "volume": bar_row["volume"],
-                "rv": result.features_row.get("rv"),
-                "C": result.features_row.get("C"),
-                "psi": result.features_row.get("psi"),
-                "C_int": result.features_row.get("C_int"),
-                "S": result.features_row.get("S"),
-                "risk_state": result.decision.risk_state,
-                "risk_budget": result.decision.risk_budget,
-                "intent_exposure": result.intent.desired_exposure,
-                "target_exposure": result.target_exposure,
-                "action": action,
-            }
-            with out_path.open("w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=CSV_OUTPUT_COLUMNS)
-                writer.writeheader()
-                writer.writerow(export_row)
+            if args.csv_out_mode == "features":
+                export_df = _compute_feature_outputs(
+                    ohlcv_df=df,
+                    feature_cfg=feat_cfg,
+                    regime_engine=regime_engine,
+                    strategy=strategy,
+                    max_exposure=max_exposure,
+                    equity_usdt=result.equity["equity_usdt"],
+                    tail=args.csv_out_tail,
+                )
+                export_df.to_csv(out_path, index=False)
+                bar_row, ts_value = _latest_bar_row(df)
+            else:
+                bar_row, ts_value = _latest_bar_row(df)
+                export_row = {
+                    "timestamp": ts_value,
+                    "open": bar_row["open"],
+                    "high": bar_row["high"],
+                    "low": bar_row["low"],
+                    "close": bar_row["close"],
+                    "volume": bar_row["volume"],
+                    "rv": result.features_row.get("rv"),
+                    "C": result.features_row.get("C"),
+                    "psi": result.features_row.get("psi"),
+                    "C_int": result.features_row.get("C_int"),
+                    "S": result.features_row.get("S"),
+                    "risk_state": result.decision.risk_state,
+                    "risk_budget": result.decision.risk_budget,
+                    "intent_exposure": result.intent.desired_exposure,
+                    "target_exposure": result.target_exposure,
+                    "action": action,
+                }
+                with out_path.open("w", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=CSV_OUTPUT_COLUMNS)
+                    writer.writeheader()
+                    writer.writerow(export_row)
 
         if logger:
             if bar_row is None or ts_value is None:
