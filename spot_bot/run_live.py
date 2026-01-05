@@ -261,12 +261,12 @@ def _compute_feature_outputs(
     strategy: MeanReversionStrategy,
     max_exposure: float,
     equity_usdt: float,
-    tail: Optional[int] = None,
+    tail_rows: Optional[int] = None,
     latest_action: str = "",
 ) -> pd.DataFrame:
     features = compute_features(ohlcv_df, feature_cfg)
     if features.empty:
-        return features
+        return features.head(0)
 
     # Add OHLCV columns for completeness
     for col in ("open", "high", "low", "close", "volume"):
@@ -282,7 +282,9 @@ def _compute_feature_outputs(
     ema = closes.ewm(span=strategy.ema_span, adjust=False).mean()
     rolling_std = closes.rolling(strategy.std_lookback).std(ddof=0)
     fallback_std = closes.expanding().std(ddof=0).fillna(0.0)
-    safe_std = strategy._safe_std(closes_non_na) if not closes_non_na.empty else 1e-8
+    safe_std = float(closes_non_na.std(ddof=0)) if not closes_non_na.empty else 0.0
+    if safe_std <= 0.0:
+        safe_std = 1e-8
     fallback_std = fallback_std.where(fallback_std > 0.0, safe_std)
     effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
     effective_std = effective_std.replace(0.0, safe_std)
@@ -295,43 +297,43 @@ def _compute_feature_outputs(
     raw_exposure = strategy.min_exposure + (strategy.max_exposure - strategy.min_exposure) * scale
     desired_exposure_series = raw_exposure.where(signal_strength > entry, 0.0).clip(lower=0.0, upper=1.0)
 
-    risk_states = []
-    risk_budgets = []
-    intent_exposures = []
-    target_exposures = []
-
     equity = float(equity_usdt or 0.0)
 
-    for pos, ts in enumerate(valid.index):
-        decision = regime_engine.decide(valid.iloc[[pos]])
-        intent_exp = desired_exposure_series.loc[ts] if ts in desired_exposure_series.index else 0.0
+    rv_values = valid["rv"] if "rv" in valid.columns else pd.Series(index=valid.index, dtype=float)
+    risk_state_series = pd.Series("ON", index=valid.index)
 
-        price = float(closes.loc[ts])
-        target_btc = compute_target_position(
-            equity_usdt=equity,
-            price=price,
-            desired_exposure=float(intent_exp) if pd.notna(intent_exp) else 0.0,
-            risk_budget=float(decision.risk_budget),
-            max_exposure=max_exposure,
-            risk_state=decision.risk_state,
-        )
-        target_exp = (target_btc * price / equity) if equity > 0 else 0.0
+    off_mask = valid["S"] < regime_engine.s_off
+    if regime_engine.rv_off is not None:
+        off_mask = off_mask | (rv_values > regime_engine.rv_off)
+    risk_state_series = risk_state_series.mask(off_mask, "OFF")
 
-        risk_states.append(decision.risk_state)
-        risk_budgets.append(decision.risk_budget)
-        intent_exposures.append(float(intent_exp) if pd.notna(intent_exp) else 0.0)
-        target_exposures.append(target_exp)
+    reduce_mask = risk_state_series.eq("ON") & (valid["S"] < regime_engine.s_on)
+    if regime_engine.rv_reduce is not None:
+        reduce_mask = reduce_mask | (risk_state_series.eq("ON") & (rv_values > regime_engine.rv_reduce))
+    risk_state_series = risk_state_series.mask(reduce_mask, "REDUCE")
 
-    valid["risk_state"] = risk_states
-    valid["risk_budget"] = risk_budgets
-    valid["intent_exposure"] = intent_exposures
-    valid["target_exposure"] = target_exposures
+    span = max(regime_engine.s_budget_high - regime_engine.s_budget_low, 1e-6)
+    budget_raw = (valid["S"] - regime_engine.s_budget_low) / span
+    risk_budget_series = budget_raw.clip(lower=0.0, upper=1.0)
+    if regime_engine.rv_guard is not None and abs(regime_engine.rv_guard) > 1e-6:
+        vol_guard = (1.0 - (rv_values / regime_engine.rv_guard)).clip(lower=0.0, upper=1.0)
+        risk_budget_series = (risk_budget_series * vol_guard).clip(lower=0.0, upper=1.0)
+
+    intent_series = desired_exposure_series.reindex(valid.index).fillna(0.0).clip(lower=0.0, upper=1.0)
+    target_exp_series = (intent_series * risk_budget_series).clip(lower=0.0, upper=float(max_exposure))
+    target_exp_series = target_exp_series.where(risk_state_series == "ON", 0.0)
+    target_btc_series = target_exp_series * equity / valid["close"]
+
+    valid["risk_state"] = risk_state_series
+    valid["risk_budget"] = risk_budget_series
+    valid["intent_exposure"] = intent_series
+    valid["target_exposure"] = target_exp_series.fillna(0.0)
     valid["action"] = ""
     if latest_action and not valid.empty:
         valid.loc[valid.index[-1], "action"] = latest_action
 
-    if tail:
-        valid = valid.tail(tail)
+    if tail_rows:
+        valid = valid.tail(tail_rows)
 
     return valid
 
@@ -581,14 +583,17 @@ def main() -> None:
                     strategy=strategy,
                     max_exposure=max_exposure,
                     equity_usdt=result.equity["equity_usdt"],
-                    tail=args.csv_out_tail,
+                    tail_rows=args.csv_out_tail,
                     latest_action=action,
                 )
                 if "timestamp" not in export_df.columns:
                     export_df = export_df.reset_index()
-                    timestamp_candidates = [c for c in export_df.columns if pd.api.types.is_datetime64_any_dtype(export_df[c])]
-                    timestamp_col = timestamp_candidates[0] if timestamp_candidates else export_df.columns[0]
-                    export_df = export_df.rename(columns={timestamp_col: "timestamp"})
+                    if export_df.columns.empty:
+                        export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
+                    else:
+                        timestamp_candidates = [c for c in export_df.columns if pd.api.types.is_datetime64_any_dtype(export_df[c])]
+                        timestamp_col = timestamp_candidates[0] if timestamp_candidates else export_df.columns[0]
+                        export_df = export_df.rename(columns={timestamp_col: "timestamp"})
                 export_df.to_csv(out_path, index=False)
             else:
                 bar_row, ts_value = _latest_bar_row(df)

@@ -85,21 +85,5 @@ def test_run_live_exports_feature_table(tmp_path):
     assert csv_out.exists()
     out_df = pd.read_csv(csv_out)
     assert len(out_df) > 10
-    required_cols = {
-        "timestamp",
-        "open",
-        "high",
-        "low",
-        "close",
-        "volume",
-        "rv",
-        "C",
-        "psi",
-        "C_int",
-        "S",
-        "risk_state",
-        "risk_budget",
-        "intent_exposure",
-        "target_exposure",
-    }
+    required_cols = set(CSV_OUTPUT_COLUMNS) - {"action"}
     assert required_cols.issubset(out_df.columns)
