@@ -44,8 +44,8 @@ def test_benchmark_strategies_smoke(tmp_path):
         "12",
         "--use-cache-only",
     ]
-    res = subprocess.run(cmd, cwd=Path(__file__).resolve().parents[1], text=True)
-    assert res.returncode == 0
+    res = subprocess.run(cmd, cwd=Path(__file__).resolve().parents[1], text=True, capture_output=True)
+    assert res.returncode == 0, f"stdout={res.stdout}\nstderr={res.stderr}"
 
     summary = pd.read_csv(summary_path)
     required = {"symbol", "variant", "final_return", "max_drawdown", "time_in_market", "turnover", "trades", "avg_trade_size"}

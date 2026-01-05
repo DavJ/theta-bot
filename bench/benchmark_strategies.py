@@ -285,12 +285,16 @@ def main() -> None:
     print(f"Saved summary CSV to {out_path}")
 
     # Pivot for quick comparison (flattened columns variant__metric)
-    pivot = summary.pivot_table(index="symbol", columns="variant", values=["final_return", "max_drawdown", "time_in_market"])
-    pivot_flat = _flatten_pivot_columns(pivot)
-    pivot_path = Path(args.pivot_out)
-    pivot_path.parent.mkdir(parents=True, exist_ok=True)
-    pivot_flat.to_csv(pivot_path, index=False)
-    print(f"Saved pivot CSV to {pivot_path}")
+    pivot_values = [c for c in ("final_return", "max_drawdown", "time_in_market") if c in summary.columns]
+    if pivot_values and not summary.empty:
+        pivot = summary.pivot_table(index="symbol", columns="variant", values=pivot_values)
+        pivot_flat = _flatten_pivot_columns(pivot)
+        pivot_path = Path(args.pivot_out)
+        pivot_path.parent.mkdir(parents=True, exist_ok=True)
+        pivot_flat.to_csv(pivot_path, index=False)
+        print(f"Saved pivot CSV to {pivot_path}")
+    else:
+        print("No metrics available to pivot; skipping pivot export.")
 
     if window_rows:
         windows_df = pd.DataFrame(window_rows)

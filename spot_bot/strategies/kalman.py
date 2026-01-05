@@ -11,6 +11,9 @@ from spot_bot.utils.normalization import clip01
 from .base import Intent, Strategy
 
 
+MIN_VARIANCE = 1e-8
+
+
 @dataclass
 class KalmanParams:
     q_level: float = 1e-4
@@ -72,8 +75,8 @@ class KalmanStrategy(Strategy):
             # Update
             innovation = y - H @ x_pred
             innovation_var = float(H @ P_pred @ H.T + R)
-            if innovation_var <= 0.0 or np.isnan(innovation_var):
-                innovation_var = 1e-8
+            if np.isnan(innovation_var) or innovation_var <= 0.0:
+                innovation_var = MIN_VARIANCE
             K = (P_pred @ H) / innovation_var
             x = x_pred + K * innovation
             P = (np.eye(2) - np.outer(K, H)) @ P_pred
@@ -91,7 +94,7 @@ class KalmanStrategy(Strategy):
         state, innovation_var = self._run_filter(prices)
         level_est = float(state[0])
         latest_price = float(prices.iloc[-1])
-        z = (latest_price - level_est) / float(np.sqrt(innovation_var) if innovation_var > 0 else 1e-8)
+        z = (latest_price - level_est) / float(np.sqrt(innovation_var) if innovation_var > 0 else MIN_VARIANCE)
 
         exposure_raw = 1.0 / (1.0 + float(np.exp(self.params.k * z)))
         desired_exposure = clip01(exposure_raw)
