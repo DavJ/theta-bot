@@ -147,7 +147,7 @@ def summarize_features_csv(symbol: str, csv_path: Path) -> dict:
         S = pd.to_numeric(df["S"], errors="coerce")
         rv = pd.to_numeric(df["rv"], errors="coerce")
         q = pd.qcut(S, 5, duplicates="drop")
-        g = rv.groupby(q).mean()
+        g = rv.groupby(q, observed=False).mean()
         row["rv_S_q0"] = float(g.iloc[0])
         row["rv_S_q4"] = float(g.iloc[-1])
 
@@ -251,4 +251,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

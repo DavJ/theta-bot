@@ -13,9 +13,11 @@ if __package__ is None and __name__ == "__main__":
 
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from spot_bot.backtest.backtest_spot import run_mean_reversion_backtests
+from spot_bot.backtest.backtest_spot import run_strategy_backtests
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.persist import SQLiteLogger
+from spot_bot.strategies.kalman import KalmanStrategy
+from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 
 PRICE_NOISE_STD = 0.0005
 
@@ -52,11 +54,17 @@ def _load_ohlcv(csv_path: Optional[str], bars: int) -> pd.DataFrame:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run mean reversion spot backtest.")
+    parser = argparse.ArgumentParser(description="Run spot backtest (mean reversion or Kalman).")
     parser.add_argument("--csv", type=str, default=None, help="Path to OHLCV CSV with a 'close' column.")
     parser.add_argument("--output", type=str, default="backtest_equity.png", help="Optional output plot path.")
     parser.add_argument("--bars", type=int, default=240, help="Synthetic bar count if CSV not provided.")
     parser.add_argument("--slippage-bps", type=float, default=0.5, help="Simple slippage penalty in basis points.")
+    parser.add_argument("--strategy", type=str, choices=["meanrev", "kalman"], default="meanrev")
+    parser.add_argument("--kalman-q-level", type=float, default=1e-4)
+    parser.add_argument("--kalman-q-trend", type=float, default=1e-6)
+    parser.add_argument("--kalman-r", type=float, default=1e-3)
+    parser.add_argument("--kalman-k", type=float, default=1.5, help="Sigmoid steepness for exposure conversion.")
+    parser.add_argument("--kalman-min-bars", type=int, default=10, help="Minimum bars before emitting exposure.")
     parser.add_argument(
         "--save-plots", type=str, default=None, help="Directory prefix to save diagnostic plots (equity, exposure, S/C_int)."
     )
@@ -66,7 +74,24 @@ def main() -> None:
     logger = SQLiteLogger(args.db) if args.db else None
     ohlcv = _load_ohlcv(args.csv, args.bars)
     feat_cfg = FeatureConfig()
-    results = run_mean_reversion_backtests(ohlcv, logger=logger, slippage_bps=args.slippage_bps, feature_config=feat_cfg)
+    if args.strategy == "kalman":
+        strategy = KalmanStrategy(
+            q_level=args.kalman_q_level,
+            q_trend=args.kalman_q_trend,
+            r=args.kalman_r,
+            k=args.kalman_k,
+            min_bars=args.kalman_min_bars,
+        )
+    else:
+        strategy = MeanReversionStrategy()
+
+    results = run_strategy_backtests(
+        ohlcv_df=ohlcv,
+        strategy=strategy,
+        logger=logger,
+        slippage_bps=args.slippage_bps,
+        feature_config=feat_cfg,
+    )
     summary = pd.DataFrame({name: res.metrics for name, res in results.items()}).T
     print("\nSummary metrics:")
     print(summary.to_string(float_format=lambda x: f"{x:.4f}"))
