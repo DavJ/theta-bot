@@ -164,7 +164,7 @@ def main() -> None:
                         {
                             "timestamp": equity.index,
                             "equity": equity.values,
-                            "exposure": exp_used.reindex(equity.index).fillna(0.0),
+                            "exposure": exp_used.reindex(equity.index, fill_value=0.0),
                         }
                     )
                     eq_df.to_csv(eq_out, index=False)

@@ -298,17 +298,11 @@ def summarize_features_csv(
         g = rv.groupby(q, observed=True).mean()
         row["rv_S_q0"] = float(g.iloc[0])
         row["rv_S_q4"] = float(g.iloc[-1])
-
-    if "S" in df.columns and "rv" in df.columns:
-        S = pd.to_numeric(df["S"], errors="coerce")
-        rv = pd.to_numeric(df["rv"], errors="coerce")
-        q = pd.qcut(S, 5, duplicates="drop")
-        g = rv.groupby(q, observed=True).mean()
-        row["rv_S_low"] = float(g.iloc[0])   # nejnižší kvantil S
-        row["rv_S_high"] = float(g.iloc[-1]) # nejvyšší kvantil S
+        row["rv_S_low"] = float(g.iloc[0])
+        row["rv_S_high"] = float(g.iloc[-1])
     else:
-        row["rv_S_low"] = None
-        row["rv_S_high"] = None
+        row["rv_S_q0"] = row["rv_S_q4"] = None
+        row["rv_S_low"] = row["rv_S_high"] = None
 
     equity = pd.Series(dtype=float)
     exp_used = pd.Series(dtype=float)
