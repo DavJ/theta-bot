@@ -262,6 +262,7 @@ def _compute_feature_outputs(
     max_exposure: float,
     equity_usdt: float,
     tail: Optional[int] = None,
+    latest_action: str = "",
 ) -> pd.DataFrame:
     features = compute_features(ohlcv_df, feature_cfg)
     if features.empty:
@@ -310,6 +311,8 @@ def _compute_feature_outputs(
     valid["intent_exposure"] = intent_exposures
     valid["target_exposure"] = target_exposures
     valid["action"] = ""
+    if latest_action:
+        valid.loc[valid.index[-1], "action"] = latest_action
 
     if tail:
         valid = valid.tail(tail)
@@ -563,9 +566,9 @@ def main() -> None:
                     max_exposure=max_exposure,
                     equity_usdt=result.equity["equity_usdt"],
                     tail=args.csv_out_tail,
+                    latest_action=action,
                 )
                 export_df.to_csv(out_path, index=False)
-                bar_row, ts_value = _latest_bar_row(df)
             else:
                 bar_row, ts_value = _latest_bar_row(df)
                 export_row = {
