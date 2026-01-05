@@ -13,6 +13,13 @@ def frac01(x: float, eps: float = np.finfo(float).eps) -> float:
     """
     Wrap x into [0, 1) with a stable modulus (robust to negative inputs) and clamp values extremely
     close to 1.0 back to 0.
+
+    Args:
+        x: Value to wrap into the unit interval.
+        eps: Tolerance for mapping values extremely close to 1.0 back to 0.0.
+
+    Returns:
+        Value normalized into [0, 1).
     """
     y = ((float(x) % 1.0) + 1.0) % 1.0
     if y >= 1.0 - eps:
@@ -75,6 +82,7 @@ def cepstral_phase(
             return math.nan
         candidate_slice = cepstrum[min_bin:max_bin]
     else:
+        # Avoid the DC component when selecting the dominant spectral bin.
         k_min = max(1, min_bin)
         candidate_max = min(int(len(seg) * max_frac), len(spectrum) // 2)
         k_max = max(candidate_max, k_min + 1)
