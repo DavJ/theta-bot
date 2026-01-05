@@ -396,6 +396,13 @@ def build_parser() -> argparse.ArgumentParser:
     # Feature config overrides
     parser.add_argument("--rv-window", type=int, default=DEFAULT_FEATURE_CFG.rv_window)
     parser.add_argument("--conc-window", type=int, default=DEFAULT_FEATURE_CFG.conc_window)
+    parser.add_argument(
+        "--psi-mode",
+        type=str,
+        default=DEFAULT_FEATURE_CFG.psi_mode,
+        choices=["none", "cepstrum", "complex_cepstrum"],
+        help="Internal phase method: none, cepstrum (real), or complex_cepstrum.",
+    )
     parser.add_argument("--psi-window", type=int, default=DEFAULT_FEATURE_CFG.psi_window)
     parser.add_argument("--cepstrum-domain", type=str, default=DEFAULT_FEATURE_CFG.cepstrum_domain)
     parser.add_argument("--cepstrum-min-bin", type=int, default=DEFAULT_FEATURE_CFG.cepstrum_min_bin)
@@ -469,6 +476,7 @@ def main() -> None:
             base=args.base,
             rv_window=args.rv_window,
             conc_window=args.conc_window,
+            psi_mode=args.psi_mode,
             psi_window=args.psi_window,
             cepstrum_domain=args.cepstrum_domain,
             cepstrum_min_bin=args.cepstrum_min_bin,

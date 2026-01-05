@@ -19,7 +19,13 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import roc_auc_score
 
 from btc_log_phase import fetch_ohlcv_binance, risk_filter_backtest, uniformity_test
-from theta_features.cepstrum import EPS_LOG, cepstral_phase, rolling_cepstral_phase
+from theta_features.cepstrum import (
+    EPS_LOG,
+    cepstral_phase,
+    complex_cepstral_phase,
+    rolling_cepstral_phase,
+    rolling_complex_cepstral_phase,
+)
 from theta_features.log_phase_core import log_phase, phase_embedding, rolling_phase_concentration
 
 DEFAULT_CANDIDATES = [
@@ -259,6 +265,24 @@ def _cepstral_phase(
     )
 
 
+def _complex_cepstral_phase(
+    series: pd.Series,
+    window: int,
+    min_bin: int = 2,
+    max_frac: float = 0.25,
+    domain: str = "linear",
+) -> pd.Series:
+    return rolling_complex_cepstral_phase(
+        series,
+        window=window,
+        min_bin=min_bin,
+        max_frac=max_frac,
+        domain=domain,
+        eps=EPS_LOG,
+        return_debug=False,
+    )
+
+
 def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Series | None:
     mode = getattr(args, "psi_mode", None)
     if not mode or str(mode).lower() == "none":
@@ -298,6 +322,13 @@ def compute_internal_phase(df: pd.DataFrame, args: argparse.Namespace) -> pd.Ser
         return _cepstral_phase(
             log_rv, window, min_bin=min_bin, max_frac=max_frac, topk=topk, domain=domain
         )
+
+    if mode == "complex_cepstrum":
+        lr = np.log(df["close"] / df["close"].shift(1))
+        rv = lr.rolling(window=rv_window, min_periods=rv_window).std()
+        log_rv = np.log(np.abs(rv) + EPS_LOG)
+        min_bin, max_frac, _, domain = _extract_cepstrum_params(args)
+        return _complex_cepstral_phase(log_rv, window, min_bin=min_bin, max_frac=max_frac, domain=domain)
 
     raise ValueError(f"Unknown psi mode: {mode}")
 
@@ -712,11 +743,11 @@ def parse_args() -> argparse.Namespace:
         "--psi-mode",
         type=str,
         default="none",
-        choices=["none", "hilbert_rv", "pca_hilbert", "theta_phase", "cepstrum"],
+        choices=["none", "hilbert_rv", "pca_hilbert", "theta_phase", "cepstrum", "complex_cepstrum"],
         help=(
             "Internal phase ψ method: hilbert_rv (Hilbert of realized vol), "
             "pca_hilbert (PCA then Hilbert), theta_phase (existing theta coefficients), "
-            "cepstrum (cepstral analysis), or none."
+            "cepstrum (cepstral analysis), complex_cepstrum (phase-unwrapped complex cepstrum), or none."
         ),
     )
     parser.add_argument(
