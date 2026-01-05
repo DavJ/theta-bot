@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import pathlib
 import sys
 from dataclasses import dataclass
@@ -27,6 +28,25 @@ from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 
 
 DEFAULT_FEATURE_CFG = FeatureConfig()
+CSV_OUTPUT_COLUMNS = [
+    "timestamp",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "rv",
+    "C",
+    "psi",
+    "C_int",
+    "S",
+    "risk_state",
+    "risk_budget",
+    "intent_exposure",
+    "target_exposure",
+    "action",
+]
+REQUIRED_BAR_COLUMNS = {"open", "high", "low", "close", "volume"}
 
 
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
@@ -120,6 +140,25 @@ def _load_or_fetch(mode: str, symbol: str, timeframe: str, limit: int, cache: Op
         pathlib.Path(cache).parent.mkdir(parents=True, exist_ok=True)
         df.reset_index().to_csv(cache, index=False)
     return df
+
+
+def _latest_bar_row(df: pd.DataFrame) -> tuple[pd.Series, pd.Timestamp]:
+    latest_bar = df.tail(1).reset_index()
+    if latest_bar.empty:
+        raise ValueError("Latest bar is missing.")
+    bar_row = latest_bar.iloc[0]
+    bar_cols = set(latest_bar.columns)
+    missing_cols = [c for c in REQUIRED_BAR_COLUMNS if c not in bar_cols]
+    if missing_cols:
+        raise ValueError(f"Latest bar missing columns {missing_cols}; available columns: {sorted(bar_cols)}")
+    if "timestamp" in bar_cols:
+        ts_col = "timestamp"
+    elif "index" in bar_cols:
+        ts_col = "index"
+    else:
+        raise ValueError(f"Latest bar is missing a timestamp/index column. Available columns: {sorted(bar_cols)}")
+    ts_value = pd.to_datetime(bar_row[ts_col], utc=True)
+    return bar_row, ts_value
 
 
 def _apply_fill_to_balances(balances: Dict[str, float], side: str, qty: float, price: float, fee_rate: float) -> float:
@@ -253,7 +292,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--slippage-bps", dest="slippage_bps", type=float, default=0.0)
     parser.add_argument("--min-notional", dest="min_notional", type=float, default=10.0)
     parser.add_argument("--step-size", dest="step_size", type=float, default=None)
-    parser.add_argument("--csv", type=str, default=None, help="Optional CSV for offline testing.")
+    parser.add_argument("--csv-in", dest="csv_in", type=str, default=None, help="Optional CSV input for offline testing.")
+    parser.add_argument("--csv-out", dest="csv_out", type=str, default=None, help="Optional CSV output to export latest result.")
+    parser.add_argument("--csv", type=str, default=None, help="(Deprecated) Use --csv-in/--csv-out instead.")
     parser.add_argument("--cache", type=str, default=None, help="Optional cache file for OHLCV.")
     parser.add_argument("--config", type=str, default=str(pathlib.Path(__file__).parent / "config.yaml"))
     parser.add_argument("--i-understand-live-risk", action="store_true", help="Required to enable live execution.")
@@ -295,8 +336,21 @@ def main() -> None:
         min_notional = float(args.min_notional or cfg.get("min_notional", 10.0))
         step_size = args.step_size
 
+        csv_in = args.csv_in
         if args.csv:
-            df = pd.read_csv(args.csv, parse_dates=["timestamp"])
+            print(
+                "--csv is deprecated; use --csv-in for input (old behavior) or --csv-out for exporting results.",
+                file=sys.stderr,
+            )
+            if not csv_in:
+                csv_in = args.csv
+
+        if csv_in:
+            csv_in_path = pathlib.Path(csv_in)
+            if not csv_in_path.exists():
+                print(f"CSV input not found: {csv_in_path}", file=sys.stderr)
+                sys.exit(1)
+            df = pd.read_csv(csv_in_path, parse_dates=["timestamp"])
             df = df.set_index("timestamp")
         else:
             df = _load_or_fetch(args.mode, symbol, timeframe, limit_total, args.cache)
@@ -421,10 +475,38 @@ def main() -> None:
         )
         print(summary)
 
+        bar_row = None
+        ts_value = None
+        if args.csv_out:
+            bar_row, ts_value = _latest_bar_row(df)
+            out_path = pathlib.Path(args.csv_out)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            export_row = {
+                "timestamp": ts_value,
+                "open": bar_row["open"],
+                "high": bar_row["high"],
+                "low": bar_row["low"],
+                "close": bar_row["close"],
+                "volume": bar_row["volume"],
+                "rv": result.features_row.get("rv"),
+                "C": result.features_row.get("C"),
+                "psi": result.features_row.get("psi"),
+                "C_int": result.features_row.get("C_int"),
+                "S": result.features_row.get("S"),
+                "risk_state": result.decision.risk_state,
+                "risk_budget": result.decision.risk_budget,
+                "intent_exposure": result.intent.desired_exposure,
+                "target_exposure": result.target_exposure,
+                "action": action,
+            }
+            with out_path.open("w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=CSV_OUTPUT_COLUMNS)
+                writer.writeheader()
+                writer.writerow(export_row)
+
         if logger:
-            latest_bar = df.tail(1).reset_index()
-            bar_row = latest_bar.iloc[0]
-            ts_value = bar_row.get("timestamp", bar_row.get("index"))
+            if bar_row is None or ts_value is None:
+                bar_row, ts_value = _latest_bar_row(df)
             logger.upsert_bar(
                 ts=ts_value,
                 open=bar_row["open"],
