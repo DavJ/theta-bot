@@ -52,8 +52,8 @@ Stability scores (median window return − |p10 return| − |median drawdown|) f
 ```
 - Strategy PnL benchmark (both meanrev + Kalman, with optional windows):  
 ```bash
-  python bench/benchmark_strategies.py --limit-total 8000 --timeframe 1h --out bench_out/benchmark_strategies.csv --pivot-out bench_out/benchmark_strategies_pivot.csv --window-days 30
-  ```
+  python -m bench.benchmark_strategies --limit-total 8000 --timeframe 1h --out bench_out/benchmark_strategies.csv --pivot-out bench_out/benchmark_strategies_pivot.csv --window-days 30
+```
 - Single backtest example (supports `--strategy kalman`):  
   ```bash
   python -m spot_bot.run_backtest --csv path/to/ohlcv.csv --strategy kalman --kalman-q-level 1e-4 --kalman-q-trend 1e-6 --kalman-r 1e-3 --kalman-k 1.5 --kalman-min-bars 10

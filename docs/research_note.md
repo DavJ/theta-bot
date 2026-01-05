@@ -59,7 +59,7 @@ Run the benchmark (below) to produce `bench_out/strategies.csv` and per-run wind
 - Dryrun live (features only):  
   `python -m spot_bot.run_live --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 1000 --csv-out bench_out/live_features.csv --csv-out-mode features --strategy meanrev`
 - Strategy benchmark (PnL, psi modes, windows):  
-  `python bench/benchmark_strategies.py --limit-total 8000 --timeframe 1h --out bench_out/strategies.csv --plots-dir bench_out/plots`
+  `python -m bench.benchmark_strategies --limit-total 8000 --timeframe 1h --out bench_out/strategies.csv --plots-dir bench_out/plots`
 - Single backtest example (Kalman):  
   `python -m spot_bot.run_backtest --csv path/to/ohlcv.csv --strategy kalman --kalman-mode meanrev --kalman-q-level 1e-4 --kalman-q-trend 1e-6 --kalman-r 1e-3`
 - Features-only pairs scan:  

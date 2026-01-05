@@ -29,7 +29,7 @@
   ```
 - Strategy evaluation with gating:
   ```bash
-  python bench/benchmark_strategies.py --timeframe 1h --limit-total 8000 --out bench_out/strategies.csv --pivot-out bench_out/strategies_pivot.csv --psi-modes scale_phase --kalman-mode meanrev
+  python -m bench.benchmark_strategies --timeframe 1h --limit-total 8000 --out bench_out/strategies.csv --pivot-out bench_out/strategies_pivot.csv --psi-modes scale_phase --kalman-mode meanrev
   ```
 - Single pair diagnostic:
   ```bash

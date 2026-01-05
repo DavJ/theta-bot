@@ -20,7 +20,7 @@ python -m spot_bot.run_live --mode dryrun --symbol BTC/USDT --timeframe 1h --lim
 python -m spot_bot.run_backtest --csv path/to/ohlcv.csv --strategy kalman --kalman-mode meanrev --slippage-bps 1
 
 # Benchmark across pairs/psi modes
-python bench/benchmark_strategies.py --limit-total 8000 --timeframe 1h --out bench_out/strategies.csv --plots-dir bench_out/plots
+python -m bench.benchmark_strategies --limit-total 8000 --timeframe 1h --out bench_out/strategies.csv --plots-dir bench_out/plots
 ```
 
 ## Spot Bot 2.0 runners (long/flat)
