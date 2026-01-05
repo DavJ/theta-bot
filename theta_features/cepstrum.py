@@ -9,6 +9,16 @@ import pandas as pd
 EPS_LOG = 1e-12
 
 
+def frac01(x: float, eps: float = np.finfo(float).eps) -> float:
+    """
+    Wrap x into [0, 1) with a stable modulus and clamp values extremely close to 1.0 back to 0.
+    """
+    y = ((float(x) % 1.0) + 1.0) % 1.0
+    if y >= 1.0 - eps:
+        return 0.0
+    return y
+
+
 def _logtime_resample(seg: np.ndarray) -> np.ndarray:
     w = len(seg)
     idx = np.unique(np.floor(np.exp(np.linspace(np.log(1.0), np.log(w), w))).astype(int) - 1)
@@ -32,6 +42,7 @@ def cepstral_phase(
     max_frac: float = 0.25,
     topk: int | None = None,
     eps: float = EPS_LOG,
+    phase_source: Literal["spectrum", "cepstrum"] = "spectrum",
 ) -> float:
     """
     Return psi in [0,1) from the dominant cepstral bin within band.
@@ -41,6 +52,9 @@ def cepstral_phase(
     if arr.size == 0:
         return math.nan
     domain = (domain or "linear").lower()
+    phase_source = (phase_source or "spectrum").lower()
+    if phase_source not in {"spectrum", "cepstrum"}:
+        raise ValueError("phase_source must be 'spectrum' or 'cepstrum'.")
     min_bin = max(1, int(min_bin))
     max_frac = float(max_frac)
 
@@ -49,33 +63,37 @@ def cepstral_phase(
         seg = _logtime_resample(seg)
 
     spectrum = np.fft.fft(seg)
-    log_mag = np.log(np.abs(spectrum) + eps)
-    cepstrum = np.fft.ifft(log_mag)
+    if phase_source == "cepstrum":
+        log_mag = np.log(np.abs(spectrum) + eps)
+        cepstrum = np.fft.ifft(log_mag)
 
-    candidate_max = min(int(len(seg) * max_frac), len(seg) // 2, len(cepstrum))
-    max_bin = max(candidate_max, min_bin + 1)
-    max_bin = min(max_bin, len(cepstrum))
-    if min_bin >= max_bin:
-        return math.nan
+        candidate_max = min(int(len(seg) * max_frac), len(seg) // 2, len(cepstrum))
+        max_bin = max(candidate_max, min_bin + 1)
+        max_bin = min(max_bin, len(cepstrum))
+        if min_bin >= max_bin:
+            return math.nan
+        candidate_slice = cepstrum[min_bin:max_bin]
+    else:
+        k_min = max(1, min_bin)
+        candidate_max = min(int(len(seg) * max_frac), len(spectrum) // 2)
+        k_max = max(candidate_max, k_min + 1)
+        k_max = min(k_max, len(spectrum))
+        if k_min >= k_max:
+            return math.nan
+        candidate_slice = spectrum[k_min:k_max]
 
-    candidate_slice = cepstrum[min_bin:max_bin]
     mags = np.abs(candidate_slice)
     if candidate_slice.size == 0:
         return math.nan
     if topk is not None and topk >= 2:
         k = min(topk, len(candidate_slice))
         idxs = np.argpartition(mags, -k)[-k:]
-        angles = np.angle(candidate_slice[idxs])
-        weights = mags[idxs]
-        combined = np.sum(weights * np.exp(1j * angles))
+        combined = np.sum(candidate_slice[idxs])
         ang = float(np.angle(combined))
     else:
         best_idx = int(np.argmax(mags))
         ang = float(np.angle(candidate_slice[best_idx]))
-    phi = (ang / (2 * np.pi)) % 1.0
-    if phi >= 1.0 - np.finfo(float).eps:
-        phi = math.nextafter(1.0, 0.0)
-    return phi
+    return frac01(ang / (2 * np.pi))
 
 
 def rolling_cepstral_phase(
@@ -86,6 +104,7 @@ def rolling_cepstral_phase(
     topk: int | None = None,
     domain: Literal["linear", "logtime"] = "linear",
     eps: float = EPS_LOG,
+    phase_source: Literal["spectrum", "cepstrum"] = "spectrum",
 ) -> pd.Series:
     """
     Rolling cepstral phase over a sliding window.
@@ -103,6 +122,7 @@ def rolling_cepstral_phase(
             min_bin=min_bin,
             max_frac=max_frac,
             topk=topk,
+            phase_source=phase_source,
             eps=eps,
         )
     return pd.Series(out, index=series.index)
