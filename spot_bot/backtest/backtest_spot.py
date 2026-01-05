@@ -11,6 +11,7 @@ import pandas as pd
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.portfolio import compute_target_position
 from spot_bot.regime.regime_engine import RegimeEngine
+from spot_bot.strategies.base import Strategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ def _max_drawdown(equity_curve: pd.Series) -> float:
 
 def _run_backtest_core(
     ohlcv_df: pd.DataFrame,
-    strategy: MeanReversionStrategy,
+    strategy: Strategy,
     regime_engine: Optional[RegimeEngine],
     regime_features: Optional[pd.DataFrame],
     fee_rate: float,
@@ -86,7 +87,7 @@ def _run_backtest_core(
             if regime_features is None:
                 raise ValueError(
                     "regime_features must be provided when regime_engine is set "
-                    "(use compute_features or pass feature_config to run_mean_reversion_backtests)."
+                    "(use compute_features or pass feature_config to run_strategy_backtests)."
                 )
             features_slice = regime_features.iloc[: i + 1]
             latest_feat = features_slice.iloc[-1]
@@ -163,26 +164,25 @@ def _run_backtest_core(
     )
 
 
-def run_mean_reversion_backtests(
+def run_strategy_backtests(
     ohlcv_df: pd.DataFrame,
+    strategy: Strategy,
     fee_rate: float = 0.0005,
     max_exposure: float = 1.0,
     initial_equity: float = 1000.0,
     regime_config: Optional[Dict] = None,
-    strategy: Optional[MeanReversionStrategy] = None,
     feature_config: Optional[FeatureConfig] = None,
     logger: "SQLiteLogger | None" = None,
     slippage_bps: float = 0.0,
 ) -> Dict[str, BacktestResult]:
     """
-    Run mean reversion backtests with and without risk gating.
+    Run strategy backtests with and without risk gating.
 
     Returns a mapping with 'baseline' (no gating) and 'gated' (RegimeEngine).
     """
-    mr_strategy = strategy or MeanReversionStrategy()
     baseline = _run_backtest_core(
         ohlcv_df=ohlcv_df,
-        strategy=mr_strategy,
+        strategy=strategy,
         regime_engine=None,
         regime_features=None,
         fee_rate=fee_rate,
@@ -197,7 +197,7 @@ def run_mean_reversion_backtests(
     regime_engine = RegimeEngine(regime_config or {})
     gated = _run_backtest_core(
         ohlcv_df=ohlcv_df,
-        strategy=mr_strategy,
+        strategy=strategy,
         regime_engine=regime_engine,
         regime_features=regime_features,
         fee_rate=fee_rate,
@@ -208,6 +208,34 @@ def run_mean_reversion_backtests(
     )
 
     return {"baseline": baseline, "gated": gated}
+
+
+def run_mean_reversion_backtests(
+    ohlcv_df: pd.DataFrame,
+    fee_rate: float = 0.0005,
+    max_exposure: float = 1.0,
+    initial_equity: float = 1000.0,
+    regime_config: Optional[Dict] = None,
+    strategy: Optional[MeanReversionStrategy] = None,
+    feature_config: Optional[FeatureConfig] = None,
+    logger: "SQLiteLogger | None" = None,
+    slippage_bps: float = 0.0,
+) -> Dict[str, BacktestResult]:
+    """
+    Backward-compatible wrapper that defaults to MeanReversionStrategy.
+    """
+    mr_strategy = strategy or MeanReversionStrategy()
+    return run_strategy_backtests(
+        ohlcv_df=ohlcv_df,
+        strategy=mr_strategy,
+        fee_rate=fee_rate,
+        max_exposure=max_exposure,
+        initial_equity=initial_equity,
+        regime_config=regime_config,
+        feature_config=feature_config,
+        logger=logger,
+        slippage_bps=slippage_bps,
+    )
 
 
 def _load_ohlcv_csv(path: str) -> pd.DataFrame:

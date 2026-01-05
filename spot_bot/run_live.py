@@ -24,6 +24,8 @@ from spot_bot.live import PaperBroker
 from spot_bot.persist import SQLiteLogger
 from spot_bot.portfolio.sizer import compute_target_position
 from spot_bot.regime.regime_engine import RegimeEngine
+from spot_bot.strategies.base import Intent
+from spot_bot.strategies.kalman import KalmanStrategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 
 
@@ -60,6 +62,11 @@ CSV_OUTPUT_COLUMNS = [
 ]
 REQUIRED_BAR_COLUMNS = {"open", "high", "low", "close", "volume"}
 CSV_OUT_MODES = ("latest", "features")
+
+
+class NullStrategy:
+    def generate_intent(self, features_df):
+        return Intent(desired_exposure=0.0, reason="strategy none", diagnostics={})
 
 
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
@@ -435,6 +442,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rv-off", dest="rv_off", type=float, default=None)
     parser.add_argument("--rv-reduce", dest="rv_reduce", type=float, default=None)
     parser.add_argument("--rv-guard", dest="rv_guard", type=float, default=None)
+    parser.add_argument("--strategy", type=str, choices=["none", "meanrev", "kalman"], default="meanrev")
     return parser
 
 
@@ -521,7 +529,16 @@ def main() -> None:
         }
         regime_cfg = {k: v for k, v in regime_cfg.items() if v is not None}
         regime_engine = RegimeEngine(regime_cfg)
-        strategy = MeanReversionStrategy()
+        if args.strategy == "kalman":
+            strategy = KalmanStrategy()
+        elif args.strategy == "none":
+            class NullStrategy:
+                def generate_intent(self, features_df):
+                    return Intent(desired_exposure=0.0, reason="strategy none", diagnostics={})
+
+            strategy = NullStrategy()  # type: ignore
+        else:
+            strategy = MeanReversionStrategy()
 
         balances = {
             "usdt": last_equity["usdt"] if last_equity else float(args.initial_usdt),

@@ -3,5 +3,15 @@
 from .base import Intent, Strategy
 from .kalman import KalmanStrategy
 from .mean_reversion import MeanReversionStrategy
+from .risk import KalmanRiskStrategy, MeanRevGatedStrategy, apply_risk_gating, params_hash
 
-__all__ = ["Intent", "Strategy", "MeanReversionStrategy", "KalmanStrategy"]
+__all__ = [
+    "Intent",
+    "Strategy",
+    "MeanReversionStrategy",
+    "KalmanStrategy",
+    "MeanRevGatedStrategy",
+    "KalmanRiskStrategy",
+    "apply_risk_gating",
+    "params_hash",
+]

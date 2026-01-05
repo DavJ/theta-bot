@@ -8,28 +8,19 @@ A predictive trading engine grounded in Complex Consciousness Theory (CCT) and U
 🔬 **Testing Infrastructure Ready** - Tools for real market data testing now available  
 ⏳ **Awaiting Real Data Validation** - Model tested on synthetic data only, real market data testing needed before production
 
-## Quick Start
-
-### For Production Testing (Real Market Data)
-
-**⚠️ IMPORTANT:** The model has been tested on synthetic data only. Before deploying for real trading, you must complete the production preparation steps.
-
-See **[PRODUCTION_PREPARATION.md](PRODUCTION_PREPARATION.md)** for complete guidance.
-
-Quick test with one command:
+## Quick Start (Spot Bot 2.0)
 
 ```bash
-# Install dependencies
-pip install numpy pandas scipy matplotlib requests
+pip install -r requirements.txt
 
-# Test with real data (downloads BTCUSDT automatically)
-python quick_start.py --symbol BTCUSDT --interval 1h --limit 2000
-```
+# Dryrun live (features + intent, no orders)
+python -m spot_bot.run_live --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 1000 --csv-out bench_out/live_features.csv --csv-out-mode features --strategy meanrev
 
-Or use existing CSV data:
+# Backtest single CSV
+python -m spot_bot.run_backtest --csv path/to/ohlcv.csv --strategy kalman --kalman-mode meanrev --slippage-bps 1
 
-```bash
-python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
+# Benchmark across pairs/psi modes
+python bench/benchmark_strategies.py --limit-total 8000 --timeframe 1h --out bench_out/strategies.csv --plots-dir bench_out/plots
 ```
 
 ## Spot Bot 2.0 runners (long/flat)

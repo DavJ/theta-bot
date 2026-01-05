@@ -19,10 +19,14 @@ def compute_target_position(
     if price <= 0:
         raise ValueError("Price must be positive.")
 
-    if risk_state != "ON":
+    if risk_state == "OFF":
         target_exposure = 0.0
-    else:
+    elif risk_state == "REDUCE":
         target_exposure = clip01(desired_exposure) * clip01(risk_budget)
+    elif risk_state == "ON":
+        target_exposure = clip01(desired_exposure) * clip01(risk_budget)
+    else:
+        target_exposure = 0.0
 
     target_exposure = min(float(max_exposure), target_exposure)
     return float(equity_usdt) * target_exposure / float(price)
