@@ -284,10 +284,11 @@ def _compute_feature_outputs(
     target_exposures = []
 
     equity = float(equity_usdt or 0.0)
+    valid_positions = [features.index.get_loc(ts) for ts in valid.index]
 
-    for ts in valid.index:
-        window_df = features.loc[:ts]
-        decision = regime_engine.decide(window_df)
+    for ts, pos in zip(valid.index, valid_positions):
+        window_df = features.iloc[: pos + 1]
+        decision = regime_engine.decide(features.iloc[[pos]])
         intent = strategy.generate_intent(window_df)
 
         price = float(closes.loc[ts])
@@ -311,7 +312,7 @@ def _compute_feature_outputs(
     valid["intent_exposure"] = intent_exposures
     valid["target_exposure"] = target_exposures
     valid["action"] = ""
-    if latest_action:
+    if latest_action and not valid.empty:
         valid.loc[valid.index[-1], "action"] = latest_action
 
     if tail:
@@ -568,6 +569,8 @@ def main() -> None:
                     tail=args.csv_out_tail,
                     latest_action=action,
                 )
+                if "timestamp" not in export_df.columns:
+                    export_df = export_df.reset_index().rename(columns={"index": "timestamp"})
                 export_df.to_csv(out_path, index=False)
             else:
                 bar_row, ts_value = _latest_bar_row(df)
