@@ -63,4 +63,4 @@ Run the benchmark (below) to produce `bench_out/strategies.csv` and per-run wind
 - Single backtest example (Kalman):  
   `python -m spot_bot.run_backtest --csv path/to/ohlcv.csv --strategy kalman --kalman-mode meanrev --kalman-q-level 1e-4 --kalman-q-trend 1e-6 --kalman-r 1e-3`
 - Features-only pairs scan:  
-  `python bench/benchmark_pairs.py --limit-total 8000 --timeframe 1h --out bench_out/benchmark_pairs.csv`
+  `python -m bench.benchmark_pairs --limit-total 8000 --timeframe 1h --out bench_out/benchmark_pairs.csv`

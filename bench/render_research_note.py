@@ -76,7 +76,7 @@ def main() -> None:
     dd_runs = list(top_dd["run_id"]) if "run_id" in top_dd else []
     run_ids = sorted(set(sharpe_runs) | set(dd_runs))
     benchmark_cmd = _load_cmd(args)
-    render_cmd = "python bench/render_research_note.py " + " ".join(sys.argv[1:])
+    render_cmd = "python -m bench.render_research_note " + " ".join(sys.argv[1:])
 
     symbols = ", ".join(sorted(set(matrix["symbol"].astype(str))))
     timeframe = matrix.get("timeframe", pd.Series(["n/a"])).iloc[0]

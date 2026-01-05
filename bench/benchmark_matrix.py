@@ -117,7 +117,7 @@ def _rolling_windows(equity: pd.Series, window_days: int, timeframe: str) -> Lis
 
 
 def _save_command(workdir: Path) -> None:
-    cmd = "python bench/benchmark_matrix.py " + " ".join(shlex.quote(a) for a in sys.argv[1:])
+    cmd = "python -m bench.benchmark_matrix " + " ".join(shlex.quote(a) for a in sys.argv[1:])
     workdir.mkdir(parents=True, exist_ok=True)
     (workdir / "benchmark_cmd.txt").write_text(cmd)
 

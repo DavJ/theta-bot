@@ -16,8 +16,8 @@ Top Sharpe and drawdown profiles summarized below. Costs applied to exposure cha
 - Pairs: AVAX/USDT, BNB/USDT, BTC/USDT, ETH/USDT, SOL/USDT, XRP/USDT
 - Timeframe: 1h
 - Costs: fee_rate=0.001, slippage_bps=5.0, max_exposure=0.3
-- Benchmark command: `python bench/benchmark_matrix.py --timeframe 1h --limit-total 8000 --symbols BTC/USDT,ETH/USDT,SOL/USDT,BNB/USDT,XRP/USDT,AVAX/USDT --psi-modes none,mellin_cepstrum,mellin_complex_cepstrum --methods C,S --rv-window 24 --conc-window 256 --psi-window 256 --cepstrum-min-bin 4 --cepstrum-max-frac 0.2 --base 10.0 --fee-rate 0.001 --slippage-bps 5 --max-exposure 0.30 --out bench_out/benchmark_matrix.csv`
-- Render command: `python bench/render_research_note.py --matrix bench_out/benchmark_matrix.csv --windows bench_out/benchmark_windows.csv --out bench_out/research_note.md`
+- Benchmark command: `python -m bench.benchmark_matrix --timeframe 1h --limit-total 8000 --symbols BTC/USDT,ETH/USDT,SOL/USDT,BNB/USDT,XRP/USDT,AVAX/USDT --psi-modes none,mellin_cepstrum,mellin_complex_cepstrum --methods C,S --rv-window 24 --conc-window 256 --psi-window 256 --cepstrum-min-bin 4 --cepstrum-max-frac 0.2 --base 10.0 --fee-rate 0.001 --slippage-bps 5 --max-exposure 0.30 --out bench_out/benchmark_matrix.csv`
+- Render command: `python -m bench.render_research_note --matrix bench_out/benchmark_matrix.csv --windows bench_out/benchmark_windows.csv --out bench_out/research_note.md`
 
 ## Top Runs by Sharpe
 | run_id                             | symbol   | method   | psi_mode                |   sharpe |      cagr |   max_drawdown |   turnover |   time_in_market |
