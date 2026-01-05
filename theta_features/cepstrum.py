@@ -226,7 +226,7 @@ def rolling_complex_cepstral_phase(
                 return_debug=True,
             )
             out[i] = psi_val
-            if debug_data is not None and dbg is not None and len(dbg) > 0:
+            if debug_data is not None and dbg:
                 for key in debug_data:
                     debug_data[key][i] = dbg.get(key, math.nan)
         else:

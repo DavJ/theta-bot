@@ -107,16 +107,17 @@ def compute_features(ohlcv_df: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame
         log_rv = pd.Series(np.log(np.abs(rv) + EPS_LOG), index=close.index)
         psi, psi_debug = _compute_psi(log_rv, cfg)
         feature_data["psi"] = psi
-        feature_data["psi_mode"] = str(cfg.psi_mode)
-        if psi_debug is not None:
-            for col in psi_debug.columns:
-                feature_data[col] = psi_debug[col]
 
     df_feat = pd.DataFrame(feature_data, index=close.index)
     df_feat["psi_mode"] = str(cfg.psi_mode)
-    for col in ("psi_n_star", "psi_c_real", "psi_c_imag", "psi_c_abs", "psi_angle_rad"):
-        if col not in df_feat.columns:
-            df_feat[col] = np.nan
+    debug_cols = ("psi_n_star", "psi_c_real", "psi_c_imag", "psi_c_abs", "psi_angle_rad")
+    if psi_debug is not None:
+        for col in debug_cols:
+            df_feat[col] = psi_debug[col]
+    else:
+        for col in debug_cols:
+            if col not in df_feat.columns:
+                df_feat[col] = np.nan
 
     if psi is not None:
         psi_vals = psi.to_numpy(dtype=float)
