@@ -28,6 +28,20 @@ MODES:
   
 - both: Runs regime sweep first, then uses best configs as base for phase sweep
 
+PARAMETER GRIDS:
+The default parameter grids are designed for practical tuning with reasonable runtime.
+Users can modify generate_regime_grid() and generate_phase_grid() functions to:
+- Add more parameter values for finer-grained search
+- Reduce parameter values for faster exploratory runs
+- Focus on specific parameter ranges based on domain knowledge
+
+PERFORMANCE:
+Each backtest takes approximately 3-5 seconds on typical data.
+- regime mode: ~48 configs × 4s = ~3 minutes
+- phase mode: ~16 configs × 4s = ~1 minute  
+- both mode: ~96 configs × 4s = ~6 minutes
+Adjust parameter grids based on available time and compute resources.
+
 WALK-FORWARD VALIDATION (BONUS):
 If --walk-forward is specified with --train-bars and --test-bars:
 - Split data into multiple train/test folds
@@ -513,12 +527,13 @@ def main() -> None:
         regime_configs = generate_regime_grid()
         print(f"  Regime configs: {len(regime_configs)}")
         
-        # Run regime sweep first (on a subset to find best configs)
+        # Run regime sweep first (limit to first 10 for speed)
         print("  Running initial regime sweep to find best base configs...")
         regime_results = []
-        for i, config in enumerate(regime_configs[:20]):  # Limit to 20 for initial sweep
+        num_initial = min(10, len(regime_configs))
+        for i, config in enumerate(regime_configs[:num_initial]):
             if (i + 1) % 5 == 0:
-                print(f"    Progress: {i + 1}/20", end="\r")
+                print(f"    Progress: {i + 1}/{num_initial}", end="\r")
             
             metrics = run_backtest_with_config(
                 ohlcv_df, config, args.slippage_bps, args.fee_rate,
