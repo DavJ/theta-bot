@@ -20,8 +20,9 @@ def test_psi_not_degenerate_and_in_range():
     omega1 = 2 * np.pi * PRIMARY_FREQ_BIN / WINDOW
     omega2 = 2 * np.pi * SECONDARY_FREQ_BIN / WINDOW
     phase_walk = np.cumsum(rng.normal(scale=PHASE_WALK_SCALE, size=n))
+    secondary_phase = rng.uniform(0, 2 * np.pi)
     signal = np.sin(omega1 * t + phase_walk) + SECONDARY_AMPLITUDE * np.sin(
-        omega2 * t + rng.uniform(0, 2 * np.pi)
+        omega2 * t + secondary_phase
     )
 
     psi = rolling_cepstral_phase(pd.Series(signal), window=WINDOW)
