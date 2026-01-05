@@ -97,7 +97,7 @@ def test_walkforward_dual_stream_runs(tmp_path):
     else:
         predictions_files = list(output_dir.rglob("predictions.csv"))
         assert len(predictions_files) > 0
-        preds_df = pd.read_csv(predictions_files[0], index_col=0, parse_dates=True)
+        preds_df = pd.read_csv(predictions_files[0], index_col=0, parse_dates=[0])
     
     # Load predictions and verify columns
     assert "predicted_return" in preds_df.columns
