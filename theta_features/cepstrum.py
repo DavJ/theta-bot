@@ -52,6 +52,8 @@ def cepstral_phase(
     arr = np.asarray(x, dtype=float)
     if arr.size == 0:
         return math.nan
+    if np.isnan(arr).any():
+        return math.nan
     domain = (domain or "linear").lower()
     min_bin = max(1, int(min_bin))
     max_frac = float(max_frac)
@@ -117,7 +119,7 @@ def complex_cepstral_phase(
 
     cepstrum = complex_cepstrum(seg, eps=eps)
 
-    candidate_max = min(int(len(seg) * max_frac), len(seg))
+    candidate_max = min(int(len(seg) * max_frac), len(seg) // 2, len(cepstrum))
     max_bin = max(candidate_max, min_bin + 1)
     max_bin = min(max_bin, len(cepstrum))
     if min_bin >= max_bin:
