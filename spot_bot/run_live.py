@@ -64,6 +64,11 @@ REQUIRED_BAR_COLUMNS = {"open", "high", "low", "close", "volume"}
 CSV_OUT_MODES = ("latest", "features")
 
 
+class NullStrategy:
+    def generate_intent(self, features_df):
+        return Intent(desired_exposure=0.0, reason="strategy none", diagnostics={})
+
+
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
     match = re.fullmatch(r"(\d+)([mhd])", timeframe.strip(), flags=re.IGNORECASE)
     if not match:

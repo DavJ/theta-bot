@@ -17,6 +17,13 @@ from typing import Dict, Iterable, List, Tuple
 import numpy as np
 import pandas as pd
 
+try:  # optional plotting dependency
+    import matplotlib.pyplot as plt
+
+    HAS_MPL = True
+except Exception:  # pragma: no cover
+    HAS_MPL = False
+
 if __package__ is None and __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -42,7 +49,8 @@ def _fetch_ccxt(symbol: str, timeframe: str, limit_total: int) -> pd.DataFrame:
     try:
         from theta_features.binance_data import fetch_ohlcv_ccxt
     except (ImportError, ModuleNotFoundError) as exc:  # pragma: no cover
-        print("ccxt or theta_features not installed; install ccxt to download live data.")
+        missing = getattr(exc, "name", "dependency")
+        print(f"Missing dependency ({missing}); install ccxt and theta_features to download live data.")
         raise SystemExit(1) from exc
     df = fetch_ohlcv_ccxt(symbol=symbol, timeframe=timeframe, limit_total=limit_total)
     df = df.rename(columns={"dt": "timestamp"})
@@ -141,9 +149,12 @@ def run_backtest(
                 dec = regime.decide(feat.iloc[: i + 1])
                 risk_state = dec.risk_state
                 risk_budget = dec.risk_budget
-            except ValueError:
-                risk_state = "ON"
-                risk_budget = 1.0
+            except ValueError as exc:
+                if "NaN" in str(exc):
+                    risk_state = "ON"
+                    risk_budget = 1.0
+                else:
+                    raise
         gated_exposure = apply_risk_gating(desired_exposure, risk_state, risk_budget)
         desired.append(desired_exposure)
         gated.append(gated_exposure)
@@ -293,18 +304,13 @@ def main() -> None:
                             "max_drawdown": w.get("max_drawdown"),
                         }
                     )
-                if plots_dir:
-                    try:
-                        import matplotlib.pyplot as plt
-
-                        fig, ax = plt.subplots(figsize=(8, 3))
-                        ax.plot(res.equity.index, res.equity.values)
-                        ax.set_title(f"{symbol} {strategy_name} {psi_mode}")
-                        plt.tight_layout()
-                        fig.savefig(plots_dir / f"equity_{symbol.replace('/','_')}_{psi_mode}_{strategy_name}.png")
-                        plt.close(fig)
-                    except ImportError:
-                        print("matplotlib not installed; skipping plots.")
+                if plots_dir and HAS_MPL:
+                    fig, ax = plt.subplots(figsize=(8, 3))
+                    ax.plot(res.equity.index, res.equity.values)
+                    ax.set_title(f"{symbol} {strategy_name} {psi_mode}")
+                    plt.tight_layout()
+                    fig.savefig(plots_dir / f"equity_{symbol.replace('/','_')}_{psi_mode}_{strategy_name}.png")
+                    plt.close(fig)
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     summary_df = pd.DataFrame(rows)

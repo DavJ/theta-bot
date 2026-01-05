@@ -9,6 +9,8 @@ import pandas as pd
 
 from spot_bot.utils.normalization import clip01
 
+MIN_VARIANCE = 1e-8
+
 
 def _hash_params(params: dict) -> str:
     key = "|".join(f"{k}={params[k]}" for k in sorted(params))
@@ -111,7 +113,7 @@ class KalmanRiskStrategy:
             innovation = y - H @ x_pred
             innovation_var = float(H @ P_pred @ H.T + self.r)
             if np.isnan(innovation_var) or innovation_var <= 0.0:
-                innovation_var = 1e-8
+                innovation_var = MIN_VARIANCE
             K = (P_pred @ H) / innovation_var
             x = x_pred + K * innovation
             P = (np.eye(2) - np.outer(K, H)) @ P_pred
@@ -121,13 +123,15 @@ class KalmanRiskStrategy:
         prices = prices.dropna()
         if len(prices) < self.min_bars:
             return StrategyOutput(desired_exposure=0.0, diagnostics={"reason": "insufficient history"})
-        log_prices = np.log(prices.replace(0, np.nan).dropna())
+        if (prices <= 0).any():
+            raise ValueError("Prices must be positive for Kalman filter.")
+        log_prices = np.log(prices)
         state, innov_var = self._filter(log_prices)
         level, trend = float(state[0]), float(state[1])
         latest_lp = float(log_prices.iloc[-1])
         resid = latest_lp - level
         signal = -resid if self.mode == "meanrev" else trend
-        scale = signal / max(np.sqrt(innov_var), 1e-6)
+        scale = signal / max(np.sqrt(innov_var), np.sqrt(MIN_VARIANCE))
         exposure = float(np.clip(scale, -1.0, 1.0) * self.max_exposure)
         diag = {"level": level, "trend": trend, "resid": resid, "innovation_var": innov_var, "mode": self.mode}
         return StrategyOutput(desired_exposure=exposure, diagnostics=diag)
