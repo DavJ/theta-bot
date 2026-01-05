@@ -277,25 +277,39 @@ def _compute_feature_outputs(
     if valid.empty:
         return valid
 
-    closes = ohlcv_df["close"]
+    closes = ohlcv_df["close"].astype(float)
+    ema = closes.ewm(span=strategy.ema_span, adjust=False).mean()
+    rolling_std = closes.rolling(strategy.std_lookback).std(ddof=0)
+    fallback_std = closes.expanding().std(ddof=0).fillna(0.0)
+    safe_std = strategy._safe_std(closes.dropna()) if not closes.dropna().empty else 1e-8
+    fallback_std = fallback_std.where(fallback_std > 0.0, safe_std)
+    effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
+    effective_std = effective_std.replace(0.0, safe_std)
+    zscore = (closes - ema) / effective_std
+    signal_strength = (-zscore).clip(lower=0.0)
+    entry = strategy.entry_z
+    full = strategy.full_z
+    capped_strength = signal_strength.clip(upper=full)
+    scale = (capped_strength - entry) / max(full - entry, 1e-8)
+    raw_exposure = strategy.min_exposure + (strategy.max_exposure - strategy.min_exposure) * scale
+    desired_exposure_series = raw_exposure.where(signal_strength > entry, 0.0).clip(lower=0.0, upper=1.0)
+
     risk_states = []
     risk_budgets = []
     intent_exposures = []
     target_exposures = []
 
     equity = float(equity_usdt or 0.0)
-    valid_positions = [features.index.get_loc(ts) for ts in valid.index]
 
-    for ts, pos in zip(valid.index, valid_positions):
-        window_df = features.iloc[: pos + 1]
-        decision = regime_engine.decide(features.iloc[[pos]])
-        intent = strategy.generate_intent(window_df)
+    for ts in valid.index:
+        decision = regime_engine.decide(features.loc[[ts]])
+        intent_exp = desired_exposure_series.loc[ts] if ts in desired_exposure_series.index else 0.0
 
         price = float(closes.loc[ts])
         target_btc = compute_target_position(
             equity_usdt=equity,
             price=price,
-            desired_exposure=float(intent.desired_exposure),
+            desired_exposure=float(intent_exp) if pd.notna(intent_exp) else 0.0,
             risk_budget=float(decision.risk_budget),
             max_exposure=max_exposure,
             risk_state=decision.risk_state,
@@ -304,7 +318,7 @@ def _compute_feature_outputs(
 
         risk_states.append(decision.risk_state)
         risk_budgets.append(decision.risk_budget)
-        intent_exposures.append(intent.desired_exposure)
+        intent_exposures.append(float(intent_exp) if pd.notna(intent_exp) else 0.0)
         target_exposures.append(target_exp)
 
     valid["risk_state"] = risk_states
@@ -570,7 +584,9 @@ def main() -> None:
                     latest_action=action,
                 )
                 if "timestamp" not in export_df.columns:
-                    export_df = export_df.reset_index().rename(columns={"index": "timestamp"})
+                    export_df = export_df.reset_index()
+                    timestamp_col = export_df.columns[0]
+                    export_df = export_df.rename(columns={timestamp_col: "timestamp"})
                 export_df.to_csv(out_path, index=False)
             else:
                 bar_row, ts_value = _latest_bar_row(df)
