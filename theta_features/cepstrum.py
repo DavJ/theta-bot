@@ -12,7 +12,8 @@ EPS_LOG = 1e-12
 def frac01(x: float, eps: float = np.finfo(float).eps) -> float:
     """
     Wrap x into [0, 1) with a stable modulus (robust to negative inputs) and clamp values extremely
-    close to 1.0 back to 0 so phase angles remain continuous on the unit circle.
+    close to 1.0 back to 0 so phase angles remain continuous on the unit circle and avoid precision
+    glitches right at the wrap boundary.
 
     Args:
         x: Value to wrap into the unit interval.
@@ -53,8 +54,8 @@ def cepstral_phase(
     phase_source: Literal["spectrum", "cepstrum"] = "spectrum",
 ) -> float:
     """
-    Return psi in [0,1) from the dominant cepstral bin within band.
-    Deterministic and safe for constant arrays.
+    Return psi in [0,1) from the dominant bin, using spectral phase by default or cepstral phase
+    when requested. Deterministic and safe for constant arrays.
     """
     arr = np.asarray(x, dtype=float)
     if arr.size == 0:
@@ -115,7 +116,8 @@ def rolling_cepstral_phase(
     phase_source: Literal["spectrum", "cepstrum"] = "spectrum",
 ) -> pd.Series:
     """
-    Rolling cepstral phase over a sliding window.
+    Rolling psi over a sliding window, using spectral phase by default (or cepstral phase when
+    requested).
     """
     arr = series.to_numpy(dtype=float)
     n = len(arr)
