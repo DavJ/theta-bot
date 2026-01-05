@@ -9,6 +9,11 @@ from datetime import datetime, timezone
 import re
 from typing import Any, Dict, Optional
 
+if __package__ is None and __name__ == "__main__":
+    import os
+
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import pandas as pd
 import yaml
 

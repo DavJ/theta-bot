@@ -35,15 +35,17 @@ python quick_start.py --csv path/to/BTCUSDT_1h.csv --quick
 ## Spot Bot 2.0 runners (long/flat)
 
 - Regime smoke-test (logs optional):  
-  `python spot_bot/run_regime.py --csv path/to/BTCUSDT_1h.csv --db bot.db`
+  `python -m spot_bot.run_regime --csv path/to/BTCUSDT_1h.csv --db bot.db`
 - Backtest with simple fees/slippage and plots:  
-  `python spot_bot/run_backtest.py --csv path/to/BTCUSDT_1h.csv --slippage-bps 1 --save-plots plots/`
+  `python -m spot_bot.run_backtest --csv path/to/BTCUSDT_1h.csv --slippage-bps 1 --save-plots plots/`
 - Live loop dryrun (no trades, logs optional):  
-  `python spot_bot/run_live.py --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --cache data/latest.csv`
+  `python -m spot_bot.run_live --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --cache data/latest.csv`
 - Paper trading (simulated fills at close, restartable from DB):  
-  `python spot_bot/run_live.py --mode paper --db bot.db --initial-usdt 1000 --fee-rate 0.001 --max-exposure 0.3`
+  `python -m spot_bot.run_live --mode paper --db bot.db --initial-usdt 1000 --fee-rate 0.001 --max-exposure 0.3`
 - Live execution requires explicit opt-in flag:  
-  `python spot_bot/run_live.py --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h`
+  `python -m spot_bot.run_live --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h`
+
+Note: If running as a script instead of module mode, use `PYTHONPATH=.` to resolve imports.
 
 ### Manual Testing Steps
 

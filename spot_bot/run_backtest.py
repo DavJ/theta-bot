@@ -7,6 +7,12 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+if __package__ is None and __name__ == "__main__":
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from spot_bot.backtest.backtest_spot import run_mean_reversion_backtests
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.persist import SQLiteLogger
