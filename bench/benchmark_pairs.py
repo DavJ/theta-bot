@@ -9,7 +9,7 @@ What it does:
 - Prints a sorted table + optionally writes a summary CSV.
 
 Usage example:
-  python -m bench.benchmark_pairs --limit-total 8000 --out benchmark_summary.csv
+  python -m bench.benchmark_pairs --limit-total 8000 --psi-modes "none,scale_phase" --out benchmark_summary.csv
 """
 
 from __future__ import annotations
@@ -32,6 +32,25 @@ DEFAULT_SYMBOLS = [
     "XRP/USDT",
     "AVAX/USDT",
 ]
+
+ALLOWED_PSI_MODES = {"none", "scale_phase"}
+
+
+def _parse_psi_modes(val: str) -> list[str]:
+    modes: list[str] = []
+    for raw in val.split(","):
+        mode = raw.strip().lower()
+        if not mode:
+            continue
+        if mode not in ALLOWED_PSI_MODES:
+            raise argparse.ArgumentTypeError(
+                f"Unsupported psi mode '{raw}'. Allowed: {sorted(ALLOWED_PSI_MODES)}"
+            )
+        if mode not in modes:
+            modes.append(mode)
+    if not modes:
+        raise argparse.ArgumentTypeError("At least one psi mode is required.")
+    return modes
 
 
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
@@ -166,9 +185,6 @@ def run_features_export(
     *,
     psi_mode: str,
     psi_window: int,
-    cepstrum_domain: str,
-    cepstrum_min_bin: int,
-    cepstrum_max_frac: float,
     rv_window: int,
     conc_window: int,
     base: float,
@@ -192,12 +208,6 @@ def run_features_export(
         psi_mode,
         "--psi-window",
         str(psi_window),
-        "--cepstrum-domain",
-        cepstrum_domain,
-        "--cepstrum-min-bin",
-        str(cepstrum_min_bin),
-        "--cepstrum-max-frac",
-        str(cepstrum_max_frac),
         "--rv-window",
         str(rv_window),
         "--conc-window",
@@ -343,11 +353,13 @@ def main() -> None:
     ap.add_argument("--workdir", default="bench_out", help="Where to store per-pair feature CSVs")
     ap.add_argument("--out", default="", help="Optional summary CSV output path")
     # Fixed research params (keep constant across pairs)
-    ap.add_argument("--psi-mode", default="complex_cepstrum")
+    ap.add_argument(
+        "--psi-modes",
+        type=_parse_psi_modes,
+        default=["none", "scale_phase"],
+        help="Comma-separated psi modes to evaluate. Allowed: none, scale_phase.",
+    )
     ap.add_argument("--psi-window", type=int, default=256)
-    ap.add_argument("--cepstrum-domain", default="logtime")
-    ap.add_argument("--cepstrum-min-bin", type=int, default=4)
-    ap.add_argument("--cepstrum-max-frac", type=float, default=0.2)
     ap.add_argument("--rv-window", type=int, default=24)
     ap.add_argument("--conc-window", type=int, default=256)
     ap.add_argument("--base", type=float, default=10.0)
@@ -364,47 +376,46 @@ def main() -> None:
     rows = []
     for sym in symbols:
         safe = sym.replace("/", "_")
-        csv_path = workdir / f"features_{safe}.csv"
+        for psi_mode in args.psi_modes:
+            csv_path = workdir / f"features_{safe}_{psi_mode}.csv"
 
-        run_features_export(
-            sym,
-            args.timeframe,
-            args.limit_total,
-            csv_path,
-            psi_mode=args.psi_mode,
-            psi_window=args.psi_window,
-            cepstrum_domain=args.cepstrum_domain,
-            cepstrum_min_bin=args.cepstrum_min_bin,
-            cepstrum_max_frac=args.cepstrum_max_frac,
-            rv_window=args.rv_window,
-            conc_window=args.conc_window,
-            base=args.base,
-            fee_rate=args.fee_rate,
-            slippage_bps=args.slippage_bps,
-            max_exposure=args.max_exposure,
-        )
-
-        summary_row, equity, exp_used = summarize_features_csv(
-            sym,
-            csv_path,
-            timeframe=args.timeframe,
-            max_exposure=args.max_exposure,
-            fee_rate=args.fee_rate,
-            slippage_bps=args.slippage_bps,
-        )
-        rows.append(summary_row)
-
-        if not equity.empty:
-            eq_out = workdir / f"equity_{safe}.csv"
-            eq_df = pd.DataFrame(
-                {
-                    "timestamp": equity.index,
-                    "equity": equity.values,
-                    "exposure": exp_used.reindex(equity.index, fill_value=0.0),
-                }
+            run_features_export(
+                sym,
+                args.timeframe,
+                args.limit_total,
+                csv_path,
+                psi_mode=psi_mode,
+                psi_window=args.psi_window,
+                rv_window=args.rv_window,
+                conc_window=args.conc_window,
+                base=args.base,
+                fee_rate=args.fee_rate,
+                slippage_bps=args.slippage_bps,
+                max_exposure=args.max_exposure,
             )
-            eq_df.to_csv(eq_out, index=False)
-            print(f"Saved equity curve for {sym}: {eq_out}")
+
+            summary_row, equity, exp_used = summarize_features_csv(
+                sym,
+                csv_path,
+                timeframe=args.timeframe,
+                max_exposure=args.max_exposure,
+                fee_rate=args.fee_rate,
+                slippage_bps=args.slippage_bps,
+            )
+            summary_row["psi_mode"] = psi_mode
+            rows.append(summary_row)
+
+            if not equity.empty:
+                eq_out = workdir / f"equity_{safe}_{psi_mode}.csv"
+                eq_df = pd.DataFrame(
+                    {
+                        "timestamp": equity.index,
+                        "equity": equity.values,
+                        "exposure": exp_used.reindex(equity.index, fill_value=0.0),
+                    }
+                )
+                eq_df.to_csv(eq_out, index=False)
+                print(f"Saved equity curve for {sym} ({psi_mode}): {eq_out}")
 
     summary = pd.DataFrame(rows)
 
@@ -425,7 +436,7 @@ def main() -> None:
 
     # Pretty print
     cols = [
-        "symbol", "rows",
+        "symbol", "psi_mode", "rows",
         "psi_uniq_3dp", "psi_min", "psi_max",
         "S_min", "S_max",
         "ON", "REDUCE", "OFF",
