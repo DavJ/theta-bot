@@ -41,7 +41,12 @@ def _compute_rv(log_returns: pd.Series, window: int) -> pd.Series:
     return r2_sum.pow(0.5)
 
 
-def _compute_psi(log_rv: pd.Series, cfg: FeatureConfig) -> tuple[pd.Series, Optional[pd.DataFrame]]:
+def _compute_psi(log_rv: pd.Series, cfg: FeatureConfig) -> pd.Series:
+    psi, _ = _compute_psi_with_debug(log_rv, cfg)
+    return psi
+
+
+def _compute_psi_with_debug(log_rv: pd.Series, cfg: FeatureConfig) -> tuple[pd.Series, Optional[pd.DataFrame]]:
     mode = str(cfg.psi_mode or "none").lower()
     if mode == "none":
         return pd.Series(np.nan, index=log_rv.index), None
@@ -105,7 +110,7 @@ def compute_features(ohlcv_df: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame
     psi_debug = None
     if cfg.psi_window and int(cfg.psi_window) > 0:
         log_rv = pd.Series(np.log(np.abs(rv) + EPS_LOG), index=close.index)
-        psi, psi_debug = _compute_psi(log_rv, cfg)
+        psi, psi_debug = _compute_psi_with_debug(log_rv, cfg)
         feature_data["psi"] = psi
 
     df_feat = pd.DataFrame(feature_data, index=close.index)

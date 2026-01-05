@@ -93,7 +93,7 @@ def test_run_live_exports_complex_cepstrum_features(tmp_path):
     rows = 600
     idx = pd.date_range("2024-01-01", periods=rows, freq="h", tz="UTC")
     base = 20000 + np.linspace(0, 200, rows)
-    modulation = np.sin(np.linspace(0, 12.56, rows)) + 0.3 * np.sin(np.linspace(0, 25.12, rows) + 0.2)
+    modulation = np.sin(np.linspace(0, 4 * np.pi, rows)) + 0.3 * np.sin(np.linspace(0, 8 * np.pi, rows) + 0.2)
     close = base + modulation * 80
     open_ = close * 0.999
     high = np.maximum(open_, close) * 1.001

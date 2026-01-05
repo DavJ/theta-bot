@@ -63,7 +63,7 @@ where \(\arg(\cdot)\) is taken in \((-\pi,\pi]\); using the argument preserves t
 
 ### Real vs complex cepstrum phase
 - **Real cepstrum degeneracy:** When only \(\log |S[k]|\) is inverted, \(c[n]\) is (numerically) real for real-valued inputs. Its phase collapses to \(\{0, \pi\}\), so \(\psi\) often takes only two toroidal values.
-- **Complex cepstrum fix:** Form the complex log spectrum with unwrapped phase, \(L[k] = \log(|S[k]| + \varepsilon) + i\,\operatorname{unwrap}(\angle S[k]))\), then \(c[n] = \text{IFFT}(L[k])\). The dominant coefficient \(c[n^*]\) now carries a meaningful internal angle; \(\psi = \operatorname{frac}(\angle c[n^*]/2\pi)\) varies across \([0,1)\).
+- **Complex cepstrum fix:** Form the complex log spectrum with unwrapped phase, \(L[k] = \log(|S[k]| + \varepsilon) + i\,\operatorname{unwrap}(\angle S[k])\), then \(c[n] = \text{IFFT}(L[k])\). The dominant coefficient \(c[n^*]\) now carries a meaningful internal angle; \(\psi = \operatorname{frac}(\angle c[n^*]/2\pi)\) varies across \([0,1)\).
 
 ## 4) Logtime (Mellin-approx) cepstrum
 Modification: logarithmic time warping before the cepstrum to approximate scale invariance (approximate Mellin behavior, not a full Mellin transform).

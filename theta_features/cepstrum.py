@@ -66,7 +66,7 @@ def cepstral_phase(
     log_mag = np.log(np.abs(spectrum) + eps)
     cepstrum = np.fft.ifft(log_mag)
 
-    candidate_max = min(int(len(seg) * max_frac), len(seg) // 2, len(cepstrum))
+    candidate_max = min(int(len(seg) * max_frac), len(seg) // 2)
     max_bin = max(candidate_max, min_bin + 1)
     max_bin = min(max_bin, len(cepstrum))
     if min_bin >= max_bin:
