@@ -278,10 +278,11 @@ def _compute_feature_outputs(
         return valid
 
     closes = ohlcv_df["close"].astype(float)
+    closes_non_na = closes.dropna()
     ema = closes.ewm(span=strategy.ema_span, adjust=False).mean()
     rolling_std = closes.rolling(strategy.std_lookback).std(ddof=0)
     fallback_std = closes.expanding().std(ddof=0).fillna(0.0)
-    safe_std = strategy._safe_std(closes.dropna()) if not closes.dropna().empty else 1e-8
+    safe_std = strategy._safe_std(closes_non_na) if not closes_non_na.empty else 1e-8
     fallback_std = fallback_std.where(fallback_std > 0.0, safe_std)
     effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
     effective_std = effective_std.replace(0.0, safe_std)
@@ -301,8 +302,8 @@ def _compute_feature_outputs(
 
     equity = float(equity_usdt or 0.0)
 
-    for ts in valid.index:
-        decision = regime_engine.decide(features.loc[[ts]])
+    for pos, ts in enumerate(valid.index):
+        decision = regime_engine.decide(valid.iloc[[pos]])
         intent_exp = desired_exposure_series.loc[ts] if ts in desired_exposure_series.index else 0.0
 
         price = float(closes.loc[ts])
@@ -585,7 +586,8 @@ def main() -> None:
                 )
                 if "timestamp" not in export_df.columns:
                     export_df = export_df.reset_index()
-                    timestamp_col = export_df.columns[0]
+                    timestamp_candidates = [c for c in export_df.columns if pd.api.types.is_datetime64_any_dtype(export_df[c])]
+                    timestamp_col = timestamp_candidates[0] if timestamp_candidates else export_df.columns[0]
                     export_df = export_df.rename(columns={timestamp_col: "timestamp"})
                 export_df.to_csv(out_path, index=False)
             else:
