@@ -332,7 +332,7 @@ def _compute_feature_outputs(
     if latest_action and not valid.empty:
         valid.loc[valid.index[-1], "action"] = latest_action
 
-    if tail_rows:
+    if tail_rows is not None:
         valid = valid.tail(tail_rows)
 
     return valid
@@ -594,6 +594,8 @@ def main() -> None:
                         timestamp_candidates = [c for c in export_df.columns if pd.api.types.is_datetime64_any_dtype(export_df[c])]
                         timestamp_col = timestamp_candidates[0] if timestamp_candidates else export_df.columns[0]
                         export_df = export_df.rename(columns={timestamp_col: "timestamp"})
+                    if "timestamp" not in export_df.columns:
+                        export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
                 export_df.to_csv(out_path, index=False)
             else:
                 bar_row, ts_value = _latest_bar_row(df)
