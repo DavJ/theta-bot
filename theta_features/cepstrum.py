@@ -274,7 +274,8 @@ def mellin_transform(
     if w == 0:
         return np.zeros(grid_n, dtype=complex)
     
-    # Exclude k=0, use k=1..W
+    # Mathematical formulation uses k=1..W (excluding k=0 to avoid log(0))
+    # Array indices are 0-based, so k_vals represents the mathematical k values
     k_vals = np.arange(1, w + 1, dtype=float)
     u_src = np.log(k_vals + eps)
     
@@ -374,6 +375,7 @@ def _extract_psi_from_cepstrum(
     max_frac: float = 0.25,
     phase_agg: Literal["peak", "cmean"] = "peak",
     phase_power: float = 1.0,
+    eps: float = EPS_LOG,
 ) -> float:
     """
     Extract psi from cepstrum using configurable aggregation.
@@ -388,6 +390,7 @@ def _extract_psi_from_cepstrum(
         max_frac: Maximum fraction of cepstrum length for band
         phase_agg: Aggregation method ("peak" or "cmean")
         phase_power: Power for weighting magnitudes in circular mean
+        eps: Small constant for numerical stability
         
     Returns:
         psi in [0, 1)
@@ -407,7 +410,7 @@ def _extract_psi_from_cepstrum(
     
     if phase_agg == "cmean":
         # Circular mean with weighted magnitudes
-        weights = np.power(mags + EPS_LOG, phase_power)
+        weights = np.power(mags + eps, phase_power)
         angles = np.angle(band)
         combined = np.sum(weights * np.exp(1j * angles))
         ang = float(np.angle(combined))
@@ -464,6 +467,7 @@ def mellin_cepstral_phase(
         max_frac=max_frac,
         phase_agg=phase_agg,
         phase_power=phase_power,
+        eps=eps,
     )
     
     if not return_debug:
@@ -539,6 +543,7 @@ def mellin_complex_cepstral_phase(
         max_frac=max_frac,
         phase_agg=phase_agg,
         phase_power=phase_power,
+        eps=eps,
     )
     
     if not return_debug:
