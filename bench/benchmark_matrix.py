@@ -8,6 +8,10 @@ For each (symbol, method, psi_mode) combination:
 - Record metrics into a single CSV
 - Save per-run equity curve and config snapshot
 - Compute rolling window stats (30d, 90d)
+
+psi_mode variants are restricted to:
+- none: baseline with method C only
+- scale_phase: Mellin/log-scale psi with methods C and S
 """
 
 from __future__ import annotations
@@ -33,11 +37,41 @@ from bench.benchmark_pairs import (
 
 DEFAULT_PSI_MODES = ["scale_phase", "none"]
 DEFAULT_METHODS = ["C", "S"]
+ALLOWED_PSI_MODES = {"none", "scale_phase"}
+ALLOWED_METHODS = {"C", "S"}
 WINDOW_SAMPLE_COUNT = 3
 
 
 def _parse_list(val: str) -> List[str]:
     return [v.strip() for v in val.split(",") if v.strip()]
+
+
+def _build_run_plan(symbols: List[str], psi_modes: List[str], methods: List[str]) -> List[tuple[str, str, str]]:
+    norm_modes: List[str] = []
+    for mode in psi_modes:
+        mode_l = mode.lower()
+        if mode_l in ALLOWED_PSI_MODES and mode_l not in norm_modes:
+            norm_modes.append(mode_l)
+    if not norm_modes:
+        raise ValueError(f"psi_modes must be within {sorted(ALLOWED_PSI_MODES)}")
+
+    norm_methods: List[str] = []
+    for method in methods:
+        method_u = method.upper()
+        if method_u in ALLOWED_METHODS and method_u not in norm_methods:
+            norm_methods.append(method_u)
+    if not norm_methods:
+        raise ValueError(f"methods must be within {sorted(ALLOWED_METHODS)}")
+
+    plan: List[tuple[str, str, str]] = []
+    for symbol in symbols:
+        for psi_mode in norm_modes:
+            allowed_methods = norm_methods if psi_mode != "none" else [m for m in norm_methods if m == "C"]
+            for method in allowed_methods:
+                plan.append((symbol, method, psi_mode))
+    if not plan:
+        raise ValueError("No valid (symbol, method, psi_mode) combinations to run.")
+    return plan
 
 
 def _select_exposure(df: pd.DataFrame, method: str, max_exposure: float) -> pd.Series:
@@ -113,6 +147,7 @@ def main() -> None:
     symbols = _parse_list(args.symbols)
     psi_modes = _parse_list(args.psi_modes)
     methods = _parse_list(args.methods)
+    run_plan = _build_run_plan(symbols, psi_modes, methods)
     workdir = Path(args.workdir)
     workdir.mkdir(parents=True, exist_ok=True)
     _save_command(workdir)
@@ -120,110 +155,109 @@ def main() -> None:
     rows = []
     window_rows = []
 
-    for symbol in symbols:
+    for symbol, method, psi_mode in run_plan:
         safe_symbol = symbol.replace("/", "_")
-        for method in methods:
-            for psi_mode in psi_modes:
-                run_id = f"{safe_symbol}_{method}_{psi_mode}"
-                feature_path = workdir / f"features_{run_id}.csv"
-                run_features_export(
-                    symbol,
-                    args.timeframe,
-                    args.limit_total,
-                    feature_path,
-                    psi_mode=psi_mode,
-                    psi_window=args.psi_window,
-                    cepstrum_domain=args.cepstrum_domain,
-                    cepstrum_min_bin=args.cepstrum_min_bin,
-                    cepstrum_max_frac=args.cepstrum_max_frac,
-                    rv_window=args.rv_window,
-                    conc_window=args.conc_window,
-                    base=args.base,
-                    fee_rate=args.fee_rate,
-                    slippage_bps=args.slippage_bps,
-                    max_exposure=args.max_exposure,
-                )
+        run_id = f"{safe_symbol}_{method}_{psi_mode}"
+        feature_path = workdir / f"features_{run_id}.csv"
+        run_features_export(
+            symbol,
+            args.timeframe,
+            args.limit_total,
+            feature_path,
+            psi_mode=psi_mode,
+            psi_window=args.psi_window,
+            cepstrum_domain=args.cepstrum_domain,
+            cepstrum_min_bin=args.cepstrum_min_bin,
+            cepstrum_max_frac=args.cepstrum_max_frac,
+            rv_window=args.rv_window,
+            conc_window=args.conc_window,
+            base=args.base,
+            fee_rate=args.fee_rate,
+            slippage_bps=args.slippage_bps,
+            max_exposure=args.max_exposure,
+        )
 
-                df = pd.read_csv(feature_path)
-                if "timestamp" in df.columns:
-                    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
-                    df = df.set_index("timestamp")
-                exposure = _select_exposure(df, method, args.max_exposure)
-                equity, turnover, exp_used = compute_equity_curve(
-                    df,
-                    exposure,
-                    fee_rate=args.fee_rate,
-                    slippage_bps=args.slippage_bps,
-                    max_exposure=args.max_exposure,
-                )
-                metrics = compute_equity_metrics(equity, exp_used, turnover, timeframe=args.timeframe)
+        df = pd.read_csv(feature_path)
+        if "timestamp" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+            df = df.set_index("timestamp")
+        exposure = _select_exposure(df, method, args.max_exposure)
+        equity, turnover, exp_used = compute_equity_curve(
+            df,
+            exposure,
+            fee_rate=args.fee_rate,
+            slippage_bps=args.slippage_bps,
+            max_exposure=args.max_exposure,
+        )
+        metrics = compute_equity_metrics(equity, exp_used, turnover, timeframe=args.timeframe)
 
-                eq_out = workdir / f"equity_{run_id}.csv"
-                if not equity.empty:
-                    eq_df = pd.DataFrame(
-                        {
-                            "timestamp": equity.index,
-                            "equity": equity.values,
-                            "exposure": exp_used.reindex(equity.index, fill_value=0.0),
-                        }
-                    )
-                    eq_df.to_csv(eq_out, index=False)
+        eq_out = workdir / f"equity_{run_id}.csv"
+        if not equity.empty:
+            eq_df = pd.DataFrame(
+                {
+                    "timestamp": equity.index,
+                    "equity": equity.values,
+                    "exposure": exp_used.reindex(equity.index, fill_value=0.0),
+                }
+            )
+            eq_df.to_csv(eq_out, index=False)
 
-                config_path = workdir / f"config_{run_id}.json"
-                with config_path.open("w") as f:
-                    json.dump(
-                        {
-                            "symbol": symbol,
-                            "method": method,
-                            "psi_mode": psi_mode,
-                            "timeframe": args.timeframe,
-                            "limit_total": args.limit_total,
-                            "rv_window": args.rv_window,
-                            "conc_window": args.conc_window,
-                            "psi_window": args.psi_window,
-                            "cepstrum_min_bin": args.cepstrum_min_bin,
-                            "cepstrum_max_frac": args.cepstrum_max_frac,
-                            "base": args.base,
-                            "fee_rate": args.fee_rate,
-                            "slippage_bps": args.slippage_bps,
-                            "max_exposure": args.max_exposure,
-                        },
-                        f,
-                        default=str,
-                        indent=2,
-                    )
-
-                row = {
-                    "run_id": run_id,
+        config_path = workdir / f"config_{run_id}.json"
+        with config_path.open("w") as f:
+            json.dump(
+                {
                     "symbol": symbol,
                     "method": method,
                     "psi_mode": psi_mode,
-                    "feature_csv": str(feature_path),
-                    "equity_csv": str(eq_out),
+                    "timeframe": args.timeframe,
+                    "limit_total": args.limit_total,
+                    "rv_window": args.rv_window,
+                    "conc_window": args.conc_window,
+                    "psi_window": args.psi_window,
+                    "cepstrum_min_bin": args.cepstrum_min_bin,
+                    "cepstrum_max_frac": args.cepstrum_max_frac,
+                    "base": args.base,
                     "fee_rate": args.fee_rate,
                     "slippage_bps": args.slippage_bps,
                     "max_exposure": args.max_exposure,
-                    "timeframe": args.timeframe,
-                    "limit_total": args.limit_total,
-                }
-                row.update(metrics)
-                rows.append(row)
+                },
+                f,
+                default=str,
+                indent=2,
+            )
 
-                for window_days in (30, 90):
-                    for window_row in _rolling_windows(equity, window_days=window_days, timeframe=args.timeframe):
-                        window_rows.append(
-                            {
-                                "run_id": run_id,
-                                "symbol": symbol,
-                                "method": method,
-                                "psi_mode": psi_mode,
-                                "window_days": window_days,
-                                "start": window_row["start"],
-                                "end": window_row["end"],
-                                "return": window_row["return"],
-                                "maxdd": window_row["maxdd"],
-                            }
-                        )
+        row = {
+            "run_id": run_id,
+            "symbol": symbol,
+            "method": method,
+            "psi_mode": psi_mode,
+            "sharpe": metrics.get("sharpe", 0.0),
+            "cagr": metrics.get("cagr", 0.0),
+            "max_drawdown": metrics.get("max_drawdown", 0.0),
+            "time_in_market": metrics.get("time_in_market", 0.0),
+            "turnover": metrics.get("turnover", 0.0),
+            "fee_rate": args.fee_rate,
+            "slippage_bps": args.slippage_bps,
+            "max_exposure": args.max_exposure,
+            "timeframe": args.timeframe,
+        }
+        rows.append(row)
+
+        for window_days in (30, 90):
+            for window_row in _rolling_windows(equity, window_days=window_days, timeframe=args.timeframe):
+                window_rows.append(
+                    {
+                        "run_id": run_id,
+                        "symbol": symbol,
+                        "method": method,
+                        "psi_mode": psi_mode,
+                        "window_days": window_days,
+                        "start": window_row["start"],
+                        "end": window_row["end"],
+                        "return": window_row["return"],
+                        "maxdd": window_row["maxdd"],
+                    }
+                )
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
