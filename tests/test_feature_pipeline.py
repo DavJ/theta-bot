@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import pandas as pd
 
@@ -47,3 +49,28 @@ def test_feature_pipeline_is_deterministic():
     feats2 = compute_features(df.copy(), cfg=cfg)
 
     pd.testing.assert_frame_equal(feats1[["rv", "C", "psi", "C_int", "S"]], feats2[["rv", "C", "psi", "C_int", "S"]])
+
+
+def test_c_int_requires_full_window_and_matches_torus_mean():
+    conc_window = 6
+    cfg = FeatureConfig(rv_window=3, conc_window=conc_window, psi_window=conc_window, psi_mode="scale_phase")
+    feats = compute_features(_synthetic_ohlcv(rows=24), cfg=cfg)
+
+    assert feats["C_int"].iloc[: conc_window - 1].isna().all()
+
+    phi_vals = feats["phi"].to_numpy(dtype=float)
+    psi_vals = feats["psi"].to_numpy(dtype=float)
+
+    cos_phi = np.cos(2 * np.pi * phi_vals[-conc_window:])
+    sin_phi = np.sin(2 * np.pi * phi_vals[-conc_window:])
+    cos_psi = np.cos(2 * np.pi * psi_vals[-conc_window:])
+    sin_psi = np.sin(2 * np.pi * psi_vals[-conc_window:])
+
+    expected = 0.5 * math.sqrt(
+        np.mean(cos_phi) ** 2
+        + np.mean(sin_phi) ** 2
+        + np.mean(cos_psi) ** 2
+        + np.mean(sin_psi) ** 2
+    )
+
+    assert math.isclose(feats["C_int"].iloc[-1], expected, rel_tol=1e-12, abs_tol=1e-12)

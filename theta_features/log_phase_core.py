@@ -66,22 +66,29 @@ def rolling_internal_concentration(
     which stays in [0, 1]. The 1/2 normalization follows the ψ integration
     spec.
     """
-    n = len(cos_phi)
+    cos_phi_arr = np.asarray(cos_phi, dtype=float)
+    sin_phi_arr = np.asarray(sin_phi, dtype=float)
+    cos_psi_arr = np.asarray(cos_psi, dtype=float)
+    sin_psi_arr = np.asarray(sin_psi, dtype=float)
+
+    n = len(cos_phi_arr)
     out = np.full(n, np.nan, dtype=float)
     for i in range(n):
-        lo = max(0, i - window + 1)
+        if i + 1 < window:
+            continue
+        lo = i - window + 1
         has_nan = (
-            np.isnan(cos_phi[lo : i + 1]).any()
-            or np.isnan(sin_phi[lo : i + 1]).any()
-            or np.isnan(cos_psi[lo : i + 1]).any()
-            or np.isnan(sin_psi[lo : i + 1]).any()
+            np.isnan(cos_phi_arr[lo : i + 1]).any()
+            or np.isnan(sin_phi_arr[lo : i + 1]).any()
+            or np.isnan(cos_psi_arr[lo : i + 1]).any()
+            or np.isnan(sin_psi_arr[lo : i + 1]).any()
         )
         if has_nan:
             continue
-        m1 = np.mean(cos_phi[lo : i + 1])
-        m2 = np.mean(sin_phi[lo : i + 1])
-        m3 = np.mean(cos_psi[lo : i + 1])
-        m4 = np.mean(sin_psi[lo : i + 1])
+        m1 = np.mean(cos_phi_arr[lo : i + 1])
+        m2 = np.mean(sin_phi_arr[lo : i + 1])
+        m3 = np.mean(cos_psi_arr[lo : i + 1])
+        m4 = np.mean(sin_psi_arr[lo : i + 1])
         out[i] = float(np.sqrt(m1 * m1 + m2 * m2 + m3 * m3 + m4 * m4) / 2.0)
     return out
 
