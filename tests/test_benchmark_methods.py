@@ -70,7 +70,7 @@ def test_benchmark_baseline_mode():
         
         # Generate baseline configs
         configs = generate_baseline_configs()
-        assert len(configs) == 4
+        assert len(configs) == 1
         assert all("psi_mode" in c for c in configs)
         
         # Run a single backtest
@@ -100,23 +100,13 @@ def test_benchmark_grid_mode():
     
     configs = generate_grid_configs()
     
-    # Grid should have more configs than baseline
-    # FFT modes: 2 modes × 2 psi_window = 4
-    # Mellin modes: 2 modes × (2×2×2×2×1×1) = 2 × 16 = 32
-    # Total: 4 + 32 = 36
-    assert len(configs) == 36
+    # psi_window: 2 options, base: 2 options => 4 configs
+    assert len(configs) == 4
     
     # Check that all configs have psi_mode
     assert all("psi_mode" in c for c in configs)
-    
-    # Check FFT configs only have psi_window varied
-    fft_configs = [c for c in configs if c["psi_mode"] in ["cepstrum", "complex_cepstrum"]]
-    assert len(fft_configs) == 4
-    
-    # Check Mellin configs have multiple parameters
-    mellin_configs = [c for c in configs if "mellin" in c["psi_mode"]]
-    assert len(mellin_configs) == 32
-    assert all("mellin_sigma" in c for c in mellin_configs)
+    assert all("psi_window" in c for c in configs)
+    assert all("base" in c for c in configs)
 
 
 def test_load_pair_csv_with_filters():
@@ -178,7 +168,7 @@ def test_leaderboard_creation():
     # Create sample results with multiple pairs and methods
     results = []
     for pair in ["BTCUSDT", "ETHUSDT"]:
-        for method in ["cepstrum", "complex_cepstrum"]:
+        for method in ["scale_phase", "scale_phase_alt"]:
             results.append({
                 "pair": pair,
                 "method_name": method,
@@ -219,7 +209,7 @@ def test_walk_forward_mode():
         loaded_df = load_pair_csv(csv_path)
         
         # Run walk-forward
-        config = {"psi_mode": "cepstrum"}
+        config = {"psi_mode": "scale_phase"}
         result = run_walk_forward_single(
             pair="BTCUSDT",
             ohlcv_df=loaded_df,

@@ -419,23 +419,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--psi-mode",
         type=str,
         default=DEFAULT_FEATURE_CFG.psi_mode,
-        choices=["none", "cepstrum", "complex_cepstrum", "mellin_cepstrum", "mellin_complex_cepstrum"],
-        help="Internal phase method: none, cepstrum (real FFT), complex_cepstrum (FFT), mellin_cepstrum (real Mellin), or mellin_complex_cepstrum (complex Mellin).",
+        choices=["none", "scale_phase"],
+        help="Internal phase method: none or scale_phase (log-scale phase).",
     )
     parser.add_argument("--psi-window", type=int, default=DEFAULT_FEATURE_CFG.psi_window)
-    parser.add_argument("--cepstrum-domain", type=str, default=DEFAULT_FEATURE_CFG.cepstrum_domain)
-    parser.add_argument("--cepstrum-min-bin", type=int, default=DEFAULT_FEATURE_CFG.cepstrum_min_bin)
-    parser.add_argument("--cepstrum-max-frac", type=float, default=DEFAULT_FEATURE_CFG.cepstrum_max_frac)
     parser.add_argument("--base", type=float, default=DEFAULT_FEATURE_CFG.base)
-    # Mellin transform parameters
-    parser.add_argument("--mellin-grid-n", type=int, default=DEFAULT_FEATURE_CFG.mellin_grid_n, help="Grid size for Mellin transform")
-    parser.add_argument("--mellin-sigma", type=float, default=DEFAULT_FEATURE_CFG.mellin_sigma, help="Sigma parameter for Mellin transform exponential weighting")
-    parser.add_argument("--mellin-eps", type=float, default=DEFAULT_FEATURE_CFG.mellin_eps, help="Epsilon for Mellin transform log stability")
-    parser.add_argument("--mellin-detrend-phase", type=_str_to_bool, default=DEFAULT_FEATURE_CFG.mellin_detrend_phase, help="Detrend phase in complex Mellin cepstrum (true/false)")
-    parser.add_argument("--psi-min-bin", type=int, default=DEFAULT_FEATURE_CFG.psi_min_bin, help="Minimum bin for psi extraction")
-    parser.add_argument("--psi-max-frac", type=float, default=DEFAULT_FEATURE_CFG.psi_max_frac, help="Maximum fraction for psi extraction band")
-    parser.add_argument("--psi-phase-agg", type=str, default=DEFAULT_FEATURE_CFG.psi_phase_agg, choices=["peak", "cmean"], help="Phase aggregation method: peak or circular mean")
-    parser.add_argument("--psi-phase-power", type=float, default=DEFAULT_FEATURE_CFG.psi_phase_power, help="Power for weighting in circular mean aggregation")
     # Regime thresholds
     parser.add_argument("--s-off", dest="s_off", type=float, default=None)
     parser.add_argument("--s-on", dest="s_on", type=float, default=None)
@@ -507,17 +495,6 @@ def main() -> None:
             conc_window=args.conc_window,
             psi_mode=args.psi_mode,
             psi_window=args.psi_window,
-            cepstrum_domain=args.cepstrum_domain,
-            cepstrum_min_bin=args.cepstrum_min_bin,
-            cepstrum_max_frac=args.cepstrum_max_frac,
-            mellin_grid_n=args.mellin_grid_n,
-            mellin_sigma=args.mellin_sigma,
-            mellin_eps=args.mellin_eps,
-            mellin_detrend_phase=args.mellin_detrend_phase,
-            psi_min_bin=args.psi_min_bin,
-            psi_max_frac=args.psi_max_frac,
-            psi_phase_agg=args.psi_phase_agg,
-            psi_phase_power=args.psi_phase_power,
         )
 
         regime_cfg = {

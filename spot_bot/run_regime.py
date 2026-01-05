@@ -62,19 +62,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--conc-window", type=int, default=FeatureConfig.conc_window, help="Rolling window for concentration"
     )
     parser.add_argument("--psi-window", type=int, default=FeatureConfig.psi_window, help="Rolling window for psi")
-    parser.add_argument(
-        "--cepstrum-domain",
-        type=str,
-        default=FeatureConfig.cepstrum_domain,
-        choices=["linear", "logtime"],
-        help="Cepstrum domain (linear or logtime)",
-    )
-    parser.add_argument(
-        "--cepstrum-min-bin", type=int, default=FeatureConfig.cepstrum_min_bin, help="Minimum cepstrum bin (>=1)"
-    )
-    parser.add_argument(
-        "--cepstrum-max-frac", type=float, default=FeatureConfig.cepstrum_max_frac, help="Max fraction of window"
-    )
     parser.add_argument("--s-off", dest="s_off", type=float, default=-0.05, help="Score threshold for OFF")
     parser.add_argument("--s-on", dest="s_on", type=float, default=0.1, help="Score threshold for ON/REDUCE")
     parser.add_argument("--rv-off", dest="rv_off", type=float, default=0.05, help="Vol threshold for OFF")
@@ -92,9 +79,6 @@ def main() -> None:
         rv_window=args.rv_window,
         conc_window=args.conc_window,
         psi_window=args.psi_window,
-        cepstrum_domain=args.cepstrum_domain,
-        cepstrum_min_bin=args.cepstrum_min_bin,
-        cepstrum_max_frac=args.cepstrum_max_frac,
     )
     features = compute_features(df, cfg=feat_cfg)
     features = features.dropna(subset=["S", "C"])

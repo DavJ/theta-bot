@@ -6,19 +6,13 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from theta_features.cepstrum import (
-    EPS_LOG,
-    rolling_cepstral_phase,
-    rolling_complex_cepstral_phase,
-    rolling_mellin_cepstral_phase,
-    rolling_mellin_complex_cepstral_phase,
-)
 from theta_features.log_phase_core import (
     log_phase,
     phase_embedding,
     rolling_internal_concentration,
     rolling_phase_concentration,
 )
+from theta_features.scale_phase import compute_scale_phase
 
 
 @dataclass(frozen=True)
@@ -26,8 +20,9 @@ class FeatureConfig:
     base: float = 10.0
     rv_window: int = 24
     conc_window: int = 256
-    psi_mode: str = "cepstrum"
+    psi_mode: str = "scale_phase"
     psi_window: int = 256
+    # Legacy spectral parameters retained for backward compatibility (ignored by scale-phase psi)
     cepstrum_domain: str = "logtime"
     cepstrum_min_bin: int = 4
     cepstrum_max_frac: float = 0.2
@@ -56,71 +51,21 @@ def _compute_rv(log_returns: pd.Series, window: int) -> pd.Series:
     return r2_sum.pow(0.5)
 
 
-def _compute_psi(log_rv: pd.Series, cfg: FeatureConfig) -> pd.Series:
-    psi, _ = _compute_psi_with_debug(log_rv, cfg)
-    return psi
+def _normalize_psi_mode(mode: str | None) -> str:
+    mode_norm = str(mode or "scale_phase").lower()
+    if mode_norm in ("none",):
+        return "none"
+    if mode_norm in ("scale", "scale_phase"):
+        return "scale_phase"
+    raise ValueError(f"Unsupported psi_mode: {mode}")
 
 
-def _compute_psi_with_debug(log_rv: pd.Series, cfg: FeatureConfig) -> tuple[pd.Series, Optional[pd.DataFrame]]:
-    mode = str(cfg.psi_mode or "none").lower()
+def _compute_psi(rv: pd.Series, cfg: FeatureConfig) -> tuple[pd.Series, str]:
+    mode = _normalize_psi_mode(cfg.psi_mode)
     if mode == "none":
-        return pd.Series(np.nan, index=log_rv.index), None
-    if mode not in ("cepstrum", "complex_cepstrum", "mellin_cepstrum", "mellin_complex_cepstrum"):
-        raise ValueError(f"Unsupported psi_mode: {cfg.psi_mode}")
-    
-    domain = (cfg.cepstrum_domain or "linear").lower()
-    
-    if mode == "complex_cepstrum":
-        return rolling_complex_cepstral_phase(
-            log_rv,
-            window=int(cfg.psi_window),
-            min_bin=int(cfg.cepstrum_min_bin),
-            max_frac=float(cfg.cepstrum_max_frac),
-            domain=domain,
-            eps=EPS_LOG,
-            return_debug=True,
-        )
-    elif mode == "mellin_cepstrum":
-        return rolling_mellin_cepstral_phase(
-            log_rv,
-            window=int(cfg.psi_window),
-            grid_n=int(cfg.mellin_grid_n),
-            sigma=float(cfg.mellin_sigma),
-            min_bin=int(cfg.psi_min_bin),
-            max_frac=float(cfg.psi_max_frac),
-            phase_agg=str(cfg.psi_phase_agg),
-            phase_power=float(cfg.psi_phase_power),
-            eps=float(cfg.mellin_eps),
-            return_debug=True,
-        )
-    elif mode == "mellin_complex_cepstrum":
-        return rolling_mellin_complex_cepstral_phase(
-            log_rv,
-            window=int(cfg.psi_window),
-            grid_n=int(cfg.mellin_grid_n),
-            sigma=float(cfg.mellin_sigma),
-            detrend_phase=bool(cfg.mellin_detrend_phase),
-            min_bin=int(cfg.psi_min_bin),
-            max_frac=float(cfg.psi_max_frac),
-            phase_agg=str(cfg.psi_phase_agg),
-            phase_power=float(cfg.psi_phase_power),
-            eps=float(cfg.mellin_eps),
-            return_debug=True,
-        )
-    
-    # Default to regular cepstrum
-    return (
-        rolling_cepstral_phase(
-            log_rv,
-            window=int(cfg.psi_window),
-            min_bin=int(cfg.cepstrum_min_bin),
-            max_frac=float(cfg.cepstrum_max_frac),
-            topk=cfg.cepstrum_topk,
-            domain=domain,
-            eps=EPS_LOG,
-        ),
-        None,
-    )
+        return pd.Series(np.nan, index=rv.index), mode
+    psi = compute_scale_phase(rv, window=int(cfg.psi_window), base=float(cfg.base))
+    return psi, mode
 
 
 def compute_features(ohlcv_df: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame:
@@ -153,22 +98,13 @@ def compute_features(ohlcv_df: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame
     }
 
     psi = None
-    psi_debug = None
+    psi_mode_value = _normalize_psi_mode(cfg.psi_mode)
     if cfg.psi_window and int(cfg.psi_window) > 0:
-        log_rv = pd.Series(np.log(np.abs(rv) + EPS_LOG), index=close.index)
-        psi, psi_debug = _compute_psi_with_debug(log_rv, cfg)
+        psi, psi_mode_value = _compute_psi(rv, cfg)
         feature_data["psi"] = psi
 
     df_feat = pd.DataFrame(feature_data, index=close.index)
-    df_feat["psi_mode"] = str(cfg.psi_mode)
-    debug_cols = ("psi_n_star", "psi_c_real", "psi_c_imag", "psi_c_abs", "psi_angle_rad")
-    if psi_debug is not None:
-        for col in debug_cols:
-            df_feat[col] = psi_debug[col]
-    else:
-        for col in debug_cols:
-            if col not in df_feat.columns:
-                df_feat[col] = np.nan
+    df_feat["psi_mode"] = psi_mode_value
 
     if psi is not None:
         psi_vals = psi.to_numpy(dtype=float)

@@ -21,11 +21,14 @@ def _synthetic_ohlcv(rows: int = 40) -> pd.DataFrame:
 
 
 def test_feature_pipeline_columns_and_ranges():
-    cfg = FeatureConfig(rv_window=4, conc_window=8, psi_window=8, cepstrum_min_bin=2, cepstrum_max_frac=0.5)
+    cfg = FeatureConfig(rv_window=4, conc_window=8, psi_window=8, psi_mode="scale_phase")
     feats = compute_features(_synthetic_ohlcv(), cfg=cfg)
 
     for col in ["rv", "C", "psi", "C_int", "S"]:
         assert col in feats.columns
+    psi_vals = feats["psi"].dropna()
+    if not psi_vals.empty:
+        assert ((psi_vals >= 0.0) & (psi_vals < 1.0)).all()
 
     valid_s = feats["S"].dropna()
     if not valid_s.empty:
@@ -38,7 +41,7 @@ def test_feature_pipeline_columns_and_ranges():
 
 
 def test_feature_pipeline_is_deterministic():
-    cfg = FeatureConfig(rv_window=4, conc_window=8, psi_window=8, cepstrum_min_bin=2, cepstrum_max_frac=0.5)
+    cfg = FeatureConfig(rv_window=4, conc_window=8, psi_window=8, psi_mode="scale_phase")
     df = _synthetic_ohlcv(rows=32)
     feats1 = compute_features(df, cfg=cfg)
     feats2 = compute_features(df.copy(), cfg=cfg)

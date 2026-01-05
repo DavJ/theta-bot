@@ -122,7 +122,7 @@ def test_run_live_exports_complex_cepstrum_features(tmp_path):
         "--psi-window",
         "128",
         "--psi-mode",
-        "complex_cepstrum",
+        "scale_phase",
         "--csv-out-mode",
         "features",
         "--csv-out-tail",
@@ -134,11 +134,8 @@ def test_run_live_exports_complex_cepstrum_features(tmp_path):
 
     assert csv_out.exists()
     out_df = pd.read_csv(csv_out)
-    debug_cols = ["psi_mode", "psi_n_star", "psi_c_real", "psi_c_imag", "psi_c_abs", "psi_angle_rad"]
-    for col in debug_cols:
-        assert col in out_df.columns
+    assert "psi_mode" in out_df.columns
     psi_vals = out_df["psi"].dropna()
     assert not psi_vals.empty
     assert psi_vals.round(3).nunique() >= 10
-    assert out_df["psi_mode"].dropna().iloc[-1] == "complex_cepstrum"
-    assert out_df["psi_c_imag"].abs().max() > 0
+    assert out_df["psi_mode"].dropna().iloc[-1] == "scale_phase"
