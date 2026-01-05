@@ -17,7 +17,7 @@ import json
 import shlex
 import sys
 from pathlib import Path
-from typing import Iterable, List
+from typing import List
 
 import pandas as pd
 
