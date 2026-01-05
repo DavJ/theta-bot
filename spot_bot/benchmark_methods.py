@@ -433,7 +433,6 @@ def run_walk_forward_single(
     
     # Generate folds
     start = 0
-    fold_num = 0
     while start + fold_size <= total_bars:
         # Test set starts after training window
         test_start = start + train_bars
@@ -459,7 +458,6 @@ def run_walk_forward_single(
         
         # Move to next fold
         start += test_bars
-        fold_num += 1
     
     if not sharpe_scores:
         return None
@@ -605,8 +603,8 @@ def print_top_results(
     print(f"TOP {top_n} METHODS (by mean score across pairs)")
     print("=" * 80 + "\n")
     
-    for idx, row in methods_leaderboard.head(top_n).iterrows():
-        print(f"Rank {idx + 1}: {row['method_name']}")
+    for rank, (idx, row) in enumerate(methods_leaderboard.head(top_n).iterrows(), start=1):
+        print(f"Rank {rank}: {row['method_name']}")
         print(f"  Mean Score: {row['score_mean']:.4f} (±{row.get('score_std', 0.0):.4f})")
         if walk_forward:
             print(f"  Mean Sharpe: {row['mean_sharpe_mean']:.4f}")
@@ -623,8 +621,8 @@ def print_top_results(
     print("=" * 80 + "\n")
     
     top_runs = results_df.nlargest(top_n, "score")
-    for idx, row in top_runs.iterrows():
-        print(f"Rank {idx + 1}: {row['pair']} + {row['method_name']}")
+    for rank, (idx, row) in enumerate(top_runs.iterrows(), start=1):
+        print(f"Rank {rank}: {row['pair']} + {row['method_name']}")
         print(f"  Score: {row['score']:.4f}")
         if walk_forward:
             print(f"  Mean Sharpe: {row['mean_sharpe']:.4f}")

@@ -4,6 +4,8 @@
 
 The `spot_bot/benchmark_methods.py` script is a comprehensive benchmarking tool that compares multiple trading bot configurations across multiple trading pairs. It helps identify which parameter combinations perform best across different market conditions.
 
+**Supported Timeframes**: `1h`, `15m`, `4h`
+
 ## Features
 
 - **Multi-pair comparison**: Test configurations across different trading pairs simultaneously
