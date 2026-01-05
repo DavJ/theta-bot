@@ -24,7 +24,12 @@ def _to_markdown_table(df: pd.DataFrame, cols: list[str]) -> str:
     cols = [c for c in cols if c in df.columns]
     if not cols:
         return "_No data available._"
-    return df[cols].to_markdown(index=False)
+    subset = df[cols]
+    try:
+        return subset.to_markdown(index=False)
+    except (ImportError, ModuleNotFoundError):
+        csv_text = subset.to_csv(index=False)
+        return f"```\n{csv_text}```"
 
 
 def _load_cmd(args: argparse.Namespace) -> str:

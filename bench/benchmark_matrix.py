@@ -25,14 +25,20 @@ from typing import List
 
 import pandas as pd
 
-from bench.benchmark_pairs import (
-    DEFAULT_SYMBOLS,
-    compute_equity_curve,
-    compute_equity_metrics,
-    max_drawdown,
-    run_features_export,
-    _timeframe_to_timedelta,
-)
+try:
+    from .benchmark_pairs import (
+        DEFAULT_SYMBOLS,
+        compute_equity_curve,
+        compute_equity_metrics,
+        max_drawdown,
+        run_features_export,
+        _timeframe_to_timedelta,
+    )
+except ImportError as exc:  # pragma: no cover - guidance for direct execution
+    raise ImportError(
+        "bench.benchmark_matrix should be executed as a module (e.g., python -m bench.benchmark_matrix); "
+        f"original import error: {exc}"
+    ) from exc
 
 
 DEFAULT_PSI_MODES = ["scale_phase", "none"]
@@ -135,13 +141,10 @@ def main() -> None:
     ap.add_argument("--rv-window", type=int, default=24)
     ap.add_argument("--conc-window", type=int, default=256)
     ap.add_argument("--psi-window", type=int, default=256)
-    ap.add_argument("--cepstrum-min-bin", type=int, default=4)
-    ap.add_argument("--cepstrum-max-frac", type=float, default=0.2)
     ap.add_argument("--base", type=float, default=10.0)
     ap.add_argument("--fee-rate", type=float, default=0.001)
     ap.add_argument("--slippage-bps", type=float, default=0.0)
     ap.add_argument("--max-exposure", type=float, default=0.3)
-    ap.add_argument("--cepstrum-domain", default="logtime")
     args = ap.parse_args()
 
     symbols = _parse_list(args.symbols)
@@ -166,9 +169,6 @@ def main() -> None:
             feature_path,
             psi_mode=psi_mode,
             psi_window=args.psi_window,
-            cepstrum_domain=args.cepstrum_domain,
-            cepstrum_min_bin=args.cepstrum_min_bin,
-            cepstrum_max_frac=args.cepstrum_max_frac,
             rv_window=args.rv_window,
             conc_window=args.conc_window,
             base=args.base,
@@ -214,8 +214,6 @@ def main() -> None:
                     "rv_window": args.rv_window,
                     "conc_window": args.conc_window,
                     "psi_window": args.psi_window,
-                    "cepstrum_min_bin": args.cepstrum_min_bin,
-                    "cepstrum_max_frac": args.cepstrum_max_frac,
                     "base": args.base,
                     "fee_rate": args.fee_rate,
                     "slippage_bps": args.slippage_bps,

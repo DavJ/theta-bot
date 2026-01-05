@@ -204,7 +204,7 @@ def run_walkforward(config_path: str) -> Dict:
         )
     if parquet_fallback_reason:
         warnings.warn(parquet_fallback_reason)
-        preds_df.to_csv(out_dir / "predictions.csv")
+        preds_df.to_csv(out_dir / "predictions.csv", index=False)
 
     backtest_res = run_backtest(
         preds_df,
