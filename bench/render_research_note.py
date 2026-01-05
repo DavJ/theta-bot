@@ -117,9 +117,9 @@ def main() -> None:
         "",
         "## Conclusion",
         textwrap.dedent(
-            \"\"\"We model volatility and regime dynamics, not point forecasts of price direction.
+            """We model volatility and regime dynamics, not point forecasts of price direction.
             Exposure follows closed-bar signals with explicit transaction costs and risk gating,
-            highlighting robustness across market conditions.\"\"\"
+            highlighting robustness across market conditions."""
         ).strip(),
         "",
     ]
