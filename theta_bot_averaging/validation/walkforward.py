@@ -190,7 +190,10 @@ def run_walkforward(config_path: str) -> Dict:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     preds_df = pd.concat(predictions).sort_index()
-    preds_df.to_parquet(out_dir / "predictions.parquet")
+    try:
+        preds_df.to_parquet(out_dir / "predictions.parquet")
+    except ImportError:
+        preds_df.to_csv(out_dir / "predictions.csv")
 
     backtest_res = run_backtest(
         preds_df,
