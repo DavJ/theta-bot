@@ -423,12 +423,13 @@ def run_replay(
     )
     equity_rows: List[Dict[str, Any]] = []
     trade_rows: List[Dict[str, Any]] = []
-    features_rows: List[pd.DataFrame] = []
+    features_rows: List[Dict[str, Any]] = []
 
     last_error_msg: Optional[str] = None
 
+    # Replay recomputes features on the expanding history to avoid lookahead; datasets are expected to be modest.
     for i in range(len(ohlcv_df)):
-        df_slice = ohlcv_df.iloc[: i + 1].copy()
+        df_slice = ohlcv_df.iloc[: i + 1]
         try:
             result = compute_step(
                 ohlcv_df=df_slice,
@@ -516,14 +517,13 @@ def run_replay(
                 latest_action=action,
             )
             if not feat_df.empty:
-                features_rows.append(feat_df.tail(1))
+                features_rows.append(feat_df.tail(1).reset_index(drop=True).iloc[0].to_dict())
 
     equity_df = pd.DataFrame(equity_rows)
     trades_df = pd.DataFrame(trade_rows)
     features_df = None
-    # Replay datasets are typically moderate; concatenate at the end to keep per-step logic simple.
     if features_rows:
-        features_df = pd.concat(features_rows, axis=0, ignore_index=True)
+        features_df = pd.DataFrame(features_rows)
 
     _write_csv(equity_df, equity_path)
     _write_csv(trades_df, trades_path)
