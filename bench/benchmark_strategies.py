@@ -29,7 +29,13 @@ if __package__ is None and __name__ == "__main__":
 
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.regime.regime_engine import RegimeEngine
-from spot_bot.strategies import KalmanRiskStrategy, MeanRevGatedStrategy, apply_risk_gating, params_hash
+from spot_bot.strategies import (
+    KalmanRiskStrategy,
+    MeanRevDualKalmanStrategy,
+    MeanRevGatedStrategy,
+    apply_risk_gating,
+    params_hash,
+)
 
 
 DEFAULT_SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "AVAX/USDT"]
@@ -126,6 +132,7 @@ def run_backtest(
     strategy_map = {
         "meanrev": MeanRevGatedStrategy(max_exposure=max_exposure),
         "kalman": KalmanRiskStrategy(mode=kalman_mode, max_exposure=max_exposure),
+        "kalman_mr_dual": MeanRevDualKalmanStrategy(emax=max_exposure),
     }
     strategy = strategy_map.get(strategy_name)
     if strategy is None:
@@ -141,7 +148,11 @@ def run_backtest(
     equity = [initial_equity]
     for i in range(len(prices) - 1):
         window_prices = prices.iloc[: i + 1]
-        desired_exposure = strategy.generate(window_prices).desired_exposure
+        if strategy_name == "kalman_mr_dual":
+            window_feat = feat.iloc[: i + 1] if not feat.empty else pd.DataFrame({"close": window_prices})
+            desired_exposure = strategy.generate(window_prices, window_feat).desired_exposure
+        else:
+            desired_exposure = strategy.generate(window_prices).desired_exposure
         risk_state = "ON"
         risk_budget = 1.0
         if not feat.empty and i < len(feat):
@@ -243,7 +254,7 @@ def main() -> None:
             continue
         for psi_mode in psi_modes:
             cfg = FeatureConfig(psi_mode=psi_mode)
-            for strategy_name in ("meanrev", "kalman"):
+            for strategy_name in ("meanrev", "kalman", "kalman_mr_dual"):
                 res = run_backtest(
                     ohlcv=ohlcv,
                     strategy_name=strategy_name,

@@ -191,6 +191,7 @@ def run_features_export(
     fee_rate: float,
     slippage_bps: float,
     max_exposure: float,
+    strategy: str = "meanrev",
 ) -> None:
     cmd = [
         "python",
@@ -220,6 +221,8 @@ def run_features_export(
         str(slippage_bps),
         "--max-exposure",
         str(max_exposure),
+        "--strategy",
+        strategy,
         "--csv-out",
         str(out_csv),
         "--csv-out-mode",
