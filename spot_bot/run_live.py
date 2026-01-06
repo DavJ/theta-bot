@@ -473,11 +473,13 @@ def run_replay(
         )
 
         if execution_result:
+            # Prefer filled quantity; fall back to requested quantity if fill metadata is absent.
             qty_raw = execution_result.get("filled_qty")
             if qty_raw is None:
                 qty_raw = execution_result.get("qty")
             qty = float(qty_raw or 0.0)
             if qty > 0 and execution_result.get("status") in ("filled", "partial"):
+                # Prefer explicit execution price, then average fill price, and finally last close as a fallback.
                 price_raw = execution_result.get("price")
                 if price_raw is None:
                     price_raw = execution_result.get("avg_price")
@@ -519,6 +521,7 @@ def run_replay(
     equity_df = pd.DataFrame(equity_rows)
     trades_df = pd.DataFrame(trade_rows)
     features_df = None
+    # Replay datasets are typically moderate; concatenate at the end to keep per-step logic simple.
     if features_rows:
         features_df = pd.concat(features_rows, axis=0, ignore_index=True)
 
