@@ -426,6 +426,14 @@ def run_replay(
     features_rows: List[Dict[str, Any]] = []
 
     last_error_msg: Optional[str] = None
+    if len(ohlcv_df) > 10_000:
+        print(f"Replay warning: large dataset detected ({len(ohlcv_df)} rows); per-step feature recomputation may be slow.")
+
+    def _extract_execution_field(data: Dict[str, Any], primary: str, secondary: Optional[str], default_value: Any) -> Any:
+        value = data.get(primary)
+        if value is None and secondary:
+            value = data.get(secondary)
+        return default_value if value is None else value
 
     # Replay recomputes features on the expanding history to avoid lookahead; datasets are expected to be modest.
     for i in range(len(ohlcv_df)):
@@ -475,21 +483,13 @@ def run_replay(
 
         if execution_result:
             # Prefer filled quantity; fall back to requested quantity if fill metadata is absent.
-            qty_raw = execution_result.get("filled_qty")
-            if qty_raw is None:
-                qty_raw = execution_result.get("qty")
+            qty_raw = _extract_execution_field(execution_result, "filled_qty", "qty", 0.0)
             qty = float(qty_raw or 0.0)
             if qty > 0 and execution_result.get("status") in ("filled", "partial"):
                 # Prefer explicit execution price, then average fill price, and finally last close as a fallback.
-                price_raw = execution_result.get("price")
-                if price_raw is None:
-                    price_raw = execution_result.get("avg_price")
-                if price_raw is None:
-                    price_raw = result.close
+                price_raw = _extract_execution_field(execution_result, "price", "avg_price", result.close)
                 price = float(price_raw)
-                fee_raw = execution_result.get("fee")
-                if fee_raw is None:
-                    fee_raw = execution_result.get("fee_est", 0.0)
+                fee_raw = _extract_execution_field(execution_result, "fee", "fee_est", 0.0)
                 fee = float(fee_raw)
                 notional = qty * price
                 side = "buy" if result.delta_btc > 0 else "sell"
@@ -812,8 +812,9 @@ def main() -> None:
             if not csv_in_path:
                 print("Replay mode requires --csv-in with historical OHLCV.", file=sys.stderr)
                 sys.exit(1)
-            df_replay = pd.read_csv(csv_in_path, parse_dates=["timestamp"])
-            df_replay["timestamp"] = pd.to_datetime(df_replay["timestamp"], utc=True)
+            df_replay = pd.read_csv(
+                csv_in_path, parse_dates=["timestamp"], date_parser=lambda x: pd.to_datetime(x, utc=True)
+            )
             df_replay = df_replay.set_index("timestamp")
             equity_df, trades_df, features_df = run_replay(
                 ohlcv_df=df_replay,
