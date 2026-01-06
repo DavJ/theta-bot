@@ -425,8 +425,10 @@ def run_replay(
     trade_rows: List[Dict[str, Any]] = []
     features_rows: List[pd.DataFrame] = []
 
+    last_error_msg: Optional[str] = None
+
     for i in range(len(ohlcv_df)):
-        df_slice = ohlcv_df.iloc[: i + 1]
+        df_slice = ohlcv_df.iloc[: i + 1].copy(deep=False)
         try:
             result = compute_step(
                 ohlcv_df=df_slice,
@@ -444,7 +446,11 @@ def run_replay(
                 hyst_floor=hyst_floor,
                 hyst_mode=hyst_mode,
             )
-        except ValueError:
+        except ValueError as exc:
+            msg = str(exc)
+            if msg != last_error_msg:
+                print(f"Replay skipping step {i}: {msg}")
+                last_error_msg = msg
             continue
 
         execution_result = result.execution
