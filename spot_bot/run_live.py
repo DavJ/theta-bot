@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 if __package__ is None and __name__ == "__main__":
     import os
@@ -378,6 +378,139 @@ def compute_step(
     )
 
 
+def _write_csv(df: pd.DataFrame, path: pathlib.Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(path, index=False)
+
+
+def run_replay(
+    ohlcv_df: pd.DataFrame,
+    feature_cfg: FeatureConfig,
+    regime_engine: RegimeEngine,
+    strategy: MeanReversionStrategy,
+    max_exposure: float,
+    fee_rate: float,
+    slippage_bps: float,
+    spread_bps: float,
+    hyst_k: float,
+    hyst_floor: float,
+    hyst_mode: str,
+    min_notional: float,
+    step_size: Optional[float],
+    initial_usdt: float,
+    initial_btc: float,
+    equity_path: pathlib.Path,
+    trades_path: pathlib.Path,
+    features_path: Optional[pathlib.Path] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
+    if ohlcv_df is None or ohlcv_df.empty:
+        raise ValueError("Replay requires non-empty OHLCV data.")
+    if not isinstance(ohlcv_df.index, pd.DatetimeIndex):
+        if "timestamp" in ohlcv_df.columns:
+            ohlcv_df = ohlcv_df.copy()
+            ohlcv_df["timestamp"] = pd.to_datetime(ohlcv_df["timestamp"], utc=True)
+            ohlcv_df = ohlcv_df.set_index("timestamp")
+        else:
+            raise ValueError("OHLCV data must be indexed by timestamp for replay.")
+    ohlcv_df = ohlcv_df.sort_index()
+
+    broker = PaperBroker(
+        initial_usdt=initial_usdt,
+        initial_btc=initial_btc,
+        fee_rate=fee_rate,
+        min_notional=min_notional,
+        step_size=step_size,
+    )
+    equity_rows: List[Dict[str, Any]] = []
+    trade_rows: List[Dict[str, Any]] = []
+    features_rows: List[pd.DataFrame] = []
+
+    for i in range(len(ohlcv_df)):
+        df_slice = ohlcv_df.iloc[: i + 1]
+        try:
+            result = compute_step(
+                ohlcv_df=df_slice,
+                feature_cfg=feature_cfg,
+                regime_engine=regime_engine,
+                strategy=strategy,
+                max_exposure=max_exposure,
+                fee_rate=fee_rate,
+                balances=broker.balances(),
+                mode="paper",
+                broker=broker,
+                slippage_bps=slippage_bps,
+                spread_bps=spread_bps,
+                hyst_k=hyst_k,
+                hyst_floor=hyst_floor,
+                hyst_mode=hyst_mode,
+            )
+        except ValueError:
+            continue
+
+        execution_result = result.execution
+        action = "HOLD"
+        if abs(result.delta_btc) > 0:
+            action = "BUY" if result.delta_btc > 0 else "SELL"
+            if execution_result and execution_result.get("status") not in ("filled", "partial"):
+                action = f"{action}-rejected"
+
+        equity_rows.append(
+            {
+                "timestamp": result.ts,
+                "close": result.close,
+                "equity_usdt": result.equity["equity_usdt"],
+                "btc": result.equity["btc"],
+                "usdt": result.equity["usdt"],
+                "action": action,
+                "target_exposure": result.target_exposure,
+            }
+        )
+
+        if execution_result:
+            qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
+            if qty > 0 and execution_result.get("status") in ("filled", "partial"):
+                price = float(execution_result.get("price") or execution_result.get("avg_price") or result.close)
+                fee = float(execution_result.get("fee", execution_result.get("fee_est", 0.0)))
+                notional = qty * price
+                side = "buy" if result.delta_btc > 0 else "sell"
+                cost = notional + fee if side == "buy" else notional - fee
+                trade_rows.append(
+                    {
+                        "timestamp": result.ts,
+                        "side": side,
+                        "size": qty,
+                        "price": price,
+                        "fee": fee,
+                        "cost": cost,
+                    }
+                )
+
+        if features_path:
+            feat_df = _compute_feature_outputs(
+                ohlcv_df=df_slice,
+                feature_cfg=feature_cfg,
+                regime_engine=regime_engine,
+                strategy=strategy,
+                max_exposure=max_exposure,
+                equity_usdt=result.equity["equity_usdt"],
+                tail_rows=1,
+                latest_action=action,
+            )
+            if not feat_df.empty:
+                features_rows.append(feat_df.tail(1))
+
+    equity_df = pd.DataFrame(equity_rows)
+    trades_df = pd.DataFrame(trade_rows)
+    features_df = pd.concat(features_rows, axis=0) if features_rows else None
+
+    _write_csv(equity_df, equity_path)
+    _write_csv(trades_df, trades_path)
+    if features_path and features_df is not None:
+        _write_csv(features_df.reset_index(drop=True), features_path)
+
+    return equity_df, trades_df, features_df
+
+
 def _compute_feature_outputs(
     ohlcv_df: pd.DataFrame,
     feature_cfg: FeatureConfig,
@@ -511,7 +644,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--symbol", type=str, default="BTC/USDT")
     parser.add_argument("--timeframe", type=str, default="1h")
     parser.add_argument("--limit-total", dest="limit_total", type=int, default=2000)
-    parser.add_argument("--mode", choices=["dryrun", "paper", "live"], default="dryrun")
+    parser.add_argument("--mode", choices=["dryrun", "paper", "live", "replay"], default="dryrun")
     parser.add_argument("--db", type=str, default=None, help="SQLite DB path (required for paper/live).")
     parser.add_argument("--initial-usdt", dest="initial_usdt", type=float, default=1000.0)
     parser.add_argument("--max-exposure", dest="max_exposure", type=float, default=0.3)
@@ -542,6 +675,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cache", type=str, default=None, help="Optional cache file for OHLCV.")
     parser.add_argument("--config", type=str, default=str(pathlib.Path(__file__).parent / "config.yaml"))
     parser.add_argument("--i-understand-live-risk", action="store_true", help="Required to enable live execution.")
+    parser.add_argument("--replay-equity-out", dest="replay_equity_out", type=str, default="equity_curve.csv")
+    parser.add_argument("--replay-trades-out", dest="replay_trades_out", type=str, default="trades.csv")
+    parser.add_argument(
+        "--replay-features-out", dest="replay_features_out", type=str, default=None, help="Optional features.csv export."
+    )
     # Feature config overrides
     parser.add_argument("--rv-window", type=int, default=DEFAULT_FEATURE_CFG.rv_window)
     parser.add_argument("--conc-window", type=int, default=DEFAULT_FEATURE_CFG.conc_window)
@@ -647,6 +785,38 @@ def main() -> None:
             "usdt": last_equity["usdt"] if last_equity else float(args.initial_usdt),
             "btc": last_equity["btc"] if last_equity else 0.0,
         }
+
+        if args.mode == "replay":
+            if not csv_in_path:
+                print("Replay mode requires --csv-in with historical OHLCV.", file=sys.stderr)
+                sys.exit(1)
+            df_replay = pd.read_csv(csv_in_path, parse_dates=["timestamp"])
+            df_replay["timestamp"] = pd.to_datetime(df_replay["timestamp"], utc=True)
+            df_replay = df_replay.set_index("timestamp")
+            equity_df, trades_df, features_df = run_replay(
+                ohlcv_df=df_replay,
+                feature_cfg=feat_cfg,
+                regime_engine=regime_engine,
+                strategy=strategy,
+                max_exposure=max_exposure,
+                fee_rate=fee_rate,
+                slippage_bps=args.slippage_bps,
+                spread_bps=spread_bps,
+                hyst_k=args.hyst_k,
+                hyst_floor=args.hyst_floor,
+                hyst_mode=args.hyst_mode,
+                min_notional=min_notional,
+                step_size=step_size,
+                initial_usdt=balances["usdt"],
+                initial_btc=balances["btc"],
+                equity_path=pathlib.Path(args.replay_equity_out),
+                trades_path=pathlib.Path(args.replay_trades_out),
+                features_path=pathlib.Path(args.replay_features_out) if args.replay_features_out else None,
+            )
+            print(f"Replay finished: {len(equity_df)} steps, {len(trades_df)} trades, equity_out={args.replay_equity_out}")
+            if logger:
+                logger.close()
+            return
 
         broker = None
         if args.mode == "paper":
