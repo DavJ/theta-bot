@@ -18,7 +18,7 @@ def circle_dist(a: float, b: float) -> float:
     """
     if pd.isna(a) or pd.isna(b):
         return np.nan
-    diff = abs(float(a) - float(b))
+    diff = abs(a - b)
     wrapped = diff % 1.0
     return float(min(wrapped, 1.0 - wrapped))
 
@@ -74,6 +74,9 @@ class AdaptiveLevelTrendKalman:
     def step(self, y: float, scale: float = 1.0) -> Tuple[float, float, float, float]:
         """
         Local level + trend Kalman step with adaptive process noise scale.
+
+        Returns:
+            tuple: (level estimate, slope estimate, innovation, innovation variance)
         """
         if pd.isna(y):
             return float(self.level or 0.0), float(self.slope), 0.0, float(self.r)
@@ -86,14 +89,14 @@ class AdaptiveLevelTrendKalman:
         F = np.array([[1.0, 1.0], [0.0, 1.0]], dtype=float)
         H = np.array([1.0, 0.0], dtype=float)
         q_scale = max(float(scale), 0.0)
-        Q = np.array([[self.q_level * q_scale, 0.0], [0.0, self.q_slope * q_scale]], dtype=float)
+        Q = np.diag([self.q_level * q_scale, self.q_slope * q_scale]).astype(float)
 
         x = np.array([self.level, self.slope], dtype=float)
         x_pred = F @ x
         P_pred = F @ self.P @ F.T + Q
 
-        innovation = float(y) - float(H @ x_pred)
-        S = float(H @ P_pred @ H.T + self.r)
+        innovation = float(y) - float(x_pred[0])
+        S = float(P_pred[0, 0] + self.r)
         if np.isnan(S) or S <= 0.0:
             S = MIN_VARIANCE
         K = (P_pred @ H) / S

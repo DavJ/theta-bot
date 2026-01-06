@@ -45,6 +45,7 @@ DEFAULT_PSI_MODES = ["scale_phase", "none"]
 DEFAULT_METHODS = ["C", "S"]
 ALLOWED_PSI_MODES = {"none", "scale_phase"}
 ALLOWED_METHODS = {"C", "S", "KALMAN_MR_DUAL"}
+STRATEGY_BY_METHOD = {"KALMAN_MR_DUAL": "kalman_mr_dual"}
 WINDOW_SAMPLE_COUNT = 3
 
 
@@ -164,7 +165,7 @@ def main() -> None:
         safe_symbol = symbol.replace("/", "_")
         run_id = f"{safe_symbol}_{method}_{psi_mode}"
         feature_path = workdir / f"features_{run_id}.csv"
-        strategy_name = "kalman_mr_dual" if method == "KALMAN_MR_DUAL" else "meanrev"
+        strategy_name = STRATEGY_BY_METHOD.get(method, "meanrev")
         run_features_export(
             symbol,
             args.timeframe,

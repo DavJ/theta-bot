@@ -320,7 +320,8 @@ def _compute_feature_outputs(
         risk_budget_series = (risk_budget_series * vol_guard).clip(lower=0.0, upper=1.0)
 
     intent_series: pd.Series
-    if hasattr(strategy, "generate_series"):
+    if isinstance(strategy, MeanRevDualKalmanStrategy):
+        # Risk budgets are applied below via risk_budget_series to avoid double scaling.
         intent_series = strategy.generate_series(valid, risk_budget_series, apply_budget=False).reindex(valid.index)
         intent_series = intent_series.fillna(0.0)
     else:

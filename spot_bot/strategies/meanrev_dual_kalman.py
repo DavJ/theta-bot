@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import NamedTuple, Optional
 
 import numpy as np
 import pandas as pd
 
 from spot_bot.utils.normalization import clip01
+from spot_bot.strategies.risk import StrategyOutput
 from theta_bot_averaging.filters.dual_kalman import (
+    MIN_VARIANCE,
     AdaptiveLevelTrendKalman,
     RegimeKalman1D,
     circle_dist,
@@ -17,7 +19,12 @@ from theta_bot_averaging.filters.dual_kalman import (
 from .base import Intent, Strategy
 
 
-MIN_VARIANCE = 1e-12
+class FilterOutput(NamedTuple):
+    level: float
+    slope: float
+    residual: float
+    sigma: float
+    scale: float
 
 
 @dataclass
@@ -65,7 +72,7 @@ class MeanRevDualKalmanStrategy(Strategy):
         )
         return z
 
-    def _run_filters(self, close: pd.Series, z: pd.Series) -> tuple[float, float, float, float, float]:
+    def _run_filters(self, close: pd.Series, z: pd.Series) -> FilterOutput:
         regime = RegimeKalman1D(q=self.params.q_r, r=self.params.r_z, mean=0.0, var=1.0)
         scale_vals = []
         for val in z:
@@ -89,15 +96,17 @@ class MeanRevDualKalmanStrategy(Strategy):
             level, slope, residual, sigma2 = main.step(y, scale=scale)
         sigma = float(np.sqrt(max(sigma2, MIN_VARIANCE)))
         last_scale = float(scale_vals[-1]) if scale_vals else 1.0
-        return level, slope, residual, sigma, last_scale
+        return FilterOutput(level=level, slope=slope, residual=residual, sigma=sigma, scale=last_scale)
+
+    def _raw_signal(self, u_t: float) -> float:
+        return -self.params.k_u * u_t
 
     def _target_exposure(self, u_t: float, risk_budget: float, *, apply_budget: bool = True) -> float:
-        raw = float(np.clip(-self.params.k_u * u_t, -self.params.emax, self.params.emax))
-        # Long-only clamp for compatibility with existing sizing.
+        raw = self._raw_signal(u_t)
         target = float(np.clip(raw, 0.0, self.params.emax))
         if apply_budget:
             target *= clip01(risk_budget)
-        return float(np.clip(target, 0.0, self.params.emax))
+        return float(target)
 
     def generate_intent(self, features_df: pd.DataFrame) -> Intent:
         if features_df is None or features_df.empty:
@@ -107,15 +116,23 @@ class MeanRevDualKalmanStrategy(Strategy):
         if close.empty:
             return Intent(desired_exposure=0.0, reason="No price data", diagnostics={})
 
-        z = self._build_regime_signal(features_df.loc[close.index])
-        level, slope, residual, sigma, last_scale = self._run_filters(close, z)
+        z = self._build_regime_signal(features_df.loc[close.index]).reindex(close.index).fillna(0.0)
+        filter_out = self._run_filters(close, z)
+        level, slope, residual, sigma, last_scale = filter_out
 
         if sigma <= 0.0 or np.isnan(sigma):
             sigma = np.sqrt(MIN_VARIANCE)
         u_t = residual / sigma
-        risk_budget = float(features_df.iloc[-1].get("risk_budget", 1.0))
+
+        last_row = features_df.iloc[-1]
+        if isinstance(last_row, pd.Series) and "risk_budget" in last_row:
+            risk_budget = float(last_row.get("risk_budget", 1.0))
+        else:
+            risk_budget = 1.0
+
         desired_exposure = self._target_exposure(u_t, risk_budget=risk_budget, apply_budget=True)
 
+        raw_signal = self._raw_signal(u_t)
         diagnostics = {
             "level": level,
             "slope": slope,
@@ -123,7 +140,7 @@ class MeanRevDualKalmanStrategy(Strategy):
             "sigma": sigma,
             "u_t": u_t,
             "risk_budget": risk_budget,
-            "desired_raw": float(np.clip(-self.params.k_u * u_t, -self.params.emax, self.params.emax)),
+            "desired_raw": float(np.clip(raw_signal, 0.0, self.params.emax)),
             "scale": last_scale,
         }
         return Intent(desired_exposure=desired_exposure, reason="Dual Kalman mean reversion", diagnostics=diagnostics)
@@ -138,7 +155,7 @@ class MeanRevDualKalmanStrategy(Strategy):
         if close.empty:
             return pd.Series(dtype=float, index=features_df.index)
 
-        z = self._build_regime_signal(features_df.loc[close.index])
+        z = self._build_regime_signal(features_df.loc[close.index]).reindex(close.index).fillna(0.0)
         budgets = risk_budgets
         if budgets is None:
             budgets = (
@@ -167,16 +184,11 @@ class MeanRevDualKalmanStrategy(Strategy):
             exposures.append(self._target_exposure(u_t, float(budget), apply_budget=apply_budget))
         return pd.Series(exposures, index=close.index, dtype=float)
 
-    # Compatibility wrapper for backtests using StrategyOutput-like interface
+    # Compatibility wrapper for backtests returning StrategyOutput
     def generate(self, prices: pd.Series, features_df: Optional[pd.DataFrame] = None):
         feats = features_df
         if feats is None:
             feats = pd.DataFrame({"close": prices})
         intent = self.generate_intent(feats)
 
-        class _Out:
-            def __init__(self, exposure: float, diag: dict) -> None:
-                self.desired_exposure = exposure
-                self.diagnostics = diag
-
-        return _Out(intent.desired_exposure, intent.diagnostics)
+        return StrategyOutput(desired_exposure=intent.desired_exposure, diagnostics=intent.diagnostics)
