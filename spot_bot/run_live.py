@@ -27,6 +27,7 @@ from spot_bot.regime.regime_engine import RegimeEngine
 from spot_bot.strategies.base import Intent
 from spot_bot.strategies.kalman import KalmanStrategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
+from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
 
 
 def _str_to_bool(v: str) -> bool:
@@ -296,26 +297,6 @@ def _compute_feature_outputs(
     if valid.empty:
         return valid
 
-    closes = ohlcv_df["close"].astype(float)
-    closes_non_na = closes.dropna()
-    ema = closes.ewm(span=strategy.ema_span, adjust=False).mean()
-    rolling_std = closes.rolling(strategy.std_lookback).std(ddof=0)
-    fallback_std = closes.expanding().std(ddof=0).fillna(0.0)
-    safe_std = float(closes_non_na.std(ddof=0)) if not closes_non_na.empty else 0.0
-    if safe_std <= 0.0:
-        safe_std = 1e-8
-    fallback_std = fallback_std.where(fallback_std > 0.0, safe_std)
-    effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
-    effective_std = effective_std.replace(0.0, safe_std)
-    zscore = (closes - ema) / effective_std
-    signal_strength = (-zscore).clip(lower=0.0)
-    entry = strategy.entry_z
-    full = strategy.full_z
-    capped_strength = signal_strength.clip(upper=full)
-    scale = (capped_strength - entry) / max(full - entry, 1e-8)
-    raw_exposure = strategy.min_exposure + (strategy.max_exposure - strategy.min_exposure) * scale
-    desired_exposure_series = raw_exposure.where(signal_strength > entry, 0.0).clip(lower=0.0, upper=1.0)
-
     equity = float(equity_usdt or 0.0)
 
     rv_values = valid["rv"] if "rv" in valid.columns else pd.Series(index=valid.index, dtype=float)
@@ -338,7 +319,32 @@ def _compute_feature_outputs(
         vol_guard = (1.0 - (rv_values / regime_engine.rv_guard)).clip(lower=0.0, upper=1.0)
         risk_budget_series = (risk_budget_series * vol_guard).clip(lower=0.0, upper=1.0)
 
-    intent_series = desired_exposure_series.reindex(valid.index).fillna(0.0).clip(lower=0.0, upper=1.0)
+    intent_series: pd.Series
+    if hasattr(strategy, "generate_series"):
+        intent_series = strategy.generate_series(valid, risk_budget_series, apply_budget=False).reindex(valid.index)
+        intent_series = intent_series.fillna(0.0)
+    else:
+        closes = ohlcv_df["close"].astype(float)
+        closes_non_na = closes.dropna()
+        ema = closes.ewm(span=strategy.ema_span, adjust=False).mean()
+        rolling_std = closes.rolling(strategy.std_lookback).std(ddof=0)
+        fallback_std = closes.expanding().std(ddof=0).fillna(0.0)
+        safe_std = float(closes_non_na.std(ddof=0)) if not closes_non_na.empty else 0.0
+        if safe_std <= 0.0:
+            safe_std = 1e-8
+        fallback_std = fallback_std.where(fallback_std > 0.0, safe_std)
+        effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
+        effective_std = effective_std.replace(0.0, safe_std)
+        zscore = (closes - ema) / effective_std
+        signal_strength = (-zscore).clip(lower=0.0)
+        entry = strategy.entry_z
+        full = strategy.full_z
+        capped_strength = signal_strength.clip(upper=full)
+        scale = (capped_strength - entry) / max(full - entry, 1e-8)
+        raw_exposure = strategy.min_exposure + (strategy.max_exposure - strategy.min_exposure) * scale
+        desired_exposure_series = raw_exposure.where(signal_strength > entry, 0.0).clip(lower=0.0, upper=1.0)
+        intent_series = desired_exposure_series.reindex(valid.index).fillna(0.0).clip(lower=0.0, upper=1.0)
+
     target_exp_series = (intent_series * risk_budget_series).clip(lower=0.0, upper=float(max_exposure))
     target_exp_series = target_exp_series.where(risk_state_series == "ON", 0.0)
     target_btc_series = target_exp_series * equity / valid["close"]
@@ -430,7 +436,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rv-off", dest="rv_off", type=float, default=None)
     parser.add_argument("--rv-reduce", dest="rv_reduce", type=float, default=None)
     parser.add_argument("--rv-guard", dest="rv_guard", type=float, default=None)
-    parser.add_argument("--strategy", type=str, choices=["none", "meanrev", "kalman"], default="meanrev")
+    parser.add_argument(
+        "--strategy", type=str, choices=["none", "meanrev", "kalman", "kalman_mr_dual"], default="meanrev"
+    )
     return parser
 
 
@@ -508,6 +516,8 @@ def main() -> None:
         regime_engine = RegimeEngine(regime_cfg)
         if args.strategy == "kalman":
             strategy = KalmanStrategy()
+        elif args.strategy == "kalman_mr_dual":
+            strategy = MeanRevDualKalmanStrategy()
         elif args.strategy == "none":
             class NullStrategy:
                 def generate_intent(self, features_df):

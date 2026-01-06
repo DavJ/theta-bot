@@ -44,7 +44,7 @@ except ImportError as exc:  # pragma: no cover - guidance for direct execution
 DEFAULT_PSI_MODES = ["scale_phase", "none"]
 DEFAULT_METHODS = ["C", "S"]
 ALLOWED_PSI_MODES = {"none", "scale_phase"}
-ALLOWED_METHODS = {"C", "S"}
+ALLOWED_METHODS = {"C", "S", "KALMAN_MR_DUAL"}
 WINDOW_SAMPLE_COUNT = 3
 
 
@@ -72,7 +72,9 @@ def _build_run_plan(symbols: List[str], psi_modes: List[str], methods: List[str]
     plan: List[tuple[str, str, str]] = []
     for symbol in symbols:
         for psi_mode in norm_modes:
-            allowed_methods = norm_methods if psi_mode != "none" else [m for m in norm_methods if m == "C"]
+            allowed_methods = (
+                norm_methods if psi_mode != "none" else [m for m in norm_methods if m in ("C", "KALMAN_MR_DUAL")]
+            )
             for method in allowed_methods:
                 plan.append((symbol, method, psi_mode))
     if not plan:
@@ -162,6 +164,7 @@ def main() -> None:
         safe_symbol = symbol.replace("/", "_")
         run_id = f"{safe_symbol}_{method}_{psi_mode}"
         feature_path = workdir / f"features_{run_id}.csv"
+        strategy_name = "kalman_mr_dual" if method == "KALMAN_MR_DUAL" else "meanrev"
         run_features_export(
             symbol,
             args.timeframe,
@@ -175,6 +178,7 @@ def main() -> None:
             fee_rate=args.fee_rate,
             slippage_bps=args.slippage_bps,
             max_exposure=args.max_exposure,
+            strategy=strategy_name,
         )
 
         df = pd.read_csv(feature_path)
