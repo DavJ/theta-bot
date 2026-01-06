@@ -94,7 +94,9 @@ def _select_exposure(df: pd.DataFrame, method: str, max_exposure: float) -> pd.S
         return base
 
     if "target_exposure" in df.columns:
-        return pd.to_numeric(df["target_exposure"], errors="coerce").fillna(0.0).clip(lower=0.0, upper=max_exposure)
+        series = pd.to_numeric(df["target_exposure"], errors="coerce").fillna(0.0)
+        bounds = (-max_exposure, max_exposure) if method == "KALMAN_MR_DUAL" else (0.0, max_exposure)
+        return series.clip(lower=bounds[0], upper=bounds[1])
 
     base = pd.to_numeric(df.get("S"), errors="coerce").fillna(0.0).clip(lower=0.0)
     if base.max() <= 1.0 + 1e-12:

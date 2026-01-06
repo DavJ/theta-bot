@@ -37,7 +37,7 @@ def test_strategy_sane_scale_and_exposure():
     strat = MeanRevDualKalmanStrategy(emax=0.5, s_min=0.3, s_max=2.0, sigma_window=12)
     intent = strat.generate_intent(feat)
     assert not np.isnan(intent.desired_exposure)
-    assert 0.0 <= intent.desired_exposure <= 0.5
+    assert -0.5 <= intent.desired_exposure <= 0.5
     assert 0.3 <= intent.diagnostics.get("scale", 0.0) <= 2.0
     assert not np.isnan(intent.diagnostics.get("sigma", np.nan))
 
@@ -48,4 +48,4 @@ def test_strategy_smoke_backtest_series():
     exposures = strat.generate_series(feat, apply_budget=False)
     assert len(exposures) == len(feat)
     assert exposures.notna().all()
-    assert exposures.max() <= 1.0 + 1e-9
+    assert exposures.abs().max() <= 1.0 + 1e-9

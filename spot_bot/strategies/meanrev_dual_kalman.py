@@ -6,7 +6,6 @@ from typing import NamedTuple, Optional
 import numpy as np
 import pandas as pd
 
-from spot_bot.utils.normalization import clip01
 from spot_bot.strategies.risk import StrategyOutput
 from theta_bot_averaging.filters.dual_kalman import (
     MIN_VARIANCE,
@@ -103,9 +102,12 @@ class MeanRevDualKalmanStrategy(Strategy):
 
     def _target_exposure(self, u_t: float, risk_budget: float, *, apply_budget: bool = True) -> float:
         raw = self._raw_signal(u_t)
-        target = float(np.clip(raw, 0.0, self.params.emax))
+        target = float(np.clip(raw, -self.params.emax, self.params.emax))
         if apply_budget:
-            target *= clip01(risk_budget)
+            budget = float(risk_budget)
+            if not np.isfinite(budget):
+                budget = 0.0
+            target *= budget
         return float(target)
 
     def generate_intent(self, features_df: pd.DataFrame) -> Intent:
@@ -140,7 +142,7 @@ class MeanRevDualKalmanStrategy(Strategy):
             "sigma": sigma,
             "u_t": u_t,
             "risk_budget": risk_budget,
-            "desired_raw": float(np.clip(raw_signal, 0.0, self.params.emax)),
+            "desired_raw": float(np.clip(raw_signal, -self.params.emax, self.params.emax)),
             "scale": last_scale,
         }
         return Intent(desired_exposure=desired_exposure, reason="Dual Kalman mean reversion", diagnostics=diagnostics)
