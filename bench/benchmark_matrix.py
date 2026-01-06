@@ -46,6 +46,7 @@ DEFAULT_METHODS = ["C", "S"]
 ALLOWED_PSI_MODES = {"none", "scale_phase"}
 ALLOWED_METHODS = {"C", "S", "KALMAN_MR_DUAL"}
 STRATEGY_BY_METHOD = {"KALMAN_MR_DUAL": "kalman_mr_dual"}
+SIGNED_TARGET_EXPOSURE_METHODS = {"KALMAN_MR_DUAL"}
 WINDOW_SAMPLE_COUNT = 3
 
 
@@ -95,7 +96,8 @@ def _select_exposure(df: pd.DataFrame, method: str, max_exposure: float) -> pd.S
 
     if "target_exposure" in df.columns:
         series = pd.to_numeric(df["target_exposure"], errors="coerce").fillna(0.0)
-        bounds = (-max_exposure, max_exposure) if method == "KALMAN_MR_DUAL" else (0.0, max_exposure)
+        signed = method in SIGNED_TARGET_EXPOSURE_METHODS
+        bounds = (-max_exposure, max_exposure) if signed else (0.0, max_exposure)
         return series.clip(lower=bounds[0], upper=bounds[1])
 
     base = pd.to_numeric(df.get("S"), errors="coerce").fillna(0.0).clip(lower=0.0)
