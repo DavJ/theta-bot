@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import pathlib
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import re
@@ -45,6 +47,8 @@ def _str_to_bool(v: str) -> bool:
 DEFAULT_FEATURE_CFG = FeatureConfig()
 CSV_OUTPUT_COLUMNS = [
     "timestamp",
+    "last_closed_ts",
+    "bar_state",
     "open",
     "high",
     "low",
@@ -63,11 +67,48 @@ CSV_OUTPUT_COLUMNS = [
 ]
 REQUIRED_BAR_COLUMNS = {"open", "high", "low", "close", "volume"}
 CSV_OUT_MODES = ("latest", "features")
+LAST_CLOSED_KV_KEY = "last_closed_ts"
 
 
 class NullStrategy:
     def generate_intent(self, features_df):
         return Intent(desired_exposure=0.0, reason="strategy none", diagnostics={})
+
+
+class LoopStateStore:
+    """Persist loop state across runs using SQLite kv store or JSON sidecar."""
+
+    def __init__(self, logger: Optional[SQLiteLogger] = None, path: Optional[pathlib.Path] = None) -> None:
+        self.logger = logger
+        self.path = pathlib.Path(path) if path else None
+
+    def load_last_closed_ts(self) -> Optional[int]:
+        if self.logger:
+            value = self.logger.get_kv(LAST_CLOSED_KV_KEY)
+            if value is not None:
+                try:
+                    return int(value)
+                except Exception:
+                    return None
+        if self.path and self.path.exists():
+            try:
+                data = json.loads(self.path.read_text())
+                value = data.get(LAST_CLOSED_KV_KEY)
+                if value is not None:
+                    return int(value)
+            except Exception:
+                return None
+        return None
+
+    def save_last_closed_ts(self, ts_ms: Optional[int]) -> None:
+        if ts_ms is None:
+            return
+        ts_int = int(ts_ms)
+        if self.logger:
+            self.logger.set_kv(LAST_CLOSED_KV_KEY, ts_int)
+        if self.path:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text(json.dumps({LAST_CLOSED_KV_KEY: ts_int}))
 
 
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
@@ -114,6 +155,10 @@ def _to_epoch_ms(ts: Any) -> int:
     return int(pd.to_datetime(ts, utc=True).value // 1_000_000)
 
 
+def _to_utc_timestamp(ts: Any) -> pd.Timestamp:
+    return pd.to_datetime(ts, utc=True)
+
+
 def _load_config(path: pathlib.Path) -> dict:
     if not path.exists():
         return {}
@@ -124,6 +169,7 @@ def _load_config(path: pathlib.Path) -> dict:
 def _load_cached(cache_path: Optional[str]) -> Optional[pd.DataFrame]:
     if cache_path and pathlib.Path(cache_path).exists():
         df = pd.read_csv(cache_path, parse_dates=["timestamp"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         df = df.set_index("timestamp")
         return df
     return None
@@ -182,6 +228,25 @@ def _latest_bar_row(df: pd.DataFrame) -> tuple[pd.Series, pd.Timestamp]:
     return bar_row, ts_value
 
 
+def _prepare_trade_data(df: pd.DataFrame, timeframe: str, trade_on: str) -> tuple[pd.DataFrame, Optional[pd.Series], Optional[pd.Timestamp], str]:
+    if trade_on == "bar_close":
+        truncated = latest_closed_ohlcv(df, timeframe)
+        if truncated.empty:
+            return pd.DataFrame(), None, None, "closed"
+        bar_row, ts_value = _latest_bar_row(truncated)
+        return truncated, bar_row, ts_value, "closed"
+
+    truncated = df
+    if truncated.empty:
+        return truncated, None, None, "live"
+    bar_row, ts_value = _latest_bar_row(truncated)
+    tf_delta = _timeframe_to_timedelta(timeframe)
+    expected_close = _to_utc_timestamp(ts_value) + tf_delta
+    now_utc = _to_utc_timestamp(datetime.now(timezone.utc))
+    bar_state = "closed" if now_utc >= expected_close else "live"
+    return truncated, bar_row, _to_utc_timestamp(ts_value), bar_state
+
+
 def _apply_fill_to_balances(balances: Dict[str, float], side: str, qty: float, price: float, fee_rate: float) -> float:
     fee = qty * price * fee_rate
     if side == "buy":
@@ -218,13 +283,19 @@ def compute_step(
     mode: str = "dryrun",
     broker: Optional[PaperBroker] = None,
     slippage_bps: float = 0.0,
+    spread_bps: float = 0.0,
+    hyst_k: float = 5.0,
+    hyst_floor: float = 0.02,
+    hyst_mode: str = "exposure",
 ) -> StepResult:
     features = compute_features(ohlcv_df, feature_cfg).dropna(subset=["S", "C"])
+    if isinstance(features.index, pd.DatetimeIndex):
+        features.index = pd.to_datetime(features.index, utc=True)
     if features.empty:
         raise ValueError("Insufficient data to compute features.")
 
     latest_price = float(ohlcv_df["close"].iloc[-1])
-    latest_ts = features.index[-1]
+    latest_ts = _to_utc_timestamp(features.index[-1])
     decision = regime_engine.decide(features)
     intent = strategy.generate_intent(features)
 
@@ -247,6 +318,39 @@ def compute_step(
         risk_state=decision.risk_state,
     )
     target_exposure = (target_btc * latest_price / equity_usdt) if equity_usdt > 0 else 0.0
+    current_exposure = (current_btc * latest_price / equity_usdt) if equity_usdt > 0 else 0.0
+
+    cost = fee_rate + 2 * (slippage_bps / 10_000.0) + (spread_bps / 10_000.0)
+    rv_series = features["rv"] if "rv" in features.columns else pd.Series(dtype=float)
+    rv_series = rv_series.dropna()
+    rv_current = float(rv_series.iloc[-1]) if not rv_series.empty else 0.0
+    rv_ref_candidates = rv_series.tail(500)
+    rv_ref = float(rv_ref_candidates.median()) if not rv_ref_candidates.empty else float(rv_series.median()) if not rv_series.empty else 0.0
+    if rv_ref <= 0.0 and not rv_series.empty:
+        rv_ref = float(rv_series.median())
+    if rv_ref <= 0.0:
+        rv_ref = abs(rv_current)
+    rv_ref = rv_ref if rv_ref and rv_ref > 0.0 else 1.0
+    rv_current_safe = rv_current if rv_current and rv_current > 0.0 else 1e-8
+
+    delta_e = abs(target_exposure - current_exposure)
+    delta_e_min = max(hyst_floor, hyst_k * cost * (rv_ref / rv_current_safe))
+    apply_hysteresis = False
+    if hyst_mode == "zscore":
+        zscore_val = intent.diagnostics.get("zscore") if intent.diagnostics else None
+        if zscore_val is not None:
+            delta_signal = abs(float(zscore_val))
+            delta_signal_min = max(hyst_floor, hyst_k * cost)
+            apply_hysteresis = delta_signal < delta_signal_min
+        else:
+            apply_hysteresis = delta_e < delta_e_min
+    else:
+        apply_hysteresis = delta_e < delta_e_min
+
+    if apply_hysteresis:
+        target_exposure = current_exposure
+        target_btc = current_btc
+
     delta_btc = target_btc - current_btc
 
     execution: Optional[Dict[str, Any]] = None
@@ -285,6 +389,8 @@ def _compute_feature_outputs(
     latest_action: str = "",
 ) -> pd.DataFrame:
     features = compute_features(ohlcv_df, feature_cfg)
+    if isinstance(features.index, pd.DatetimeIndex):
+        features.index = pd.to_datetime(features.index, utc=True)
     if features.empty:
         return features.head(0)
 
@@ -354,6 +460,8 @@ def _compute_feature_outputs(
     valid["risk_budget"] = risk_budget_series
     valid["intent_exposure"] = intent_series
     valid["target_exposure"] = target_exp_series.fillna(0.0)
+    valid["bar_state"] = "closed"
+    valid["last_closed_ts"] = pd.to_datetime(valid.index, utc=True)
     valid["action"] = ""
     if latest_action and not valid.empty:
         valid.loc[valid.index[-1], "action"] = latest_action
@@ -375,6 +483,10 @@ def run_once_on_df(
     mode: str = "dryrun",
     broker: Optional[PaperBroker] = None,
     slippage_bps: float = 0.0,
+    spread_bps: float = 0.0,
+    hyst_k: float = 5.0,
+    hyst_floor: float = 0.02,
+    hyst_mode: str = "exposure",
 ) -> StepResult:
     return compute_step(
         ohlcv_df=ohlcv_df,
@@ -387,6 +499,10 @@ def run_once_on_df(
         mode=mode,
         broker=broker,
         slippage_bps=slippage_bps,
+        spread_bps=spread_bps,
+        hyst_k=hyst_k,
+        hyst_floor=hyst_floor,
+        hyst_mode=hyst_mode,
     )
 
 
@@ -401,8 +517,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-exposure", dest="max_exposure", type=float, default=0.3)
     parser.add_argument("--fee-rate", dest="fee_rate", type=float, default=0.001)
     parser.add_argument("--slippage-bps", dest="slippage_bps", type=float, default=0.0)
+    parser.add_argument("--spread-bps", dest="spread_bps", type=float, default=0.0)
     parser.add_argument("--min-notional", dest="min_notional", type=float, default=10.0)
     parser.add_argument("--step-size", dest="step_size", type=float, default=None)
+    parser.add_argument("--hyst-k", dest="hyst_k", type=float, default=5.0)
+    parser.add_argument("--hyst-floor", dest="hyst_floor", type=float, default=0.02)
+    parser.add_argument("--hyst-mode", dest="hyst_mode", choices=["exposure", "zscore"], default="exposure")
+    parser.add_argument("--loop", action="store_true", help="Run in continuous loop mode.")
+    parser.add_argument("--poll-seconds", dest="poll_seconds", type=float, default=10.0)
+    parser.add_argument("--trade-on", dest="trade_on", choices=["bar_close", "tick"], default="bar_close")
     parser.add_argument("--csv-in", dest="csv_in", type=str, default=None, help="Optional CSV input for offline testing.")
     parser.add_argument("--csv-out", dest="csv_out", type=str, default=None, help="Optional CSV output to export results.")
     parser.add_argument(
@@ -453,6 +576,13 @@ def main() -> None:
         sys.exit(1)
 
     logger = SQLiteLogger(args.db) if args.db else None
+    state_path: Optional[pathlib.Path] = None
+    if args.loop or args.db:
+        if args.db:
+            state_path = pathlib.Path(args.db).with_suffix(".state.json")
+        elif args.loop:
+            state_path = pathlib.Path("spot_bot_state.json")
+    state_store = LoopStateStore(logger=logger, path=state_path)
     try:
         last_equity = logger.get_latest_equity() if logger else None
 
@@ -461,6 +591,7 @@ def main() -> None:
         limit_total = int(args.limit_total or cfg.get("limit_total", 2000))
         max_exposure = float(args.max_exposure or cfg.get("max_exposure", 0.3))
         fee_rate = float(args.fee_rate or cfg.get("fee_rate", 0.001))
+        spread_bps = float(args.spread_bps if args.spread_bps is not None else cfg.get("spread_bps", 0.0))
         min_notional = float(args.min_notional or cfg.get("min_notional", 10.0))
         step_size = args.step_size
 
@@ -478,25 +609,9 @@ def main() -> None:
             if not csv_in_path.exists():
                 print(f"CSV input not found: {csv_in_path}", file=sys.stderr)
                 sys.exit(1)
-            df = pd.read_csv(csv_in_path, parse_dates=["timestamp"])
-            df = df.set_index("timestamp")
+            csv_in_path = csv_in_path
         else:
-            df = _load_or_fetch(args.mode, symbol, timeframe, limit_total, args.cache)
-
-        if df.empty:
-            print("No data available.")
-            sys.exit(1)
-
-        df = latest_closed_ohlcv(df, timeframe)
-        if df.empty:
-            print("No new closed bar.")
-            return
-
-        latest_ts = df.index[-1]
-        latest_ts_int = _to_epoch_ms(latest_ts)
-        if logger and logger.get_last_ts() == latest_ts_int:
-            print("No new closed bar since last run.")
-            return
+            csv_in_path = None
 
         feat_cfg = FeatureConfig(
             base=args.base,
@@ -543,177 +658,226 @@ def main() -> None:
                 step_size=step_size,
             )
 
-        try:
-            result = compute_step(
-                ohlcv_df=df,
-                feature_cfg=feat_cfg,
-                regime_engine=regime_engine,
-                strategy=strategy,
-                max_exposure=max_exposure,
-                fee_rate=fee_rate,
-                balances=balances,
-                mode=args.mode,
-                broker=broker,
-                slippage_bps=args.slippage_bps,
-            )
-        except ValueError as exc:
-            print(str(exc))
-            sys.exit(1)
+        def _load_input_df() -> pd.DataFrame:
+            if csv_in_path:
+                df_local = pd.read_csv(csv_in_path, parse_dates=["timestamp"])
+                df_local["timestamp"] = pd.to_datetime(df_local["timestamp"], utc=True)
+                return df_local.set_index("timestamp")
+            return _load_or_fetch(args.mode, symbol, timeframe, limit_total, args.cache)
 
-        execution_result = result.execution
-        current_btc = result.equity["btc"]
-        equity_usdt = result.equity["equity_usdt"]
+        latest_action = ""
+        while True:
+            df = _load_input_df()
+            if df.empty:
+                print("No data available.")
+                if not args.loop:
+                    break
+                time.sleep(args.poll_seconds)
+                continue
 
-        if args.mode == "live":
-            if not args.i_understand_live_risk:
-                print("Refusing to run live mode without --i-understand-live-risk.")
-                sys.exit(1)
+            df_for_trade, bar_row, ts_value, bar_state = _prepare_trade_data(df, timeframe, args.trade_on)
+            if df_for_trade.empty or bar_row is None or ts_value is None:
+                print("No new closed bar")
+                if not args.loop:
+                    break
+                time.sleep(args.poll_seconds)
+                continue
+
+            latest_ts_int = _to_epoch_ms(ts_value)
+            last_seen = state_store.load_last_closed_ts() if state_store else None
+            if last_seen is None and logger:
+                last_seen = logger.get_last_ts()
+            if last_seen is not None and last_seen == latest_ts_int:
+                print("No new closed bar")
+                if not args.loop:
+                    break
+                time.sleep(args.poll_seconds)
+                continue
+
             try:
-                from spot_bot.execution.ccxt_executor import CCXTExecutor, ExecutorConfig
-            except Exception as exc:  # pragma: no cover - optional dependency
-                print(f"Live execution unavailable: {exc}")
-                sys.exit(1)
-            exec_cfg = ExecutorConfig(
-                symbol=symbol,
-                max_notional_per_trade=cfg.get("max_notional_per_trade", 300.0),
-                max_trades_per_day=cfg.get("max_trades_per_day", 10),
-                max_turnover_per_day=cfg.get("max_turnover_per_day", 2000.0),
-                slippage_bps_limit=cfg.get("slippage_bps_limit", 10.0),
-                min_balance_reserve_usdt=cfg.get("min_usdt_reserve", 50.0),
-                fee_rate=fee_rate,
-                min_notional=min_notional,
-            )
-            executor = CCXTExecutor(exec_cfg)
-            if abs(result.delta_btc) > 0:
-                side = "buy" if result.delta_btc > 0 else "sell"
-                execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
-                if execution_result.get("status") == "filled":
-                    qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
-                    _apply_fill_to_balances(balances, side, qty, result.close, fee_rate)
-                current_btc = balances["btc"]
-                equity_usdt = balances["usdt"] + current_btc * result.close
-
-        action = "HOLD"
-        if abs(result.delta_btc) > 0:
-            action = "BUY" if result.delta_btc > 0 else "SELL"
-            if execution_result and execution_result.get("status") not in ("filled", "partial"):
-                action = f"{action}-rejected"
-
-        summary = (
-            f"{result.ts} | mode={args.mode} price={result.close:.2f} "
-            f"S={result.features_row.get('S', float('nan')):.4f} "
-            f"C={result.features_row.get('C', float('nan')):.4f} "
-            f"C_int={result.features_row.get('C_int', float('nan')):.4f} "
-            f"psi={result.features_row.get('psi', float('nan')):.4f} "
-            f"rv={result.features_row.get('rv', float('nan')):.4f} "
-            f"risk={result.decision.risk_state} budget={result.decision.risk_budget:.3f} "
-            f"intent={result.intent.desired_exposure:.3f} target_exp={result.target_exposure:.3f} "
-            f"delta_btc={result.delta_btc:.6f} equity={equity_usdt:.2f} action={action}"
-        )
-        print(summary)
-
-        bar_row = None
-        ts_value = None
-        if args.csv_out:
-            out_path = pathlib.Path(args.csv_out)
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            if args.csv_out_mode == "features":
-                export_df = _compute_feature_outputs(
-                    ohlcv_df=df,
+                result = compute_step(
+                    ohlcv_df=df_for_trade,
                     feature_cfg=feat_cfg,
                     regime_engine=regime_engine,
                     strategy=strategy,
                     max_exposure=max_exposure,
-                    equity_usdt=result.equity["equity_usdt"],
-                    tail_rows=args.csv_out_tail,
-                    latest_action=action,
-                )
-                if "timestamp" not in export_df.columns:
-                    export_df = export_df.reset_index()
-                    if export_df.columns.empty:
-                        export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
-                    else:
-                        timestamp_candidates = [c for c in export_df.columns if pd.api.types.is_datetime64_any_dtype(export_df[c])]
-                        timestamp_col = timestamp_candidates[0] if timestamp_candidates else export_df.columns[0]
-                        export_df = export_df.rename(columns={timestamp_col: "timestamp"})
-                    if "timestamp" not in export_df.columns:
-                        export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
-                export_df.to_csv(out_path, index=False)
-            else:
-                bar_row, ts_value = _latest_bar_row(df)
-                export_row = {
-                    "timestamp": ts_value,
-                    "open": bar_row["open"],
-                    "high": bar_row["high"],
-                    "low": bar_row["low"],
-                    "close": bar_row["close"],
-                    "volume": bar_row["volume"],
-                    "rv": result.features_row.get("rv"),
-                    "C": result.features_row.get("C"),
-                    "psi": result.features_row.get("psi"),
-                    "C_int": result.features_row.get("C_int"),
-                    "S": result.features_row.get("S"),
-                    "risk_state": result.decision.risk_state,
-                    "risk_budget": result.decision.risk_budget,
-                    "intent_exposure": result.intent.desired_exposure,
-                    "target_exposure": result.target_exposure,
-                    "action": action,
-                }
-                with out_path.open("w", newline="") as f:
-                    writer = csv.DictWriter(f, fieldnames=CSV_OUTPUT_COLUMNS)
-                    writer.writeheader()
-                    writer.writerow(export_row)
-
-        if logger:
-            if bar_row is None or ts_value is None:
-                bar_row, ts_value = _latest_bar_row(df)
-            logger.upsert_bar(
-                ts=ts_value,
-                open=bar_row["open"],
-                high=bar_row["high"],
-                low=bar_row["low"],
-                close=bar_row["close"],
-                volume=bar_row["volume"],
-            )
-            logger.upsert_features(
-                ts=result.ts,
-                rv=result.features_row.get("rv"),
-                C=result.features_row.get("C"),
-                psi=result.features_row.get("psi"),
-                C_int=result.features_row.get("C_int"),
-                S=result.features_row.get("S"),
-            )
-            logger.upsert_decision(
-                ts=result.ts, risk_state=result.decision.risk_state, risk_budget=result.decision.risk_budget, reason=result.decision.reason
-            )
-            logger.upsert_intent(ts=result.ts, desired_exposure=result.target_exposure, reason=result.intent.reason)
-
-            if execution_result:
-                qty_value = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
-                price_value = float(execution_result.get("price") or execution_result.get("avg_price") or result.close)
-            else:
-                qty_value = 0.0
-                price_value = result.close
-
-            if execution_result and qty_value > 0:
-                logger.insert_execution(
-                    ts=result.ts,
+                    fee_rate=fee_rate,
+                    balances=balances,
                     mode=args.mode,
-                    side="buy" if result.delta_btc > 0 else "sell",
-                    qty=qty_value,
-                    price=price_value,
-                    fee=float(execution_result.get("fee", execution_result.get("fee_est", 0.0))),
-                    order_id=str(execution_result.get("order_id", "")),
-                    status=execution_result.get("status", "filled"),
-                    meta={"delta_btc": result.delta_btc},
+                    broker=broker,
+                    slippage_bps=args.slippage_bps,
+                    spread_bps=spread_bps,
+                    hyst_k=args.hyst_k,
+                    hyst_floor=args.hyst_floor,
+                    hyst_mode=args.hyst_mode,
+                )
+            except ValueError as exc:
+                print(str(exc))
+                sys.exit(1)
+
+            execution_result = result.execution
+            current_btc = result.equity["btc"]
+            equity_usdt = result.equity["equity_usdt"]
+
+            if args.mode == "live":
+                if not args.i_understand_live_risk:
+                    print("Refusing to run live mode without --i-understand-live-risk.")
+                    sys.exit(1)
+                try:
+                    from spot_bot.execution.ccxt_executor import CCXTExecutor, ExecutorConfig
+                except Exception as exc:  # pragma: no cover - optional dependency
+                    print(f"Live execution unavailable: {exc}")
+                    sys.exit(1)
+                exec_cfg = ExecutorConfig(
+                    symbol=symbol,
+                    max_notional_per_trade=cfg.get("max_notional_per_trade", 300.0),
+                    max_trades_per_day=cfg.get("max_trades_per_day", 10),
+                    max_turnover_per_day=cfg.get("max_turnover_per_day", 2000.0),
+                    slippage_bps_limit=cfg.get("slippage_bps_limit", 10.0),
+                    min_balance_reserve_usdt=cfg.get("min_usdt_reserve", 50.0),
+                    fee_rate=fee_rate,
+                    min_notional=min_notional,
+                )
+                executor = CCXTExecutor(exec_cfg)
+                if abs(result.delta_btc) > 0:
+                    side = "buy" if result.delta_btc > 0 else "sell"
+                    execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
+                    if execution_result.get("status") == "filled":
+                        qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
+                        _apply_fill_to_balances(balances, side, qty, result.close, fee_rate)
+                    current_btc = balances["btc"]
+                    equity_usdt = balances["usdt"] + current_btc * result.close
+
+            action = "HOLD"
+            if abs(result.delta_btc) > 0:
+                action = "BUY" if result.delta_btc > 0 else "SELL"
+                if execution_result and execution_result.get("status") not in ("filled", "partial"):
+                    action = f"{action}-rejected"
+
+            balances["btc"] = current_btc
+            balances["usdt"] = float(equity_usdt - current_btc * result.close)
+            latest_action = action
+
+            summary = (
+                f"{result.ts} | mode={args.mode} price={result.close:.2f} "
+                f"S={result.features_row.get('S', float('nan')):.4f} "
+                f"C={result.features_row.get('C', float('nan')):.4f} "
+                f"C_int={result.features_row.get('C_int', float('nan')):.4f} "
+                f"psi={result.features_row.get('psi', float('nan')):.4f} "
+                f"rv={result.features_row.get('rv', float('nan')):.4f} "
+                f"risk={result.decision.risk_state} budget={result.decision.risk_budget:.3f} "
+                f"intent={result.intent.desired_exposure:.3f} target_exp={result.target_exposure:.3f} "
+                f"delta_btc={result.delta_btc:.6f} equity={equity_usdt:.2f} action={action} bar_state={bar_state}"
+            )
+            print(summary)
+
+            if args.csv_out:
+                out_path = pathlib.Path(args.csv_out)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                if args.csv_out_mode == "features":
+                    export_df = _compute_feature_outputs(
+                        ohlcv_df=df_for_trade,
+                        feature_cfg=feat_cfg,
+                        regime_engine=regime_engine,
+                        strategy=strategy,
+                        max_exposure=max_exposure,
+                        equity_usdt=result.equity["equity_usdt"],
+                        tail_rows=args.csv_out_tail,
+                        latest_action=action,
+                    )
+                    export_df["bar_state"] = bar_state
+                    export_df["last_closed_ts"] = _to_utc_timestamp(ts_value)
+                    if "timestamp" not in export_df.columns:
+                        export_df = export_df.reset_index()
+                        if export_df.columns.empty:
+                            export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
+                        else:
+                            timestamp_candidates = [c for c in export_df.columns if pd.api.types.is_datetime64_any_dtype(export_df[c])]
+                            timestamp_col = timestamp_candidates[0] if timestamp_candidates else export_df.columns[0]
+                            export_df = export_df.rename(columns={timestamp_col: "timestamp"})
+                        if "timestamp" not in export_df.columns:
+                            export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
+                    export_df.to_csv(out_path, index=False)
+                else:
+                    export_row = {
+                        "timestamp": ts_value,
+                        "last_closed_ts": ts_value,
+                        "bar_state": bar_state,
+                        "open": bar_row["open"],
+                        "high": bar_row["high"],
+                        "low": bar_row["low"],
+                        "close": bar_row["close"],
+                        "volume": bar_row["volume"],
+                        "rv": result.features_row.get("rv"),
+                        "C": result.features_row.get("C"),
+                        "psi": result.features_row.get("psi"),
+                        "C_int": result.features_row.get("C_int"),
+                        "S": result.features_row.get("S"),
+                        "risk_state": result.decision.risk_state,
+                        "risk_budget": result.decision.risk_budget,
+                        "intent_exposure": result.intent.desired_exposure,
+                        "target_exposure": result.target_exposure,
+                        "action": action,
+                    }
+                    with out_path.open("w", newline="") as f:
+                        writer = csv.DictWriter(f, fieldnames=CSV_OUTPUT_COLUMNS)
+                        writer.writeheader()
+                        writer.writerow(export_row)
+
+            if logger:
+                logger.upsert_bar(
+                    ts=ts_value,
+                    open=bar_row["open"],
+                    high=bar_row["high"],
+                    low=bar_row["low"],
+                    close=bar_row["close"],
+                    volume=bar_row["volume"],
+                )
+                logger.upsert_features(
+                    ts=result.ts,
+                    rv=result.features_row.get("rv"),
+                    C=result.features_row.get("C"),
+                    psi=result.features_row.get("psi"),
+                    C_int=result.features_row.get("C_int"),
+                    S=result.features_row.get("S"),
+                )
+                logger.upsert_decision(
+                    ts=result.ts, risk_state=result.decision.risk_state, risk_budget=result.decision.risk_budget, reason=result.decision.reason
+                )
+                logger.upsert_intent(ts=result.ts, desired_exposure=result.target_exposure, reason=result.intent.reason)
+
+                if execution_result:
+                    qty_value = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
+                    price_value = float(execution_result.get("price") or execution_result.get("avg_price") or result.close)
+                else:
+                    qty_value = 0.0
+                if execution_result and qty_value > 0:
+                    logger.insert_execution(
+                        ts=result.ts,
+                        mode=args.mode,
+                        side="buy" if result.delta_btc > 0 else "sell",
+                        qty=qty_value,
+                        price=float(execution_result.get("price") or execution_result.get("avg_price") or result.close),
+                        fee=float(execution_result.get("fee", execution_result.get("fee_est", 0.0))),
+                        order_id=str(execution_result.get("order_id", "")),
+                        status=execution_result.get("status", "filled"),
+                        meta={"delta_btc": result.delta_btc},
+                    )
+
+                logger.upsert_equity(
+                    ts=result.ts,
+                    equity_usdt=equity_usdt,
+                    btc=current_btc,
+                    usdt=float(equity_usdt - current_btc * result.close),
                 )
 
-            logger.upsert_equity(
-                ts=result.ts,
-                equity_usdt=equity_usdt,
-                btc=current_btc,
-                usdt=float(equity_usdt - current_btc * result.close),
-            )
+                state_store.save_last_closed_ts(latest_ts_int)
+            elif state_store:
+                state_store.save_last_closed_ts(latest_ts_int)
+
+            if not args.loop:
+                break
+            time.sleep(args.poll_seconds)
     finally:
         if logger:
             logger.close()
