@@ -795,8 +795,6 @@ def main() -> None:
                             timestamp_candidates = [c for c in export_df.columns if pd.api.types.is_datetime64_any_dtype(export_df[c])]
                             timestamp_col = timestamp_candidates[0] if timestamp_candidates else export_df.columns[0]
                             export_df = export_df.rename(columns={timestamp_col: "timestamp"})
-                        if "timestamp" not in export_df.columns:
-                            export_df["timestamp"] = pd.Series(dtype="datetime64[ns]")
                     export_df.to_csv(out_path, index=False)
                 else:
                     export_row = {
@@ -848,7 +846,6 @@ def main() -> None:
 
                 if execution_result:
                     qty_value = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
-                    price_value = float(execution_result.get("price") or execution_result.get("avg_price") or result.close)
                 else:
                     qty_value = 0.0
                 if execution_result and qty_value > 0:
