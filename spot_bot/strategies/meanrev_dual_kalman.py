@@ -106,7 +106,7 @@ class MeanRevDualKalmanStrategy(Strategy):
         if apply_budget:
             budget = float(risk_budget)
             if not np.isfinite(budget):
-                budget = 0.0
+                budget = 1.0
             target *= budget
         return float(target)
 
