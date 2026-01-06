@@ -428,7 +428,7 @@ def run_replay(
     last_error_msg: Optional[str] = None
 
     for i in range(len(ohlcv_df)):
-        df_slice = ohlcv_df.iloc[: i + 1].copy(deep=False)
+        df_slice = ohlcv_df.iloc[: i + 1].copy()
         try:
             result = compute_step(
                 ohlcv_df=df_slice,
@@ -473,10 +473,21 @@ def run_replay(
         )
 
         if execution_result:
-            qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
+            qty_raw = execution_result.get("filled_qty")
+            if qty_raw is None:
+                qty_raw = execution_result.get("qty")
+            qty = float(qty_raw or 0.0)
             if qty > 0 and execution_result.get("status") in ("filled", "partial"):
-                price = float(execution_result.get("price") or execution_result.get("avg_price") or result.close)
-                fee = float(execution_result.get("fee", execution_result.get("fee_est", 0.0)))
+                price_raw = execution_result.get("price")
+                if price_raw is None:
+                    price_raw = execution_result.get("avg_price")
+                if price_raw is None:
+                    price_raw = result.close
+                price = float(price_raw)
+                fee_raw = execution_result.get("fee")
+                if fee_raw is None:
+                    fee_raw = execution_result.get("fee_est", 0.0)
+                fee = float(fee_raw)
                 notional = qty * price
                 side = "buy" if result.delta_btc > 0 else "sell"
                 cost = notional + fee if side == "buy" else notional - fee
@@ -509,7 +520,7 @@ def run_replay(
     trades_df = pd.DataFrame(trade_rows)
     features_df = None
     if features_rows:
-        features_df = pd.concat(features_rows, axis=0)
+        features_df = pd.concat(features_rows, axis=0, ignore_index=True)
 
     _write_csv(equity_df, equity_path)
     _write_csv(trades_df, trades_path)
