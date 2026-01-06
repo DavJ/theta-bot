@@ -501,7 +501,9 @@ def run_replay(
 
     equity_df = pd.DataFrame(equity_rows)
     trades_df = pd.DataFrame(trade_rows)
-    features_df = pd.concat(features_rows, axis=0) if features_rows else None
+    features_df = None
+    if features_rows:
+        features_df = pd.concat(features_rows, axis=0)
 
     _write_csv(equity_df, equity_path)
     _write_csv(trades_df, trades_path)
