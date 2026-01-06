@@ -102,8 +102,8 @@ def compute_equity_curve(
     closes = pd.to_numeric(df["close"], errors="coerce")
     # Use closed-bar exposure_t applied to forward return (t -> t+1)
     returns = closes.pct_change().shift(-1).fillna(0.0)
-    exp = pd.to_numeric(exposure, errors="coerce").fillna(0.0).clip(lower=0.0)
-    exp = exp.clip(upper=max_exposure)
+    exp = pd.to_numeric(exposure, errors="coerce").fillna(0.0)
+    exp = exp.clip(lower=-max_exposure, upper=max_exposure)
 
     if len(closes) < 2:
         empty = pd.Series(dtype=float, index=closes.index)
@@ -119,7 +119,7 @@ def compute_equity_curve(
 
     for i in range(n_steps):
         exp_t = float(exp.iloc[i]) if i < len(exp) else 0.0
-        exp_t = min(max(exp_t, 0.0), max_exposure)
+        exp_t = min(max(exp_t, -max_exposure), max_exposure)
         delta = exp_t - prev_exp
         turnover += abs(delta)
         equity -= equity * abs(delta) * fee_mult
