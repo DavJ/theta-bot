@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from spot_bot import run_live
+from spot_bot.core import legacy_adapter
 from spot_bot.features import FeatureConfig
 from spot_bot.regime.types import RegimeDecision
 from spot_bot.strategies.base import Intent
@@ -50,7 +51,7 @@ def _sample_ohlcv(rows: int = 3) -> pd.DataFrame:
 
 def test_hysteresis_blocks_small_exposure_change(monkeypatch):
     df = _sample_ohlcv()
-    monkeypatch.setattr(run_live, "compute_features", lambda ohlcv, cfg: _stub_features(ohlcv))
+    monkeypatch.setattr(legacy_adapter, "compute_features", lambda ohlcv, cfg: _stub_features(ohlcv))
     regime = _AlwaysOnRegime()
     strategy = _FixedStrategy(0.1, zscore=-0.2)
     balances = {"usdt": 1000.0, "btc": 0.005}
@@ -73,7 +74,7 @@ def test_hysteresis_blocks_small_exposure_change(monkeypatch):
 
 def test_hysteresis_allows_large_exposure_change(monkeypatch):
     df = _sample_ohlcv()
-    monkeypatch.setattr(run_live, "compute_features", lambda ohlcv, cfg: _stub_features(ohlcv))
+    monkeypatch.setattr(legacy_adapter, "compute_features", lambda ohlcv, cfg: _stub_features(ohlcv))
     regime = _AlwaysOnRegime()
     strategy = _FixedStrategy(0.6, zscore=-3.0)
     balances = {"usdt": 1000.0, "btc": 0.0}
@@ -95,7 +96,7 @@ def test_hysteresis_allows_large_exposure_change(monkeypatch):
 
 def test_loop_state_skips_when_no_new_bar(tmp_path, monkeypatch):
     df = _sample_ohlcv()
-    monkeypatch.setattr(run_live, "compute_features", lambda ohlcv, cfg: _stub_features(ohlcv))
+    monkeypatch.setattr(legacy_adapter, "compute_features", lambda ohlcv, cfg: _stub_features(ohlcv))
     store_path = tmp_path / "loop_state.json"
     state_store = run_live.LoopStateStore(path=store_path)
     regime = _AlwaysOnRegime()

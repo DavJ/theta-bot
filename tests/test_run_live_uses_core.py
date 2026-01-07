@@ -37,7 +37,8 @@ def test_compute_step_calls_core_adapter():
     balances = {"btc": 0.0, "usdt": 1000.0}
     
     # Patch the core adapter to track calls
-    with patch("spot_bot.core.legacy_adapter.compute_step_with_core_full") as mock_core:
+    # The function is imported at module level in run_live, so patch there
+    with patch("spot_bot.run_live.compute_step_with_core_full") as mock_core:
         # Set up mock to return valid result
         from spot_bot.core.legacy_adapter import StepResultFromCore
         from spot_bot.core.types import TradePlan

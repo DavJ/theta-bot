@@ -55,6 +55,11 @@ class PaperBroker:
     def balances(self) -> Dict[str, float]:
         return {"usdt": float(self.usdt), "btc": float(self.btc)}
 
+    def set_balances(self, usdt: float, btc: float) -> None:
+        """Set balances directly (used by core simulation for state sync)."""
+        self.usdt = float(usdt)
+        self.btc = float(btc)
+
     def equity(self, price: float) -> float:
         return float(self.usdt + self.btc * float(price))
 
