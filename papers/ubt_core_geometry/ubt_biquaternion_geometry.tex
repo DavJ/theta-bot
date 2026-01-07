@@ -154,9 +154,9 @@ The metric is defined \textbf{exclusively} through the tetrad:
 \mathcal{G}_{\mu\nu} := \mathrm{Sc}(E_\mu E_\nu^\dagger)
 \end{equation}
 
-where $\mathrm{Sc}$ denotes the scalar (real) part of the biquaternion product.
+where $\mathrm{Sc}$ denotes the scalar part of the biquaternion product.\footnote{For a biquaternion $q = q_0 + q_1 \mathbf{i} + q_2 \mathbf{j} + q_3 \mathbf{k}$ with $q_\alpha \in \mathbb{C}$, we have $\mathrm{Sc}(q) = q_0$. For a product of biquaternions, $\mathrm{Sc}(AB)$ extracts only the $q_0$ component of the result.}
 
-Equivalently, using the full biquaternion product:
+Equivalently, using the symmetrized biquaternion product:
 
 \begin{equation}
 \mathcal{G}_{\mu\nu} = \frac{1}{2}\left(E_\mu E_\nu^\dagger + E_\nu E_\mu^\dagger\right)
@@ -188,15 +188,23 @@ The fundamental object is the \textbf{biquaternion connection}:
 
 \subsection{Covariant Derivative of Tetrad}
 
-The connection is defined through the compatibility condition with the tetrad:
+The biquaternion connection is defined through the torsion-free compatibility condition with the tetrad:
 
 \begin{equation}
-\nabla_\mu E_\nu = \partial_\mu E_\nu + \Omega_\mu \circ E_\nu - \Gamma^\lambda_{\mu\nu} E_\lambda = 0
+\nabla_\mu E_\nu = \partial_\mu E_\nu + \Omega_\mu \circ E_\nu = 0
 \end{equation}
 
 where $\circ$ denotes biquaternion multiplication (non-commutative).
 
 \textbf{Important}: We do \textbf{not} simplify commutators or assume associativity holds trivially. The full non-commutative structure must be preserved.
+
+\textbf{Note on Christoffel Symbols}: In the real projection, the connection $\Omega_\mu$ induces effective Christoffel symbols $\Gamma^\lambda_{\mu\nu}$ via:
+
+\begin{equation}
+\Gamma^\lambda_{\mu\nu} = \mathrm{Re}\left(\partial_\mu e_\nu^\lambda + \omega_\mu \circ e_\nu^\lambda\right)
+\end{equation}
+
+where $e_\nu^\lambda$ are the real tetrad components. However, $\Gamma^\lambda_{\mu\nu}$ are \textbf{derived} quantities, not fundamental. The fundamental object is always $\Omega_\mu$.
 
 \subsection{Connection Decomposition}
 
