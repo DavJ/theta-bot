@@ -288,6 +288,9 @@ def compute_step(
     hyst_k: float = 5.0,
     hyst_floor: float = 0.02,
     hyst_mode: str = "exposure",
+    min_notional: float = 10.0,
+    step_size: Optional[float] = None,
+    min_usdt_reserve: float = 0.0,
 ) -> StepResult:
     """
     Compute trading step using unified core engine.
@@ -313,9 +316,9 @@ def compute_step(
         spread_bps=spread_bps,
         hyst_k=hyst_k,
         hyst_floor=hyst_floor,
-        min_notional=10.0,  # Will be parameterized in next phase
-        step_size=None,
-        min_usdt_reserve=0.0,
+        min_notional=min_notional,
+        step_size=step_size,
+        min_usdt_reserve=min_usdt_reserve,
     )
     
     # For paper mode, execute through PaperBroker if needed

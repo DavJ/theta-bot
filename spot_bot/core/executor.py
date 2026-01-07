@@ -103,7 +103,18 @@ class LiveExecutor(Executor):
         qty = abs(plan.delta_base)
 
         # Execute via CCXT
-        ccxt_result = self.ccxt_executor.place_market_order(side, qty, price)
+        try:
+            ccxt_result = self.ccxt_executor.place_market_order(side, qty, price)
+        except Exception as exc:
+            # Handle unexpected CCXT errors gracefully
+            return ExecutionResult(
+                filled_base=0.0,
+                avg_price=price,
+                fee_paid=0.0,
+                slippage_paid=0.0,
+                status="error",
+                raw={"error": str(exc)},
+            )
 
         # Convert CCXT result to core ExecutionResult
         status = ccxt_result.get("status", "error")

@@ -25,7 +25,12 @@ def compute_rv_ref_series(rv_series: pd.Series, window: int = 500) -> pd.Series:
     The function:
     1. Computes rolling median with min_periods=1 (works from first bar)
     2. Forward fills any NaN values
-    3. Defaults to 1.0 for any remaining NaN
+    3. Defaults to 1.0 for any remaining NaN (represents a neutral volatility baseline)
+    
+    Note:
+        The final fallback of 1.0 represents a normalized volatility assumption.
+        This value is used when no historical data is available and serves as a
+        reasonable default that doesn't overly suppress or encourage trading.
     """
     rv_ref = rv_series.rolling(window=window, min_periods=1).median()
     rv_ref = rv_ref.ffill()

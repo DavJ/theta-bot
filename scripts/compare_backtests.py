@@ -280,6 +280,10 @@ def run_replay_sim(
     return equity_df, trades_df, summary
 
 
+# Tolerance for equity comparison (USDT)
+EQUITY_MATCH_TOLERANCE = 0.01
+
+
 def compare_summaries(summary_fast: dict, summary_replay: dict) -> bool:
     """Compare summary metrics between fast_backtest and replay-sim."""
     print("\n" + "=" * 60)
@@ -297,7 +301,7 @@ def compare_summaries(summary_fast: dict, summary_replay: dict) -> bool:
     print(f"  Trade Count: {summary_replay.get('trades_count', 0):.0f}")
     
     # Compare
-    equity_match = abs(summary_fast["final_equity"] - summary_replay["final_equity"]) < 0.01
+    equity_match = abs(summary_fast["final_equity"] - summary_replay["final_equity"]) < EQUITY_MATCH_TOLERANCE
     trades_match = summary_fast["trades_count"] == summary_replay["trades_count"]
     
     print("\n" + "=" * 60)
