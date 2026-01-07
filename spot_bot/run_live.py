@@ -24,8 +24,8 @@ import yaml
 from spot_bot.backtest import run_backtest
 from spot_bot.core.engine import EngineParams, simulate_execution
 from spot_bot.core.legacy_adapter import compute_step_with_core_full
-from spot_bot.core.portfolio import apply_fill
-from spot_bot.core.types import PortfolioState
+from spot_bot.core.portfolio import apply_fill, compute_equity, compute_exposure
+from spot_bot.core.types import ExecutionResult, PortfolioState
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.live import PaperBroker
 from spot_bot.persist import SQLiteLogger
@@ -279,9 +279,6 @@ def _apply_live_fill_to_balances(
     Returns:
         Fee paid
     """
-    from spot_bot.core.types import ExecutionResult
-    from spot_bot.core.portfolio import apply_fill, compute_equity, compute_exposure
-    
     # Build ExecutionResult using core type
     # delta_base is positive for buy, negative for sell
     filled_base = qty if side == "buy" else -qty

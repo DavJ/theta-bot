@@ -1,3 +1,21 @@
+"""
+Legacy backtest implementation for strategy evaluation.
+
+DEPRECATED: This module contains duplicated trading math (fee/slippage computation).
+For production backtesting with the unified core engine, use:
+    from spot_bot.backtest.fast_backtest import run_backtest
+
+This module is kept for backward compatibility with:
+    - spot_bot/benchmark_methods.py
+    - spot_bot/run_backtest.py
+    - spot_bot/tune_mellin.py
+
+See spot_bot/core/ for the single source of truth implementations of:
+    - Cost model: core/cost_model.py
+    - Portfolio math: core/portfolio.py
+    - Trade planning: core/trade_planner.py
+    - Hysteresis: core/hysteresis.py
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass

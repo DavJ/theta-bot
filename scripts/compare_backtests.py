@@ -327,18 +327,18 @@ def compare_trades(trades_fast: pd.DataFrame, trades_replay: pd.DataFrame) -> bo
                 trade_replay = trades_replay.iloc[i]
                 if trade_fast["timestamp"] != trade_replay["timestamp"]:
                     print(f"\n  First divergence at trade index {i}:")
-                    print(f"    Fast:   ts={trade_fast['timestamp']}, side={trade_fast['side']}, qty={trade_fast['qty']:.8f}, price={trade_fast['price']:.2f}")
-                    print(f"    Replay: ts={trade_replay['timestamp']}, side={trade_replay['side']}, qty={trade_replay['qty']:.8f}, price={trade_replay['price']:.2f}")
+                    print(f"    Fast:   ts={trade_fast['timestamp']}, side={trade_fast['side']}, qty={trade_fast['qty']:.12f}, price={trade_fast['price']:.2f}")
+                    print(f"    Replay: ts={trade_replay['timestamp']}, side={trade_replay['side']}, qty={trade_replay['qty']:.12f}, price={trade_replay['price']:.2f}")
                     break
             else:
                 print(f"\n  First {min_len} trades match, divergence after that.")
                 # Show the extra trade from the longer list
                 if len(trades_fast) > min_len:
                     extra_trade = trades_fast.iloc[min_len]
-                    print(f"  Extra fast trade: ts={extra_trade['timestamp']}, side={extra_trade['side']}, qty={extra_trade['qty']:.8f}")
+                    print(f"  Extra fast trade: ts={extra_trade['timestamp']}, side={extra_trade['side']}, qty={extra_trade['qty']:.12f}")
                 else:
                     extra_trade = trades_replay.iloc[min_len]
-                    print(f"  Extra replay trade: ts={extra_trade['timestamp']}, side={extra_trade['side']}, qty={extra_trade['qty']:.8f}")
+                    print(f"  Extra replay trade: ts={extra_trade['timestamp']}, side={extra_trade['side']}, qty={extra_trade['qty']:.12f}")
         
         return False
     
