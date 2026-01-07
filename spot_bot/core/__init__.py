@@ -12,6 +12,7 @@ from spot_bot.core.cost_model import compute_cost_per_turnover
 from spot_bot.core.engine import EngineParams, run_step, run_step_simulated, simulate_execution
 from spot_bot.core.executor import Executor, SimExecutor
 from spot_bot.core.hysteresis import apply_hysteresis, compute_hysteresis_threshold
+from spot_bot.core.legacy_adapter import LegacyStrategyAdapter, compute_step_with_core
 from spot_bot.core.portfolio import (
     apply_fill,
     compute_equity,
@@ -60,4 +61,7 @@ __all__ = [
     # Executors
     "Executor",
     "SimExecutor",
+    # Legacy compatibility
+    "LegacyStrategyAdapter",
+    "compute_step_with_core",
 ]
