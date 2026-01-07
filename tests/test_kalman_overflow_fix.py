@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Unit test for Kalman overflow fix with large r_hat values.
 
@@ -10,6 +10,9 @@ import pandas as pd
 import warnings
 
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy, DualKalmanParams
+
+
+BASE_PRICE = 50000  # Base price for test data generation
 
 
 def test_kalman_no_overflow_with_large_values():
@@ -24,7 +27,7 @@ def test_kalman_no_overflow_with_large_values():
     np.random.seed(42)
     
     # Simulate price data with high volatility
-    prices = 50000 * (1 + np.random.randn(n) * 0.1).cumprod()
+    prices = BASE_PRICE * (1 + np.random.randn(n) * 0.1).cumprod()
     
     # Create features with extreme values
     features_df = pd.DataFrame({

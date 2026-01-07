@@ -1,0 +1,1 @@
+python -m bench.benchmark_matrix --symbols BTC/USDT --timeframe 1h --limit-total 100 --psi-modes none --methods C,KALMAN_MR_DUAL --cache-dir test_cache_int --workdir test_out_int --out test_out_int/test.csv

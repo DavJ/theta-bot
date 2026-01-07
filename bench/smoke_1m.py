@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Smoke test for 1m benchmark_matrix with KALMAN_MR_DUAL.
 
@@ -15,6 +15,9 @@ import sys
 import time
 from pathlib import Path
 import shutil
+
+
+MIN_EXPECTED_SPEEDUP = 1.1  # Minimum speedup factor for cache effectiveness
 
 
 def run_benchmark(cache_dir: str = "bench_cache_smoke", workdir: str = "bench_out_smoke") -> tuple[int, float, str]:
@@ -108,7 +111,7 @@ def main() -> None:
     
     # Verify speedup (second run should be faster)
     speedup = elapsed1 / elapsed2 if elapsed2 > 0 else 1.0
-    if speedup < 1.1:  # At least 10% faster
+    if speedup < MIN_EXPECTED_SPEEDUP:
         print(f"⚠️  Warning: Second run not significantly faster (speedup: {speedup:.2f}x)")
         print(f"   First run: {elapsed1:.2f}s, Second run: {elapsed2:.2f}s")
     else:
