@@ -1,10 +1,3 @@
-"""
-Refactored fast backtest using unified core engine.
-
-This module now uses spot_bot/core/engine.py for all trading logic,
-ensuring consistency with live/paper/replay modes.
-"""
-
 from __future__ import annotations
 
 import math
@@ -14,13 +7,6 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from spot_bot.core import (
-    EngineParams,
-    MarketBar,
-    PortfolioState,
-    run_step_simulated,
-)
-from spot_bot.core.portfolio import compute_equity, compute_exposure
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.regime.regime_engine import RegimeEngine
 from spot_bot.strategies.base import Intent
@@ -29,6 +15,7 @@ from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
 
 TIMESTAMP_COL = "timestamp"
+MIN_STANDARD_DEVIATION = 1e-8
 
 
 @dataclass
@@ -43,6 +30,13 @@ class NullStrategy:
 
     def generate_intent(self, features_df):
         return Intent(desired_exposure=0.0, reason="none", diagnostics={})
+
+
+def _apply_step_size(delta_btc: float, step_size: float | None) -> float:
+    if step_size and step_size > 0:
+        step = float(step_size)
+        return math.copysign(math.floor(abs(delta_btc) / step) * step, delta_btc)
+    return delta_btc
 
 
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
@@ -68,7 +62,6 @@ def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _compute_risk_series(features: pd.DataFrame, regime_engine: RegimeEngine) -> Tuple[pd.Series, pd.Series]:
-    """Compute risk state and budget series from features."""
     s_vals = pd.to_numeric(features["S"], errors="coerce")
     rv_vals = pd.to_numeric(features.get("rv"), errors="coerce")
 
@@ -93,52 +86,14 @@ def _compute_risk_series(features: pd.DataFrame, regime_engine: RegimeEngine) ->
     return risk_state, risk_budget
 
 
-def _compute_intents_with_regime(
-    features: pd.DataFrame,
-    strategy: Any,
-    risk_state: pd.Series,
-    risk_budget: pd.Series,
-    max_exposure: float,
-) -> pd.Series:
-    """
-    Compute intent series applying risk regime gating.
-
-    This generates per-bar intent and applies risk budgets/states,
-    which will be passed to the engine for hysteresis and planning.
-    """
-    close = pd.to_numeric(features["close"], errors="coerce")
-
-    # Generate raw intent from strategy
-    if isinstance(strategy, MeanRevDualKalmanStrategy):
-        # Dual Kalman generates series directly
-        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=False)
-        raw_intent = raw_intent.reindex(features.index).fillna(0.0)
-    elif isinstance(strategy, MeanReversionStrategy):
-        # Use mean reversion series logic from strategy
-        raw_intent = _meanrev_series_from_strategy(close, strategy)
-    elif isinstance(strategy, KalmanStrategy):
-        # Use Kalman series logic
-        raw_intent = _kalman_series_from_strategy(close, strategy)
-    else:
-        raw_intent = pd.Series(0.0, index=features.index, dtype=float)
-
-    # Apply risk budget and max exposure
-    target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
-    # Turn off when risk state is OFF
-    target_exposure = target_exposure.where(risk_state == "ON", 0.0)
-
-    return target_exposure
-
-
-def _meanrev_series_from_strategy(close: pd.Series, strategy: MeanReversionStrategy) -> pd.Series:
-    """Generate mean reversion intent series."""
+def _meanrev_series(close: pd.Series, strategy: MeanReversionStrategy) -> pd.Series:
     prices = close.astype(float)
     ema = prices.ewm(span=strategy.ema_span, adjust=False).mean()
     rolling_std = prices.rolling(strategy.std_lookback).std(ddof=0)
 
-    safe_std = float(np.std(prices.values)) if len(prices) > 1 else 1e-8
+    safe_std = float(np.std(prices.values)) if len(prices) > 1 else MIN_STANDARD_DEVIATION
     if safe_std <= 0.0:
-        safe_std = 1e-8
+        safe_std = MIN_STANDARD_DEVIATION
     fallback_std = prices.expanding().std(ddof=0).fillna(safe_std).replace(0.0, safe_std)
     effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
 
@@ -147,14 +102,13 @@ def _meanrev_series_from_strategy(close: pd.Series, strategy: MeanReversionStrat
 
     entry = strategy.entry_z
     full = strategy.full_z
-    scale = ((signal_strength.clip(upper=full) - entry) / max(full - entry, 1e-8)).clip(lower=0.0)
+    scale = ((signal_strength.clip(upper=full) - entry) / max(full - entry, MIN_STANDARD_DEVIATION)).clip(lower=0.0)
     raw_exposure = strategy.min_exposure + (strategy.max_exposure - strategy.min_exposure) * scale
     desired = raw_exposure.where(signal_strength > entry, 0.0).clip(lower=0.0, upper=1.0)
     return desired.reindex(prices.index).fillna(0.0)
 
 
-def _kalman_series_from_strategy(close: pd.Series, strategy: KalmanStrategy) -> pd.Series:
-    """Generate Kalman filter intent series."""
+def _kalman_series(close: pd.Series, strategy: KalmanStrategy) -> pd.Series:
     prices = close.astype(float)
     exposures: List[float] = []
     level = float(prices.iloc[0]) if not prices.empty else 0.0
@@ -171,7 +125,7 @@ def _kalman_series_from_strategy(close: pd.Series, strategy: KalmanStrategy) -> 
         innovation = float(price) - H @ x_pred
         innovation_var = float(H @ P_pred @ H.T + R)
         if math.isnan(innovation_var) or innovation_var <= 0.0:
-            innovation_var = 1e-8
+            innovation_var = MIN_STANDARD_DEVIATION
         K = (P_pred @ H) / innovation_var
         x = x_pred + K * innovation
         P = (np.eye(2) - np.outer(K, H)) @ P_pred
@@ -185,20 +139,23 @@ def _kalman_series_from_strategy(close: pd.Series, strategy: KalmanStrategy) -> 
     return exposures_series
 
 
-class StrategyAdapter:
-    """Adapter to wrap pre-computed intent series as a strategy."""
+def _compute_intents(
+    features: pd.DataFrame, strategy: Any, risk_budget: pd.Series
+) -> pd.Series:
+    close = pd.to_numeric(features["close"], errors="coerce")
+    if isinstance(strategy, MeanRevDualKalmanStrategy):
+        return (
+            # Risk budget is applied downstream; dual Kalman emits raw intent here.
+            strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=False)
+            .reindex(features.index)
+            .fillna(0.0)
+        )
+    if isinstance(strategy, MeanReversionStrategy):
+        return _meanrev_series(close, strategy)
+    if isinstance(strategy, KalmanStrategy):
+        return _kalman_series(close, strategy)
 
-    def __init__(self, intent_series: pd.Series):
-        self.intent_series = intent_series
-        self._current_index = 0
-
-    def generate_intent(self, features_df: pd.DataFrame) -> Intent:
-        """Return intent for current bar."""
-        if self._current_index < len(self.intent_series):
-            exposure = float(self.intent_series.iloc[self._current_index])
-        else:
-            exposure = 0.0
-        return Intent(desired_exposure=exposure, reason="precomputed", diagnostics={})
+    return pd.Series(0.0, index=features.index, dtype=float)
 
 
 def run_backtest(
@@ -218,24 +175,13 @@ def run_backtest(
     step_size: float | None = None,
     bar_state: str = "closed",
     log: bool = True,
-    hyst_k: float = 5.0,
-    hyst_floor: float = 0.02,
-    spread_bps: float = 0.0,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
-    """
-    Run fast backtest using unified core engine.
-
-    This is the refactored version that eliminates duplicated trading logic
-    by using spot_bot.core.engine for all decisions.
-    """
-    # Normalize and validate input
     df_norm = _normalize_df(df)
     required = {"open", "high", "low", "close", "volume"}
     missing = required - set(df_norm.columns)
     if missing:
         raise ValueError(f"Input DataFrame missing columns: {sorted(missing)}")
 
-    # Compute features once
     feat_cfg = FeatureConfig(
         base=base,
         rv_window=rv_window,
@@ -247,7 +193,6 @@ def run_backtest(
     features["close"] = pd.to_numeric(df_norm["close"], errors="coerce").values
     features[TIMESTAMP_COL] = pd.to_datetime(features.index, utc=True)
 
-    # Filter valid rows
     valid_mask = (
         features["C"].notna()
         & features["S"].notna()
@@ -258,133 +203,95 @@ def run_backtest(
     if features.empty:
         raise ValueError("Insufficient data to run backtest.")
 
-    # Compute risk regime series
     regime_engine = RegimeEngine({})
     risk_state, risk_budget = _compute_risk_series(features, regime_engine)
 
-    # Instantiate strategy
-    strategy_obj: Any
+    strategy: Any
     if strategy_name == "kalman_mr_dual":
-        strategy_obj = MeanRevDualKalmanStrategy()
+        strategy = MeanRevDualKalmanStrategy()
     elif strategy_name == "kalman":
-        strategy_obj = KalmanStrategy()
+        strategy = KalmanStrategy()
     elif strategy_name == "meanrev":
-        strategy_obj = MeanReversionStrategy()
+        strategy = MeanReversionStrategy()
     else:
-        strategy_obj = NullStrategy()
+        strategy = NullStrategy()
 
-    # Compute intent series with regime gating
-    intent_series = _compute_intents_with_regime(
-        features, strategy_obj, risk_state, risk_budget, max_exposure
-    )
+    intent_series = _compute_intents(features, strategy, risk_budget)
+    target_exposure = (intent_series * risk_budget).clip(lower=0.0, upper=float(max_exposure))
+    target_exposure = target_exposure.where(risk_state == "ON", 0.0)
 
-    # Compute rv_ref series (rolling median of last 500 bars)
-    rv_series = features["rv"].fillna(0.0)
-    rv_ref_series = rv_series.rolling(window=500, min_periods=1).median().fillna(1.0)
-
-    # Initialize engine params
-    engine_params = EngineParams(
-        fee_rate=fee_rate,
-        slippage_bps=slippage_bps,
-        spread_bps=spread_bps,
-        hyst_k=hyst_k,
-        hyst_floor=hyst_floor,
-        min_notional=min_notional,
-        step_size=step_size,
-        allow_short=False,
-    )
-
-    # Initialize portfolio
-    portfolio = PortfolioState(
-        usdt=float(initial_usdt),
-        base=0.0,
-        equity=float(initial_usdt),
-        exposure=0.0,
-    )
-
-    # Run backtest using core engine
     timestamps = pd.to_datetime(features[TIMESTAMP_COL], utc=True)
     closes = pd.to_numeric(features["close"], errors="coerce").astype(float).values
+    target_exp_vals = target_exposure.reindex(features.index).fillna(0.0).astype(float).values
 
+    usdt = float(initial_usdt)
+    btc = 0.0
+    peak_equity = usdt
     equity_rows: List[Dict[str, Any]] = []
     trade_rows: List[Dict[str, Any]] = []
-    peak_equity = portfolio.equity
+    turnover_value = 0.0
     exposures_time: List[float] = []
 
-    for i, (ts, price, target_exp, rv_current, rv_ref) in enumerate(
-        zip(timestamps, closes, intent_series, rv_series, rv_ref_series)
-    ):
+    for ts, price, tgt_exp in zip(timestamps, closes, target_exp_vals):
         if not np.isfinite(price) or price <= 0.0:
             continue
+        equity = usdt + btc * price
+        target_btc = equity * tgt_exp / price if equity > 0 else 0.0
+        delta_btc = _apply_step_size(target_btc - btc, step_size)
+        notional_ref = abs(delta_btc) * price
+        action = "HOLD"
+        fee_paid = 0.0
+        slip_cost = 0.0
 
-        # Create market bar
-        bar = MarketBar(
-            ts=int(ts.value // 1_000_000),
-            open=price,
-            high=price,
-            low=price,
-            close=price,
-            volume=0.0,
-        )
-
-        # Create minimal features_df for strategy adapter
-        # Strategy adapter will return pre-computed target_exp
-        features_window = pd.DataFrame({"close": [price]})
-        adapter = StrategyAdapter(pd.Series([target_exp]))
-
-        # Run single step with core engine
-        try:
-            plan, execution, portfolio, diagnostics = run_step_simulated(
-                bar=bar,
-                features_df=features_window,
-                portfolio=portfolio,
-                strategy=adapter,
-                params=engine_params,
-                rv_current=float(rv_current),
-                rv_ref=float(rv_ref),
-            )
-        except Exception:
-            # Skip this bar on error
-            continue
-
-        # Record trade if executed
-        action = plan.action
-        if execution.status == "filled" and abs(execution.filled_base) > 0:
+        if notional_ref >= min_notional and abs(delta_btc) > 0:
+            slip_mult = 1 + (slippage_bps * 1e-4) * (1 if delta_btc > 0 else -1)
+            exec_price = price * slip_mult
+            notional = abs(delta_btc) * exec_price
+            fee_paid = notional * fee_rate
+            slip_cost = abs(exec_price - price) * abs(delta_btc)
+            turnover_value += notional
+            if delta_btc > 0:
+                usdt -= notional + fee_paid
+                btc += delta_btc
+                action = "BUY"
+            else:
+                usdt += notional - fee_paid
+                btc += delta_btc
+                action = "SELL"
             trade_rows.append(
                 {
                     "timestamp": ts,
-                    "side": "buy" if execution.filled_base > 0 else "sell",
-                    "price": execution.avg_price,
-                    "qty": abs(execution.filled_base),
-                    "fee": execution.fee_paid,
-                    "slippage": execution.slippage_paid,
-                    "notional": abs(execution.filled_base) * execution.avg_price,
+                    "side": action.lower(),
+                    "price": exec_price,
+                    "qty": abs(delta_btc),
+                    "fee": fee_paid,
+                    "slippage": slip_cost,
+                    "notional": notional,
                 }
             )
 
-        # Record equity
-        peak_equity = max(peak_equity, portfolio.equity)
-        drawdown = (portfolio.equity - peak_equity) / peak_equity if peak_equity > 0 else 0.0
-        exposures_time.append(abs(portfolio.exposure))
+        equity = usdt + btc * price
+        peak_equity = max(peak_equity, equity)
+        drawdown = (equity - peak_equity) / peak_equity if peak_equity > 0 else 0.0
+        exposure_now = (btc * price / equity) if equity > 0 else 0.0
+        exposures_time.append(abs(exposure_now))
 
         equity_rows.append(
             {
                 "timestamp": ts,
                 "close": price,
-                "position_btc": portfolio.base,
-                "equity": portfolio.equity,
+                "position_btc": btc,
+                "equity": equity,
                 "drawdown": drawdown,
-                "target_exposure": target_exp,
+                "target_exposure": tgt_exp,
                 "action": action,
                 "bar_state": bar_state,
             }
         )
 
-    # Build output DataFrames
     equity_df = pd.DataFrame(equity_rows)
     trades_df = pd.DataFrame(trade_rows)
 
-    # Compute summary metrics
     equity_series = equity_df.set_index("timestamp")["equity"] if not equity_df.empty else pd.Series(dtype=float)
     returns = equity_series.pct_change().dropna()
     delta = _timeframe_to_timedelta(timeframe)
@@ -404,8 +311,6 @@ def run_backtest(
     else:
         cagr = total_return
     max_dd = float(equity_df["drawdown"].min()) if not equity_df.empty else 0.0
-
-    turnover_value = sum(t["notional"] for t in trade_rows)
     turnover = float(turnover_value / initial_usdt) if initial_usdt else 0.0
     time_in_market = float(np.mean(exposures_time)) if exposures_time else 0.0
 
