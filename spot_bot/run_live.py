@@ -249,6 +249,23 @@ def _prepare_trade_data(df: pd.DataFrame, timeframe: str, trade_on: str) -> tupl
 
 
 def _apply_fill_to_balances(balances: Dict[str, float], side: str, qty: float, price: float, fee_rate: float) -> float:
+    """
+    Apply fill to local balances dictionary (for live mode tracking only).
+    
+    NOTE: This function is only used in LIVE mode to update local tracking
+    after a real exchange execution. For paper/replay/backtest modes, use
+    core.portfolio.apply_fill instead.
+    
+    Args:
+        balances: Local balances dict with 'usdt' and 'btc' keys
+        side: 'buy' or 'sell'
+        qty: Quantity filled
+        price: Fill price
+        fee_rate: Fee rate
+    
+    Returns:
+        Fee paid
+    """
     fee = qty * price * fee_rate
     if side == "buy":
         balances["usdt"] = balances.get("usdt", 0.0) - qty * price - fee

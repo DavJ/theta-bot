@@ -317,14 +317,30 @@ def compare_trades(trades_fast: pd.DataFrame, trades_replay: pd.DataFrame) -> bo
     """Compare individual trades between fast_backtest and replay-sim."""
     if len(trades_fast) != len(trades_replay):
         print(f"\n✗ Trade count mismatch: fast={len(trades_fast)}, replay={len(trades_replay)}")
+        
+        # Show first divergence in equity curves would be more helpful
+        # but we'll just note the counts for now
+        min_len = min(len(trades_fast), len(trades_replay))
+        if min_len > 0:
+            # Check if trades match up to the shorter length
+            for i in range(min_len):
+                trade_fast = trades_fast.iloc[i]
+                trade_replay = trades_replay.iloc[i]
+                if trade_fast["timestamp"] != trade_replay["timestamp"]:
+                    print(f"\n  First divergence at trade index {i}:")
+                    print(f"    Fast:   ts={trade_fast['timestamp']}, side={trade_fast['side']}, qty={trade_fast['qty']:.8f}")
+                    print(f"    Replay: ts={trade_replay['timestamp']}, side={trade_replay['side']}, qty={trade_replay['qty']:.8f}")
+                    break
+            else:
+                print(f"\n  First {min_len} trades match, divergence after that.")
+        
         return False
     
     if len(trades_fast) == 0:
         print("\n✓ No trades in either run (both produced same result)")
         return True
     
-    # Compare each trade
-    mismatches = []
+    # Compare each trade and fail on first divergence
     for i in range(len(trades_fast)):
         trade_fast = trades_fast.iloc[i]
         trade_replay = trades_replay.iloc[i]
@@ -336,22 +352,66 @@ def compare_trades(trades_fast: pd.DataFrame, trades_replay: pd.DataFrame) -> bo
         notional_match = abs(trade_fast["notional"] - trade_replay["notional"]) < 1e-4
         
         if not all([ts_match, side_match, qty_match, price_match, notional_match]):
-            mismatches.append({
-                "index": i,
-                "timestamp": trade_fast["timestamp"],
-                "fast": trade_fast.to_dict(),
-                "replay": trade_replay.to_dict(),
-            })
-    
-    if mismatches:
-        print(f"\n✗ Found {len(mismatches)} trade mismatches:")
-        for mm in mismatches[:3]:  # Show first 3
-            print(f"\n  Trade {mm['index']} at {mm['timestamp']}:")
-            print(f"    Fast:   {mm['fast']}")
-            print(f"    Replay: {mm['replay']}")
-        return False
+            print(f"\n✗ DIVERGENCE at trade index {i} (timestamp: {trade_fast['timestamp']})")
+            print("\n  Fast Backtest Trade:")
+            for key, val in trade_fast.items():
+                print(f"    {key}: {val}")
+            print("\n  Replay-Sim Trade:")
+            for key, val in trade_replay.items():
+                print(f"    {key}: {val}")
+            print("\n  Differences:")
+            if not ts_match:
+                print(f"    - timestamp: fast={trade_fast['timestamp']}, replay={trade_replay['timestamp']}")
+            if not side_match:
+                print(f"    - side: fast={trade_fast['side']}, replay={trade_replay['side']}")
+            if not qty_match:
+                print(f"    - qty: fast={trade_fast['qty']:.10f}, replay={trade_replay['qty']:.10f}, diff={abs(trade_fast['qty'] - trade_replay['qty']):.2e}")
+            if not price_match:
+                print(f"    - price: fast={trade_fast['price']:.6f}, replay={trade_replay['price']:.6f}, diff={abs(trade_fast['price'] - trade_replay['price']):.2e}")
+            if not notional_match:
+                print(f"    - notional: fast={trade_fast['notional']:.6f}, replay={trade_replay['notional']:.6f}, diff={abs(trade_fast['notional'] - trade_replay['notional']):.2e}")
+            return False
     
     print(f"\n✓ All {len(trades_fast)} trades match exactly!")
+    return True
+
+
+def compare_equity_curves(equity_fast: pd.DataFrame, equity_replay: pd.DataFrame, tolerance: float = 0.01) -> bool:
+    """Compare equity curves between fast_backtest and replay-sim."""
+    if len(equity_fast) != len(equity_replay):
+        print(f"\n✗ Equity curve length mismatch: fast={len(equity_fast)}, replay={len(equity_replay)}")
+        return False
+    
+    if equity_fast.empty:
+        print("\n✓ Empty equity curves (both)")
+        return True
+    
+    # Compare each bar and find first divergence
+    for i in range(len(equity_fast)):
+        eq_fast = float(equity_fast.iloc[i]["equity"])
+        eq_replay = float(equity_replay.iloc[i]["equity"])
+        diff = abs(eq_fast - eq_replay)
+        
+        if diff >= tolerance:
+            ts = equity_fast.iloc[i].get("timestamp", i)
+            print(f"\n✗ EQUITY DIVERGENCE at bar {i} (timestamp: {ts})")
+            print(f"    Fast:   equity={eq_fast:.6f}")
+            print(f"    Replay: equity={eq_replay:.6f}")
+            print(f"    Difference: {diff:.6f} (tolerance: {tolerance})")
+            
+            # Show context - what was the action?
+            action_fast = equity_fast.iloc[i].get("action", "?")
+            action_replay = equity_replay.iloc[i].get("action", "?")
+            print(f"    Actions: fast={action_fast}, replay={action_replay}")
+            
+            # Show target exposure
+            te_fast = equity_fast.iloc[i].get("target_exposure", "?")
+            te_replay = equity_replay.iloc[i].get("target_exposure", "?")
+            print(f"    Target Exposure: fast={te_fast}, replay={te_replay}")
+            
+            return False
+    
+    print(f"\n✓ Equity curves match within tolerance ({tolerance}) for all {len(equity_fast)} bars")
     return True
 
 
@@ -373,10 +433,13 @@ def main():
     # Compare summaries
     summaries_match = compare_summaries(summary_fast, summary_replay)
     
-    # Compare trades
+    # Compare trades (fails on first divergence)
     trades_match = compare_trades(results_fast["trades"], results_replay["trades"])
+    
+    # Compare equity curves
+    equity_match = compare_equity_curves(results_fast["equity"], results_replay["equity"])
 
-    if summaries_match and trades_match:
+    if summaries_match and trades_match and equity_match:
         print("\n" + "=" * 60)
         print("✓ EQUIVALENCE VERIFIED!")
         print("=" * 60)
