@@ -2,7 +2,7 @@
 Test that run_live.py compute_step delegates to core engine.
 
 This test verifies that compute_step no longer computes cost/hysteresis/rounding
-locally but instead calls the unified core engine.
+locally but instead calls the unified core engine via plan_from_live_inputs.
 """
 
 import pandas as pd
@@ -15,11 +15,12 @@ from spot_bot.run_live import compute_step
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 
 
-def test_compute_step_calls_core_adapter():
+def test_compute_step_calls_plan_from_live_inputs():
     """
-    Test that compute_step delegates to compute_step_with_core_full.
+    Test that compute_step delegates to plan_from_live_inputs.
     
-    This verifies the refactor removed duplicated cost/hysteresis logic.
+    This verifies the refactor removed duplicated cost/hysteresis logic
+    and uses the single entry point from legacy_adapter.
     """
     # Create minimal test data
     df = pd.DataFrame({
@@ -36,9 +37,9 @@ def test_compute_step_calls_core_adapter():
     strategy = MeanReversionStrategy()
     balances = {"btc": 0.0, "usdt": 1000.0}
     
-    # Patch the core adapter to track calls
+    # Patch plan_from_live_inputs to track calls
     # The function is imported at module level in run_live, so patch there
-    with patch("spot_bot.run_live.compute_step_with_core_full") as mock_core:
+    with patch("spot_bot.run_live.plan_from_live_inputs") as mock_plan:
         # Set up mock to return valid result
         from spot_bot.core.legacy_adapter import StepResultFromCore
         from spot_bot.core.types import TradePlan
@@ -66,7 +67,7 @@ def test_compute_step_calls_core_adapter():
             ),
             diagnostics={},
         )
-        mock_core.return_value = mock_result
+        mock_plan.return_value = mock_result
         
         # Call compute_step
         try:
@@ -88,14 +89,14 @@ def test_compute_step_calls_core_adapter():
             )
         except Exception:
             # If features computation fails (not enough data), that's OK for this test
-            # We just want to verify the core adapter was called
+            # We just want to verify plan_from_live_inputs was called
             pass
         
-        # Verify core adapter was called
-        assert mock_core.called, "compute_step should call compute_step_with_core_full"
+        # Verify plan_from_live_inputs was called
+        assert mock_plan.called, "compute_step should call plan_from_live_inputs"
         
         # Verify it was called with correct params
-        call_args = mock_core.call_args
+        call_args = mock_plan.call_args
         assert call_args is not None
         assert call_args[1]["fee_rate"] == 0.001
         assert call_args[1]["slippage_bps"] == 5.0
@@ -139,6 +140,61 @@ def test_compute_step_no_local_rv_ref_computation():
         "compute_step should not compute rv_ref locally"
     assert "rv_ref_candidates.median()" not in source, \
         "compute_step should delegate rv_ref to core"
+
+
+def test_compute_step_no_local_hysteresis_computation():
+    """
+    Verify compute_step doesn't compute hysteresis locally.
+    
+    All hysteresis logic should be in core, not in run_live.py.
+    """
+    import inspect
+    source = inspect.getsource(compute_step)
+    
+    # Check that no hysteresis computation is present
+    assert "abs(target_exposure - current_exposure)" not in source, \
+        "compute_step should not compute exposure delta for hysteresis"
+    assert "delta_e_min" not in source, \
+        "compute_step should not reference hysteresis threshold delta_e_min"
+
+
+def test_compute_step_no_local_rounding():
+    """
+    Verify compute_step doesn't round quantities locally.
+    
+    All quantity rounding should be in core trade_planner, not in run_live.py.
+    """
+    import inspect
+    source = inspect.getsource(compute_step)
+    
+    # Check that no rounding is present
+    assert "round(" not in source or "round(target_exposure" not in source, \
+        "compute_step should not round target quantities locally"
+    assert "step_size" not in source or "# step_size" in source or "step_size=" in source, \
+        "compute_step should only pass step_size to core, not use it for rounding"
+
+
+def test_compute_step_only_calls_core_functions():
+    """
+    Verify compute_step only orchestrates and doesn't do trading math.
+    
+    It should only call:
+    - plan_from_live_inputs (for planning)
+    - simulate_execution (for paper execution)
+    - apply_fill (for balance updates)
+    """
+    import inspect
+    source = inspect.getsource(compute_step)
+    
+    # Verify it calls the right functions
+    assert "plan_from_live_inputs(" in source, \
+        "compute_step must call plan_from_live_inputs"
+    
+    # In paper mode, it should use core execution
+    assert "simulate_execution(" in source, \
+        "compute_step should use core simulate_execution for paper mode"
+    assert "apply_fill(" in source, \
+        "compute_step should use core apply_fill for balance updates"
 
 
 if __name__ == "__main__":

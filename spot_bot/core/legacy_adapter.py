@@ -340,9 +340,56 @@ def compute_step_with_core_full(
     )
 
 
+def plan_from_live_inputs(
+    ohlcv_df: pd.DataFrame,
+    feature_cfg: FeatureConfig,
+    regime_engine: RegimeEngine,
+    strategy: Any,
+    max_exposure: float,
+    fee_rate: float,
+    balances: Dict[str, float],
+    slippage_bps: float = 0.0,
+    spread_bps: float = 0.0,
+    hyst_k: float = 5.0,
+    hyst_floor: float = 0.02,
+    min_notional: float = 10.0,
+    step_size: Optional[float] = None,
+    min_usdt_reserve: float = 0.0,
+) -> StepResultFromCore:
+    """
+    Primary entry point for run_live.py to plan trades using core engine.
+    
+    This is the ONLY function run_live.py should call for trade planning.
+    It delegates all math (cost, hysteresis, rounding, guards) to core engine.
+    
+    This is an alias for compute_step_with_core_full with a more descriptive name
+    that emphasizes its role as the single entry point from live trading.
+    
+    Returns:
+        StepResultFromCore with all fields needed by run_live.py orchestration
+    """
+    return compute_step_with_core_full(
+        ohlcv_df=ohlcv_df,
+        feature_cfg=feature_cfg,
+        regime_engine=regime_engine,
+        strategy=strategy,
+        max_exposure=max_exposure,
+        fee_rate=fee_rate,
+        balances=balances,
+        slippage_bps=slippage_bps,
+        spread_bps=spread_bps,
+        hyst_k=hyst_k,
+        hyst_floor=hyst_floor,
+        min_notional=min_notional,
+        step_size=step_size,
+        min_usdt_reserve=min_usdt_reserve,
+    )
+
+
 __all__ = [
     "LegacyStrategyAdapter",
     "StepResultFromCore",
     "compute_step_with_core",
     "compute_step_with_core_full",
+    "plan_from_live_inputs",
 ]

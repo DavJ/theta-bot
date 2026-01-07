@@ -23,7 +23,7 @@ import yaml
 
 from spot_bot.backtest import run_backtest
 from spot_bot.core.engine import EngineParams, simulate_execution
-from spot_bot.core.legacy_adapter import compute_step_with_core_full
+from spot_bot.core.legacy_adapter import plan_from_live_inputs
 from spot_bot.core.portfolio import apply_fill, apply_live_fill_to_balances, compute_equity, compute_exposure
 from spot_bot.core.types import ExecutionResult, PortfolioState
 from spot_bot.features import FeatureConfig, compute_features
@@ -314,14 +314,14 @@ def compute_step(
     """
     Compute trading step using unified core engine.
     
-    This is a thin wrapper around compute_step_with_core_full that delegates
+    This is a thin wrapper around plan_from_live_inputs that delegates
     all trading math to the core engine. No cost/hysteresis/rounding is computed here.
     
     All trading decisions (target exposure, hysteresis, costs, rounding, guards, fills)
     are computed ONLY by spot_bot/core. This function is a pure orchestrator.
     """
-    # Call core adapter
-    result = compute_step_with_core_full(
+    # Call core adapter - this is the ONLY place where trade planning happens
+    result = plan_from_live_inputs(
         ohlcv_df=ohlcv_df,
         feature_cfg=feature_cfg,
         regime_engine=regime_engine,
