@@ -20,7 +20,17 @@ python -m spot_bot.run_live --mode dryrun --symbol BTC/USDT --timeframe 1h --lim
 python -m spot_bot.run_backtest --csv path/to/ohlcv.csv --strategy kalman --kalman-mode meanrev --slippage-bps 1
 
 # Benchmark across pairs/psi modes
-python -m bench.benchmark_strategies --limit-total 8000 --timeframe 1h --out bench_out/strategies.csv --plots-dir bench_out/plots
+    python -m bench.benchmark_strategies --limit-total 8000 --timeframe 1h --out bench_out/strategies.csv --plots-dir bench_out/plots
+```
+
+## Fast backtest from CSV
+
+Run the live entrypoint in backtest mode to process a local OHLCV CSV without downloading from Binance:
+
+```bash
+python -m spot_bot.run_live --mode backtest --csv-in data/btc_1m.csv --timeframe 1m --strategy kalman_mr_dual \
+  --psi-mode scale_phase --psi-window 512 --rv-window 120 --fee-rate 0.001 --slippage-bps 5 --max-exposure 0.30 \
+  --out-equity bench_out/btc_equity.csv --out-trades bench_out/btc_trades.csv --out-summary bench_out/btc_summary.csv
 ```
 
 ## Spot Bot 2.0 runners (long/flat)

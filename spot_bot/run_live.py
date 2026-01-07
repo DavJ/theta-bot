@@ -21,6 +21,7 @@ if __package__ is None and __name__ == "__main__":
 import pandas as pd
 import yaml
 
+from spot_bot.backtest import run_backtest
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.live import PaperBroker
 from spot_bot.persist import SQLiteLogger
@@ -666,7 +667,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--symbol", type=str, default="BTC/USDT")
     parser.add_argument("--timeframe", type=str, default="1h")
     parser.add_argument("--limit-total", dest="limit_total", type=int, default=2000)
-    parser.add_argument("--mode", choices=["dryrun", "paper", "live", "replay"], default="dryrun")
+    parser.add_argument("--mode", choices=["dryrun", "paper", "live", "replay", "backtest"], default="dryrun")
     parser.add_argument("--db", type=str, default=None, help="SQLite DB path (required for paper/live).")
     parser.add_argument("--initial-usdt", dest="initial_usdt", type=float, default=1000.0)
     parser.add_argument("--max-exposure", dest="max_exposure", type=float, default=0.3)
@@ -701,6 +702,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--replay-trades-out", dest="replay_trades_out", type=str, default="trades.csv")
     parser.add_argument(
         "--replay-features-out", dest="replay_features_out", type=str, default=None, help="Optional features.csv export."
+    )
+    parser.add_argument("--out-equity", dest="out_equity", type=str, default=None, help="Backtest equity CSV output path.")
+    parser.add_argument("--out-trades", dest="out_trades", type=str, default=None, help="Backtest trades CSV output path.")
+    parser.add_argument(
+        "--out-summary",
+        dest="out_summary",
+        type=str,
+        default=None,
+        help="Backtest summary output path (CSV or JSON).",
     )
     # Feature config overrides
     parser.add_argument("--rv-window", type=int, default=DEFAULT_FEATURE_CFG.rv_window)
@@ -807,6 +817,53 @@ def main() -> None:
             "usdt": last_equity["usdt"] if last_equity else float(args.initial_usdt),
             "btc": last_equity["btc"] if last_equity else 0.0,
         }
+
+        if args.mode == "backtest":
+            if not csv_in_path:
+                print("Backtest mode requires --csv-in with historical OHLCV.", file=sys.stderr)
+                sys.exit(1)
+            df_bt = pd.read_csv(csv_in_path, parse_dates=["timestamp"])
+            df_bt["timestamp"] = pd.to_datetime(df_bt["timestamp"], utc=True)
+            if args.limit_total:
+                df_bt = df_bt.head(int(args.limit_total))
+            equity_df, trades_df, summary = run_backtest(
+                df=df_bt,
+                timeframe=timeframe,
+                strategy_name=args.strategy,
+                psi_mode=args.psi_mode,
+                psi_window=args.psi_window,
+                rv_window=args.rv_window,
+                conc_window=args.conc_window,
+                base=args.base,
+                fee_rate=fee_rate,
+                slippage_bps=args.slippage_bps,
+                max_exposure=max_exposure,
+                initial_usdt=balances["usdt"],
+                min_notional=min_notional,
+                step_size=step_size,
+                bar_state="closed",
+            )
+            if args.out_equity:
+                out_e = pathlib.Path(args.out_equity)
+                out_e.parent.mkdir(parents=True, exist_ok=True)
+                equity_df.to_csv(out_e, index=False)
+            if args.out_trades:
+                out_t = pathlib.Path(args.out_trades)
+                out_t.parent.mkdir(parents=True, exist_ok=True)
+                trades_df.to_csv(out_t, index=False)
+            if args.out_summary:
+                out_s = pathlib.Path(args.out_summary)
+                out_s.parent.mkdir(parents=True, exist_ok=True)
+                if out_s.suffix.lower() == ".json":
+                    out_s.write_text(json.dumps(summary, indent=2))
+                else:
+                    pd.DataFrame([summary]).to_csv(out_s, index=False)
+            print(
+                f"Backtest complete: bars={len(equity_df)}, trades={len(trades_df)}, final_equity={summary.get('final_equity', 0):.2f}"
+            )
+            if logger:
+                logger.close()
+            return
 
         if args.mode == "replay":
             if not csv_in_path:
