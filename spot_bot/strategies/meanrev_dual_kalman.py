@@ -41,6 +41,7 @@ class DualKalmanParams:
     k_u: float = 1.0
     sigma_window: int = 32
     emax: float = 1.0
+    r_max: float = 8.0  # Maximum allowed value for r_hat to prevent exp overflow
 
 
 class MeanRevDualKalmanStrategy(Strategy):
@@ -76,6 +77,7 @@ class MeanRevDualKalmanStrategy(Strategy):
         scale_vals = []
         for val in z:
             r_hat = regime.step(val)
+            r_hat = np.clip(r_hat, -self.params.r_max, self.params.r_max)
             scale = float(np.clip(np.exp(r_hat), self.params.s_min, self.params.s_max))
             scale_vals.append(scale)
 
@@ -180,6 +182,7 @@ class MeanRevDualKalmanStrategy(Strategy):
         sigma2 = self.params.r
         for price, z_val, budget in zip(close, z, budgets):
             r_hat = regime.step(z_val)
+            r_hat = np.clip(r_hat, -self.params.r_max, self.params.r_max)
             scale = float(np.clip(np.exp(r_hat), self.params.s_min, self.params.s_max))
             _, _, residual, sigma2 = main.step(price, scale=scale)
             sigma = float(np.sqrt(max(sigma2, MIN_VARIANCE)))
