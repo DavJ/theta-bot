@@ -24,8 +24,12 @@
 
 \maketitle
 
+\textbf{Note on UBT Core Geometry}: For the fundamental physical formulation of Unified Biquaternion Theory in which General Relativity emerges as the real projection of biquaternion spacetime geometry, see \texttt{papers/ubt\_core\_geometry/ubt\_biquaternion\_geometry.tex}. The present paper applies UBT-inspired mathematics to financial markets, which are \textbf{not} physical spacetime systems.
+
+\vspace{1em}
+
 \begin{abstract}
-Unified Biquaternion Theory (UBT) is a physical theory that employs biquaternion algebra to describe fundamental interactions in spacetime, achieving compatibility with general relativity, quantum mechanics, and Maxwell's equations. The choice of biquaternions in UBT is dictated by physical symmetry requirements, specifically Lorentz covariance and gauge invariance. This paper presents a tensor-based mathematical framework inspired by UBT's formalism but applied to an entirely different domain: high-dimensional coupled systems of cryptocurrency spot and derivatives markets. We emphasize that this work is not a physical model of the universe, but rather an application of UBT-inspired mathematics to characterize market state spaces. Financial markets do not require spacetime symmetry, and their high-dimensional nature (multiple assets, multiple derivatives) naturally suggests a tensor representation as the minimal generalization of biquaternion structures. We demonstrate how biquaternions appear as a structured subspace within this tensor formalism, maintaining conceptual continuity with UBT while accommodating the dimensionality requirements of coupled market systems. The framework focuses on characterizing deterministic structure, regime evolution, and collective stress rather than directional price prediction. We explicitly delineate the scope, capabilities, and fundamental limitations of this approach.
+Unified Biquaternion Theory (UBT) is a physical theory that employs biquaternion algebra to describe fundamental interactions in spacetime. In its core formulation (see companion paper), the classical metric tensor $g_{\mu\nu}$ of General Relativity emerges as the real projection of a fundamental biquaternion metric $\mathcal{G}_{\mu\nu}$, with all geometric objects (connection, curvature, stress-energy) being fundamentally biquaternionic. The choice of biquaternions in UBT is dictated by physical symmetry requirements, specifically Lorentz covariance and gauge invariance. This paper presents a tensor-based mathematical framework inspired by UBT's formalism but applied to an entirely different domain: high-dimensional coupled systems of cryptocurrency spot and derivatives markets. We emphasize that this work is not a physical model of the universe, but rather an application of UBT-inspired mathematics to characterize market state spaces. Financial markets do not require spacetime symmetry, and their high-dimensional nature (multiple assets, multiple derivatives) naturally suggests a tensor representation as the minimal generalization of biquaternion structures. We demonstrate how biquaternions appear as a structured subspace within this tensor formalism, maintaining conceptual continuity with UBT while accommodating the dimensionality requirements of coupled market systems. The framework focuses on characterizing deterministic structure, regime evolution, and collective stress rather than directional price prediction. We explicitly delineate the scope, capabilities, and fundamental limitations of this approach.
 \end{abstract}
 
 \section{Introduction}
@@ -101,17 +105,17 @@ These physical motivations are central to UBT. The theory is not merely using bi
 
 \subsection{Compatibility with General Relativity, Quantum Mechanics, and Maxwell Equations}
 
-UBT strives to achieve compatibility with established physical theories:
+UBT achieves compatibility with established physical theories through its biquaternion-first formulation:
 
 \begin{itemize}
-    \item \textbf{General Relativity}: The metric tensor of spacetime and curvature can be expressed in terms of biquaternion-valued fields. UBT seeks to represent gravitational dynamics within the biquaternion framework.
+    \item \textbf{General Relativity}: In the core UBT formulation, the classical metric tensor $g_{\mu\nu}$ is \textbf{not} fundamental but emerges as $g_{\mu\nu} := \mathrm{Re}(\mathcal{G}_{\mu\nu})$ where $\mathcal{G}_{\mu\nu}$ is the fundamental biquaternion metric. Similarly, the connection, curvature, and stress-energy tensors are all biquaternion-valued, with Einstein's field equations arising as the real projection: $\mathrm{Re}(\mathcal{G}_{\mu\nu}) = \kappa \mathrm{Re}(\mathcal{T}_{\mu\nu})$. See the core geometry paper for full details.
     
     \item \textbf{Quantum Mechanics}: Wavefunctions, operators, and commutation relations can be formulated using biquaternion algebra. The Schrödinger and Dirac equations admit biquaternion formulations.
     
-    \item \textbf{Maxwell Equations}: As mentioned, electromagnetic fields naturally map onto biquaternion components, and Maxwell's equations become algebraic relations in this language.
+    \item \textbf{Maxwell Equations}: Electromagnetic fields naturally map onto biquaternion components, and Maxwell's equations become algebraic relations in this language.
 \end{itemize}
 
-UBT thus operates firmly within the domain of physics, constrained by experimental verification and theoretical consistency with known physical laws.
+UBT thus operates firmly within the domain of physics, constrained by experimental verification and theoretical consistency with known physical laws. \textbf{Critically, GR is not assumed as a foundation but emerges as the real, commutative limit of biquaternion geometry.}
 
 \subsection{Emphasis on Physical Ontology}
 

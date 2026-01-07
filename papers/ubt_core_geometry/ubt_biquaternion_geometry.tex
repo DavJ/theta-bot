@@ -1,0 +1,459 @@
+\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{physics}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+
+% Page setup
+\geometry{margin=1in}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+
+% Title
+\title{\textbf{Unified Biquaternion Theory: Core Geometry Refactored}\\
+\large Biquaternion Spacetime Geometry with General Relativity as Real Projection}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present a fundamental reformulation of Unified Biquaternion Theory (UBT) in which the spacetime geometry is intrinsically biquaternionic. General Relativity emerges not as the foundation but as the real, commutative projection of a richer non-commutative geometric structure. The metric, connection, curvature, and stress-energy tensors are all defined as biquaternion-valued objects. Classical 4D geometry and Einstein's field equations arise by taking the real part of these fundamental biquaternion structures. This formulation permits physically consistent solutions with non-vanishing imaginary components, corresponding to exotic regimes including pseudo-antigravitational behavior, phase invisibility, and local temporal drift—phenomena unobservable in standard GR but inherent to the full biquaternion geometry.
+\end{abstract}
+
+\section{Foundational Principles}
+
+\subsection{Prohibition of Classical Metric as Fundamental}
+
+\textbf{Fundamental Axiom}: The classical real metric tensor $g_{\mu\nu}$ is \textbf{NOT} a fundamental object. It is a derived, limiting projection.
+
+All prior formulations that postulate $g_{\mu\nu}$ as the starting point are \textbf{explicitly rejected}. Instead, we demand:
+
+\begin{equation}
+g_{\mu\nu} := \mathrm{Re}(\mathcal{G}_{\mu\nu})
+\end{equation}
+
+where $\mathcal{G}_{\mu\nu}$ is the fundamental \textbf{biquaternion metric}.
+
+\textbf{Mandatory Rule}: No use of $g_{\mu\nu}$ is permitted without explicit reference to its origin as the real projection of $\mathcal{G}_{\mu\nu}$.
+
+\subsection{Biquaternion Algebra}
+
+The algebra of biquaternions $\mathbb{B}$ consists of quaternions with complex coefficients. A general biquaternion is written:
+
+\begin{equation}
+q = q_0 + q_1 \mathbf{i} + q_2 \mathbf{j} + q_3 \mathbf{k}, \quad q_\alpha \in \mathbb{C}
+\end{equation}
+
+where $\mathbf{i}, \mathbf{j}, \mathbf{k}$ are the quaternion basis elements satisfying Hamilton's relations:
+
+\begin{align}
+\mathbf{i}^2 = \mathbf{j}^2 = \mathbf{k}^2 &= -1 \\
+\mathbf{i}\mathbf{j} = \mathbf{k}, \quad \mathbf{j}\mathbf{k} &= \mathbf{i}, \quad \mathbf{k}\mathbf{i} = \mathbf{j} \\
+\mathbf{j}\mathbf{i} = -\mathbf{k}, \quad \mathbf{k}\mathbf{j} &= -\mathbf{i}, \quad \mathbf{i}\mathbf{k} = -\mathbf{j}
+\end{align}
+
+Each biquaternion has 8 real degrees of freedom (4 complex coefficients).
+
+\textbf{Critical Property}: Biquaternion multiplication is \textbf{non-commutative}. We \textbf{never} assume commutativity of components.
+
+\subsection{Decomposition Structure}
+
+A biquaternion $q \in \mathbb{B}$ can be decomposed as:
+
+\begin{equation}
+q = (a + I b) + \mathbf{J} \cdot \mathbf{v}
+\end{equation}
+
+where:
+\begin{itemize}
+\item $a, b \in \mathbb{R}$ are real scalars
+\item $I = \sqrt{-1}$ is the complex imaginary unit
+\item $\mathbf{J} = (\mathbf{i}, \mathbf{j}, \mathbf{k})$ is the quaternion basis vector
+\item $\mathbf{v} \in \mathbb{C}^3$ is a complex 3-vector
+\end{itemize}
+
+Alternatively, written in full:
+
+\begin{equation}
+q = s + I h + \mathbf{J} \cdot \mathbf{k}
+\end{equation}
+
+where $s, h \in \mathbb{R}$ and $\mathbf{k} = (k_1, k_2, k_3)$ with $k_i \in \mathbb{C}$.
+
+\section{Fundamental Biquaternion Metric}
+
+\subsection{Definition of the Metric Tensor}
+
+The fundamental geometric object of spacetime is the \textbf{biquaternion metric}:
+
+\begin{equation}
+\mathcal{G}_{\mu\nu}(x) \in \mathbb{B}
+\end{equation}
+
+defined at each spacetime point $x^\mu$.
+
+\subsection{Decomposition of the Metric}
+
+The biquaternion metric admits the general decomposition:
+
+\begin{equation}
+\mathcal{G}_{\mu\nu} = g_{\mu\nu} + I h_{\mu\nu} + \mathbf{J} \cdot \mathbf{k}_{\mu\nu}
+\end{equation}
+
+where:
+\begin{itemize}
+\item $g_{\mu\nu}(x) \in \mathbb{R}$ is the \textbf{real projection} (GR sector)
+\item $h_{\mu\nu}(x) \in \mathbb{R}$ is the \textbf{phase geometry}
+\item $\mathbf{k}_{\mu\nu}(x) = (k_{\mu\nu}^1, k_{\mu\nu}^2, k_{\mu\nu}^3)$ with $k_{\mu\nu}^a \in \mathbb{C}$ represents \textbf{inertial and causal geometry}
+\end{itemize}
+
+\textbf{Physical Interpretation}:
+\begin{itemize}
+\item $g_{\mu\nu}$: Observable spacetime metric (classical GR)
+\item $h_{\mu\nu}$: Phase structure (non-observable in GR regime)
+\item $\mathbf{k}_{\mu\nu}$: Extended causal and inertial structure
+\end{itemize}
+
+\subsection{Hermiticity and Reality Conditions}
+
+For the metric to be physically meaningful, we require:
+
+\begin{equation}
+\mathcal{G}_{\mu\nu}^\dagger = \mathcal{G}_{\nu\mu}
+\end{equation}
+
+where $\dagger$ denotes biquaternion conjugation (both complex and quaternion conjugation).
+
+This ensures that $g_{\mu\nu}$ is real and symmetric.
+
+\section{Biquaternion Tetrad Formalism}
+
+\subsection{Mandatory Tetrad Structure}
+
+The metric \textbf{must not} be introduced directly. Instead, we define the fundamental \textbf{biquaternion tetrad field}:
+
+\begin{equation}
+E_\mu(x) \in \mathbb{B}
+\end{equation}
+
+representing the local frame at each point.
+
+\subsection{Metric from Tetrad}
+
+The metric is defined \textbf{exclusively} through the tetrad:
+
+\begin{equation}
+\mathcal{G}_{\mu\nu} := \mathrm{Sc}(E_\mu E_\nu^\dagger)
+\end{equation}
+
+where $\mathrm{Sc}$ denotes the scalar (real) part of the biquaternion product.
+
+Equivalently, using the full biquaternion product:
+
+\begin{equation}
+\mathcal{G}_{\mu\nu} = \frac{1}{2}\left(E_\mu E_\nu^\dagger + E_\nu E_\mu^\dagger\right)
+\end{equation}
+
+\textbf{Prohibition}: Direct introduction of $g_{\mu\nu}$ or ad-hoc projections without tetrad construction are \textbf{forbidden}.
+
+\subsection{Tetrad Decomposition}
+
+Each tetrad component can be written:
+
+\begin{equation}
+E_\mu = e_\mu + I f_\mu + \mathbf{J} \cdot \boldsymbol{\xi}_\mu
+\end{equation}
+
+where $e_\mu \in \mathbb{R}$, $f_\mu \in \mathbb{R}$, and $\boldsymbol{\xi}_\mu \in \mathbb{C}^3$.
+
+\section{Biquaternion Connection}
+
+\subsection{Replacement of Christoffel Symbols}
+
+Christoffel symbols $\Gamma^\lambda_{\mu\nu}$ are \textbf{NOT fundamental}. They are artifacts of the real projection.
+
+The fundamental object is the \textbf{biquaternion connection}:
+
+\begin{equation}
+\Omega_\mu(x) \in \mathbb{B}
+\end{equation}
+
+\subsection{Covariant Derivative of Tetrad}
+
+The connection is defined through the compatibility condition with the tetrad:
+
+\begin{equation}
+\nabla_\mu E_\nu = \partial_\mu E_\nu + \Omega_\mu \circ E_\nu - \Gamma^\lambda_{\mu\nu} E_\lambda = 0
+\end{equation}
+
+where $\circ$ denotes biquaternion multiplication (non-commutative).
+
+\textbf{Important}: We do \textbf{not} simplify commutators or assume associativity holds trivially. The full non-commutative structure must be preserved.
+
+\subsection{Connection Decomposition}
+
+The biquaternion connection decomposes as:
+
+\begin{equation}
+\Omega_\mu = \omega_\mu + I \alpha_\mu + \mathbf{J} \cdot \mathbf{A}_\mu
+\end{equation}
+
+where:
+\begin{itemize}
+\item $\omega_\mu \in \mathbb{R}$: spin connection (real part)
+\item $\alpha_\mu \in \mathbb{R}$: phase connection
+\item $\mathbf{A}_\mu \in \mathbb{C}^3$: gauge-like connection (complex 3-vector)
+\end{itemize}
+
+\section{Biquaternion Curvature}
+
+\subsection{Curvature Tensor Definition}
+
+The biquaternion curvature is defined via the connection:
+
+\begin{equation}
+\mathcal{R}_{\mu\nu} = \partial_\mu \Omega_\nu - \partial_\nu \Omega_\mu + [\Omega_\mu, \Omega_\nu]
+\end{equation}
+
+where $[\cdot, \cdot]$ denotes the biquaternion commutator:
+
+\begin{equation}
+[\Omega_\mu, \Omega_\nu] = \Omega_\mu \Omega_\nu - \Omega_\nu \Omega_\mu
+\end{equation}
+
+Due to non-commutativity, this term is generically \textbf{non-zero}.
+
+\subsection{Ricci Tensor}
+
+The biquaternion Ricci tensor is constructed as:
+
+\begin{equation}
+\mathcal{R}_{\nu\sigma} = E^\mu \mathcal{R}_{\mu\nu} E_\sigma
+\end{equation}
+
+where contraction is performed using the biquaternion tetrad.
+
+\subsection{Real Projection to Classical Ricci Tensor}
+
+Only after defining the biquaternion Ricci tensor do we permit:
+
+\begin{equation}
+R_{\mu\nu} := \mathrm{Re}(\mathcal{R}_{\mu\nu})
+\end{equation}
+
+This is the classical Ricci tensor of General Relativity.
+
+\section{Biquaternion Stress-Energy Tensor}
+
+\subsection{Prohibition of Classical Definition}
+
+Classical definitions of the real stress-energy tensor $T_{\mu\nu}$ as fundamental are \textbf{abolished}.
+
+\subsection{Fundamental Biquaternion Stress-Energy}
+
+The fundamental object is the \textbf{biquaternion stress-energy tensor}:
+
+\begin{equation}
+\mathcal{T}_{\mu\nu} = \langle D_\mu \Theta, D_\nu \Theta \rangle_\mathbb{B} - \frac{1}{2} \mathcal{G}_{\mu\nu} \langle D\Theta, D\Theta \rangle
+\end{equation}
+
+where:
+\begin{itemize}
+\item $\Theta(x) \in \mathbb{B}$ is the fundamental biquaternion field
+\item $D_\mu \Theta = \partial_\mu \Theta + \Omega_\mu \Theta$ is the covariant derivative
+\item $\langle \cdot, \cdot \rangle_\mathbb{B}$ is the biquaternion inner product
+\end{itemize}
+
+\subsection{Biquaternion Inner Product}
+
+The inner product on biquaternions is defined as:
+
+\begin{equation}
+\langle A, B \rangle_\mathbb{B} = \mathrm{Sc}(A B^\dagger)
+\end{equation}
+
+where $B^\dagger$ is the biquaternion conjugate.
+
+\subsection{Real Projection}
+
+The observable stress-energy tensor is:
+
+\begin{equation}
+T_{\mu\nu} := \mathrm{Re}(\mathcal{T}_{\mu\nu})
+\end{equation}
+
+This is the only stress-energy tensor accessible to classical measurements.
+
+\section{Field Equations}
+
+\subsection{Prohibition of Einstein Field Equations as Fundamental}
+
+The classical Einstein field equations:
+
+\begin{equation}
+G_{\mu\nu} = \kappa T_{\mu\nu}
+\end{equation}
+
+are \textbf{NOT} fundamental. They are \textbf{forbidden} as the starting point.
+
+\subsection{Fundamental Biquaternion Field Equation}
+
+The fundamental field equation of UBT is:
+
+\begin{equation}
+\mathcal{G}_{\mu\nu} = \kappa \mathcal{T}_{\mu\nu}
+\end{equation}
+
+where both sides are biquaternion-valued.
+
+\textbf{Explicit Statement}: The real projection yields Einstein's equations:
+
+\begin{equation}
+\mathrm{Re}(\mathcal{G}_{\mu\nu}) = \kappa \mathrm{Re}(\mathcal{T}_{\mu\nu}) \quad \Rightarrow \quad G_{\mu\nu} = \kappa T_{\mu\nu}
+\end{equation}
+
+Thus, \textbf{General Relativity emerges as the real, commutative projection of the fundamental biquaternion geometry}.
+
+\subsection{Imaginary Sector Equations}
+
+The imaginary components satisfy:
+
+\begin{align}
+\mathrm{Im}(\mathcal{G}_{\mu\nu}) &= \kappa \mathrm{Im}(\mathcal{T}_{\mu\nu}) \\
+\mathbf{J} \cdot \mathrm{Vec}(\mathcal{G}_{\mu\nu}) &= \kappa \mathbf{J} \cdot \mathrm{Vec}(\mathcal{T}_{\mu\nu})
+\end{align}
+
+These equations govern the phase, inertial, and causal sectors invisible to classical GR.
+
+\section{Exotic Regimes and Unobservable Sectors}
+
+\subsection{Non-Vanishing Imaginary Metric}
+
+Solutions with:
+
+\begin{equation}
+\mathrm{Im}(\mathcal{G}_{\mu\nu}) \neq 0
+\end{equation}
+
+are \textbf{physically consistent within UBT} but \textbf{not observable in standard GR}.
+
+\subsection{Exotic Phenomena}
+
+Non-zero imaginary components correspond to:
+
+\begin{itemize}
+\item \textbf{Pseudo-antigravitational behavior}: Effective repulsion in the phase sector
+\item \textbf{Phase invisibility}: Matter configurations that couple only to $\mathrm{Im}(\mathcal{G}_{\mu\nu})$ and are invisible to classical observers
+\item \textbf{Local temporal drift}: Variations in the flow of time not captured by $g_{00}$ alone, encoded in $h_{00}$ and $k_{00}^a$
+\item \textbf{Causal structure modification}: Lightcones extended or modified by quaternion components
+\end{itemize}
+
+\subsection{Observational Constraints}
+
+For consistency with observations:
+
+\begin{itemize}
+\item In the solar system and cosmological observations, $\mathrm{Im}(\mathcal{G}_{\mu\nu}) \ll \mathrm{Re}(\mathcal{G}_{\mu\nu})$
+\item Dark matter and dark energy effects may correspond to \textbf{non-zero but small} imaginary sectors
+\item Quantum gravitational regimes near Planck scale may exhibit $\mathrm{Im}(\mathcal{G}_{\mu\nu}) \sim \mathrm{Re}(\mathcal{G}_{\mu\nu})$
+\end{itemize}
+
+\section{Meta-Commentary: GR as Emergent Limit}
+
+\subsection{Foundational Statement}
+
+\textbf{General Relativity arises as the real, commutative projection of the fundamental biquaternion geometry of spacetime.}
+
+Apparent violations of GR, such as:
+\begin{itemize}
+\item Antigravitation without exotic matter
+\item Causal drift without coordinate singularities
+\item Phase-shifted matter fields
+\end{itemize}
+
+correspond to \textbf{non-real sectors of the metric and curvature}, not to violations of energy conditions or introduction of exotic matter.
+
+\subsection{Classical vs. Fundamental Reality}
+
+The observable universe corresponds to $\mathrm{Re}(\mathcal{G}_{\mu\nu})$ due to:
+\begin{itemize}
+\item Standard matter fields coupling predominantly to real metric components
+\item Measurement apparatuses themselves described by real projections
+\item Decoherence suppressing access to phase sectors
+\end{itemize}
+
+However, the \textbf{fundamental reality} is biquaternionic. GR is a \textbf{shadow} of the complete geometry.
+
+\subsection{No Violation of Energy Conservation}
+
+The full biquaternion stress-energy tensor satisfies:
+
+\begin{equation}
+\nabla_\mu \mathcal{T}^{\mu\nu} = 0
+\end{equation}
+
+in the biquaternion sense. Taking the real part:
+
+\begin{equation}
+\nabla_\mu T^{\mu\nu} = 0
+\end{equation}
+
+recovers classical energy-momentum conservation.
+
+\textbf{Critical Point}: Energy is \textbf{not} created ex nihilo. Apparent energy violations in the real sector are compensated by flows in the imaginary sector.
+
+\section{Mandatory Prohibitions}
+
+\subsection{What is Forbidden}
+
+The following are \textbf{strictly prohibited} in UBT:
+
+\begin{enumerate}
+\item \textbf{Using GR as an axiom}: The metric $g_{\mu\nu}$ cannot be postulated directly.
+
+\item \textbf{Simplifying biquaternions to complex numbers}: The full 8-component structure must be preserved.
+
+\item \textbf{Breaking global causality}: While local causal structure can be extended, acausal loops are forbidden.
+
+\item \textbf{Identifying observable world with fundamental reality}: What we observe is $\mathrm{Re}(\mathcal{G}_{\mu\nu})$, not the full $\mathcal{G}_{\mu\nu}$.
+
+\item \textbf{Introducing energy ex nihilo}: Total biquaternion energy-momentum is conserved.
+\end{enumerate}
+
+\subsection{Methodological Requirements}
+
+All formulations must:
+\begin{itemize}
+\item Start with biquaternion objects
+\item Derive real projections explicitly
+\item Preserve non-commutativity throughout
+\item Specify how classical limits are taken
+\end{itemize}
+
+\section{Conclusion}
+
+We have established a complete refactoring of Unified Biquaternion Theory where:
+
+\begin{enumerate}
+\item The fundamental spacetime geometry is \textbf{biquaternionic}
+\item Metric, connection, curvature, and stress-energy are all $\mathbb{B}$-valued
+\item General Relativity emerges as $\mathrm{Re}(\mathcal{G}_{\mu\nu})$
+\item Exotic phenomena correspond to $\mathrm{Im}(\mathcal{G}_{\mu\nu}) \neq 0$
+\item No violation of energy conservation or causality occurs
+\end{enumerate}
+
+\textbf{UBT possesses a closed biquaternion geometry from which GR emerges solely as the limiting real sector.}
+
+\vspace{1em}
+
+\noindent\textbf{Declaration}: This document establishes the mathematical foundation. Physical predictions, experimental tests, and phenomenological consequences require separate detailed analysis.
+
+\end{document}
