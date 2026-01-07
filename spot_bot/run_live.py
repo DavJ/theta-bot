@@ -252,31 +252,71 @@ def _prepare_trade_data(df: pd.DataFrame, timeframe: str, trade_on: str) -> tupl
     return truncated, bar_row, _to_utc_timestamp(ts_value), bar_state
 
 
-def _apply_fill_to_balances(balances: Dict[str, float], side: str, qty: float, price: float, fee_rate: float) -> float:
+def _apply_live_fill_to_balances(
+    balances: Dict[str, float],
+    side: str,
+    qty: float,
+    price: float,
+    fee_rate: float,
+) -> float:
     """
-    Apply fill to local balances dictionary (for live mode tracking only).
+    Apply live exchange fill to local balances dictionary.
     
-    NOTE: This function is only used in LIVE mode to update local tracking
-    after a real exchange execution. For paper/replay/backtest modes, use
-    core.portfolio.apply_fill instead.
+    NOTE: This function is ONLY used in LIVE mode to update local tracking
+    after a real exchange execution. It uses core types for consistency.
+    For paper/replay/backtest modes, use core.portfolio.apply_fill instead.
+    
+    This wrapper constructs an ExecutionResult and uses core.apply_fill
+    to ensure fill application math is consistent across all modes.
     
     Args:
         balances: Local balances dict with 'usdt' and 'btc' keys
         side: 'buy' or 'sell'
-        qty: Quantity filled
+        qty: Quantity filled (always positive)
         price: Fill price
         fee_rate: Fee rate
     
     Returns:
         Fee paid
     """
-    fee = qty * price * fee_rate
-    if side == "buy":
-        balances["usdt"] = balances.get("usdt", 0.0) - qty * price - fee
-        balances["btc"] = balances.get("btc", 0.0) + qty
-    else:
-        balances["usdt"] = balances.get("usdt", 0.0) + qty * price - fee
-        balances["btc"] = max(0.0, balances.get("btc", 0.0) - qty)
+    from spot_bot.core.types import ExecutionResult
+    from spot_bot.core.portfolio import apply_fill, compute_equity, compute_exposure
+    
+    # Build ExecutionResult using core type
+    # delta_base is positive for buy, negative for sell
+    filled_base = qty if side == "buy" else -qty
+    notional = qty * price
+    fee = notional * fee_rate
+    
+    execution = ExecutionResult(
+        filled_base=filled_base,
+        avg_price=price,
+        fee_paid=fee,
+        slippage_paid=0.0,  # Slippage already in price for live
+        status="filled",
+        raw=None,
+    )
+    
+    # Build current portfolio state
+    current_usdt = float(balances.get("usdt", 0.0))
+    current_btc = float(balances.get("btc", 0.0))
+    equity = compute_equity(current_usdt, current_btc, price)
+    exposure = compute_exposure(current_btc, price, equity)
+    
+    portfolio = PortfolioState(
+        usdt=current_usdt,
+        base=current_btc,
+        equity=equity,
+        exposure=exposure,
+    )
+    
+    # Apply fill using core function
+    updated = apply_fill(portfolio, execution)
+    
+    # Update balances dict
+    balances["usdt"] = updated.usdt
+    balances["btc"] = updated.base
+    
     return fee
 
 
@@ -312,7 +352,7 @@ def compute_step(
     min_notional: float = 10.0,
     step_size: Optional[float] = None,
     min_usdt_reserve: float = 0.0,
-    use_core_sim: bool = False,
+    use_core_sim: bool = True,
 ) -> StepResult:
     """
     Compute trading step using unified core engine.
@@ -321,11 +361,12 @@ def compute_step(
     all trading math to the core engine. No cost/hysteresis/rounding is computed here.
     
     Args:
-        use_core_sim: If True, use core SimExecutor for paper mode instead of PaperBroker.
-                      This ensures identical execution with fast_backtest.
+        use_core_sim: If True (default), use core SimExecutor for paper mode instead 
+                      of legacy PaperBroker. This ensures identical execution with 
+                      fast_backtest. Set to False only for backward compatibility.
     
-    The only difference from core logic is that paper mode uses PaperBroker for execution
-    when use_core_sim=False (legacy behavior), or SimExecutor when use_core_sim=True.
+    All trading decisions (target exposure, hysteresis, costs, rounding, guards, fills)
+    are computed ONLY by spot_bot/core. This function is a pure orchestrator.
     """
     # Call core adapter
     result = compute_step_with_core_full(
@@ -398,7 +439,16 @@ def compute_step(
             else:
                 execution_result = {"status": "noop", "side": "hold", "qty": 0.0}
         elif broker:
-            # Legacy path: use PaperBroker
+            # DEPRECATED: Legacy path using PaperBroker with manual slippage.
+            # This path is only used when use_core_sim=False, which is not 
+            # recommended. Use use_core_sim=True (default) for consistent behavior.
+            import warnings
+            warnings.warn(
+                "Legacy PaperBroker path is deprecated. Use use_core_sim=True for "
+                "consistent execution with fast_backtest and replay modes.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             slip = slippage_bps / 10000.0
             fill_price = result.close * (1 + slip if result.delta_btc > 0 else 1 - slip)
             execution_result = broker.trade_to_target_btc(result.target_btc, fill_price)
@@ -1063,7 +1113,7 @@ def main() -> None:
                     execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
                     if execution_result.get("status") == "filled":
                         qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
-                        _apply_fill_to_balances(balances, side, qty, result.close, fee_rate)
+                        _apply_live_fill_to_balances(balances, side, qty, result.close, fee_rate)
                     current_btc = balances["btc"]
                     equity_usdt = balances["usdt"] + current_btc * result.close
 

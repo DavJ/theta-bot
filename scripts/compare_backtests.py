@@ -318,8 +318,7 @@ def compare_trades(trades_fast: pd.DataFrame, trades_replay: pd.DataFrame) -> bo
     if len(trades_fast) != len(trades_replay):
         print(f"\n✗ Trade count mismatch: fast={len(trades_fast)}, replay={len(trades_replay)}")
         
-        # Show first divergence in equity curves would be more helpful
-        # but we'll just note the counts for now
+        # Show detailed divergence info
         min_len = min(len(trades_fast), len(trades_replay))
         if min_len > 0:
             # Check if trades match up to the shorter length
@@ -328,11 +327,18 @@ def compare_trades(trades_fast: pd.DataFrame, trades_replay: pd.DataFrame) -> bo
                 trade_replay = trades_replay.iloc[i]
                 if trade_fast["timestamp"] != trade_replay["timestamp"]:
                     print(f"\n  First divergence at trade index {i}:")
-                    print(f"    Fast:   ts={trade_fast['timestamp']}, side={trade_fast['side']}, qty={trade_fast['qty']:.8f}")
-                    print(f"    Replay: ts={trade_replay['timestamp']}, side={trade_replay['side']}, qty={trade_replay['qty']:.8f}")
+                    print(f"    Fast:   ts={trade_fast['timestamp']}, side={trade_fast['side']}, qty={trade_fast['qty']:.8f}, price={trade_fast['price']:.2f}")
+                    print(f"    Replay: ts={trade_replay['timestamp']}, side={trade_replay['side']}, qty={trade_replay['qty']:.8f}, price={trade_replay['price']:.2f}")
                     break
             else:
                 print(f"\n  First {min_len} trades match, divergence after that.")
+                # Show the extra trade from the longer list
+                if len(trades_fast) > min_len:
+                    extra_trade = trades_fast.iloc[min_len]
+                    print(f"  Extra fast trade: ts={extra_trade['timestamp']}, side={extra_trade['side']}, qty={extra_trade['qty']:.8f}")
+                else:
+                    extra_trade = trades_replay.iloc[min_len]
+                    print(f"  Extra replay trade: ts={extra_trade['timestamp']}, side={extra_trade['side']}, qty={extra_trade['qty']:.8f}")
         
         return False
     
@@ -340,16 +346,19 @@ def compare_trades(trades_fast: pd.DataFrame, trades_replay: pd.DataFrame) -> bo
         print("\n✓ No trades in either run (both produced same result)")
         return True
     
-    # Compare each trade and fail on first divergence
+    # Compare each trade with tight tolerances and fail on first divergence
+    QTY_TOLERANCE = 1e-12  # Very tight qty tolerance per requirements
+    NOTIONAL_TOLERANCE = 1e-6  # Notional tolerance per requirements
+    
     for i in range(len(trades_fast)):
         trade_fast = trades_fast.iloc[i]
         trade_replay = trades_replay.iloc[i]
         
         ts_match = trade_fast["timestamp"] == trade_replay["timestamp"]
         side_match = trade_fast["side"] == trade_replay["side"]
-        qty_match = abs(trade_fast["qty"] - trade_replay["qty"]) < 1e-8
+        qty_match = abs(trade_fast["qty"] - trade_replay["qty"]) < QTY_TOLERANCE
         price_match = abs(trade_fast["price"] - trade_replay["price"]) < 1e-6
-        notional_match = abs(trade_fast["notional"] - trade_replay["notional"]) < 1e-4
+        notional_match = abs(trade_fast["notional"] - trade_replay["notional"]) < NOTIONAL_TOLERANCE
         
         if not all([ts_match, side_match, qty_match, price_match, notional_match]):
             print(f"\n✗ DIVERGENCE at trade index {i} (timestamp: {trade_fast['timestamp']})")
@@ -365,11 +374,11 @@ def compare_trades(trades_fast: pd.DataFrame, trades_replay: pd.DataFrame) -> bo
             if not side_match:
                 print(f"    - side: fast={trade_fast['side']}, replay={trade_replay['side']}")
             if not qty_match:
-                print(f"    - qty: fast={trade_fast['qty']:.10f}, replay={trade_replay['qty']:.10f}, diff={abs(trade_fast['qty'] - trade_replay['qty']):.2e}")
+                print(f"    - qty: fast={trade_fast['qty']:.12f}, replay={trade_replay['qty']:.12f}, diff={abs(trade_fast['qty'] - trade_replay['qty']):.2e} (tolerance: {QTY_TOLERANCE:.0e})")
             if not price_match:
                 print(f"    - price: fast={trade_fast['price']:.6f}, replay={trade_replay['price']:.6f}, diff={abs(trade_fast['price'] - trade_replay['price']):.2e}")
             if not notional_match:
-                print(f"    - notional: fast={trade_fast['notional']:.6f}, replay={trade_replay['notional']:.6f}, diff={abs(trade_fast['notional'] - trade_replay['notional']):.2e}")
+                print(f"    - notional: fast={trade_fast['notional']:.6f}, replay={trade_replay['notional']:.6f}, diff={abs(trade_fast['notional'] - trade_replay['notional']):.2e} (tolerance: {NOTIONAL_TOLERANCE:.0e})")
             return False
     
     print(f"\n✓ All {len(trades_fast)} trades match exactly!")
@@ -441,9 +450,10 @@ def main():
 
     if summaries_match and trades_match and equity_match:
         print("\n" + "=" * 60)
-        print("✓ EQUIVALENCE VERIFIED!")
+        print("MATCH")  # Single-word success indicator per requirements
         print("=" * 60)
-        print("\nConclusion: fast_backtest and replay-sim produce identical results.")
+        print("\n✓ EQUIVALENCE VERIFIED!")
+        print("Conclusion: fast_backtest and replay-sim produce identical results.")
         print("The unified core engine is working correctly.")
         return 0
     else:
