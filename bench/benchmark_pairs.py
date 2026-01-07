@@ -192,6 +192,7 @@ def run_features_export(
     slippage_bps: float,
     max_exposure: float,
     strategy: str = "meanrev",
+    cache_file: str | None = None,
 ) -> None:
     cmd = [
         "python",
@@ -228,6 +229,9 @@ def run_features_export(
         "--csv-out-mode",
         "features",
     ]
+    
+    if cache_file:
+        cmd.extend(["--cache", str(cache_file)])
 
     print(f"\n=== Exporting features for {symbol} -> {out_csv} ===")
     res = subprocess.run(cmd, text=True)

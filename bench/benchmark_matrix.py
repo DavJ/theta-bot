@@ -139,7 +139,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Benchmark all symbol/method/psi combinations.")
     ap.add_argument("--symbols", default=",".join(DEFAULT_SYMBOLS))
     ap.add_argument("--psi-modes", default=",".join(DEFAULT_PSI_MODES))
-    ap.add_argument("--methods", default=",".join(DEFAULT_METHODS))
+    ap.add_argument("--methods", default=",".join(DEFAULT_METHODS), 
+                    help=f"Comma-separated list of methods. Allowed: {', '.join(sorted(ALLOWED_METHODS))}. "
+                         "Note: KALMAN_MR_DUAL uses the kalman_mr_dual strategy.")
     ap.add_argument("--timeframe", default="1h")
     ap.add_argument("--limit-total", type=int, default=8000)
     ap.add_argument("--workdir", default="bench_out")
@@ -152,6 +154,9 @@ def main() -> None:
     ap.add_argument("--fee-rate", type=float, default=0.001)
     ap.add_argument("--slippage-bps", type=float, default=0.0)
     ap.add_argument("--max-exposure", type=float, default=0.3)
+    ap.add_argument("--cache-dir", default="bench_cache", 
+                    help="Directory for caching downloaded OHLCV data. Cache files are shared across runs "
+                         "with same symbol+timeframe+limit_total to speed up subsequent runs.")
     args = ap.parse_args()
 
     symbols = _parse_list(args.symbols)
@@ -160,6 +165,8 @@ def main() -> None:
     run_plan = _build_run_plan(symbols, psi_modes, methods)
     workdir = Path(args.workdir)
     workdir.mkdir(parents=True, exist_ok=True)
+    cache_dir = Path(args.cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
     _save_command(workdir)
 
     rows = []
@@ -169,6 +176,11 @@ def main() -> None:
         safe_symbol = symbol.replace("/", "_")
         run_id = f"{safe_symbol}_{method}_{psi_mode}"
         feature_path = workdir / f"features_{run_id}.csv"
+        
+        # Generate cache file path based only on symbol+timeframe+limit_total
+        # so that different methods/psi_modes share the same cached OHLCV data
+        cache_file = cache_dir / f"{safe_symbol}_{args.timeframe}_{args.limit_total}.csv"
+        
         strategy_name = STRATEGY_BY_METHOD.get(method, "meanrev")
         run_features_export(
             symbol,
@@ -184,6 +196,7 @@ def main() -> None:
             slippage_bps=args.slippage_bps,
             max_exposure=args.max_exposure,
             strategy=strategy_name,
+            cache_file=str(cache_file),
         )
 
         df = pd.read_csv(feature_path)
