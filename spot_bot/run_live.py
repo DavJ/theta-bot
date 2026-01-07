@@ -288,94 +288,70 @@ def compute_step(
     hyst_k: float = 5.0,
     hyst_floor: float = 0.02,
     hyst_mode: str = "exposure",
+    min_notional: float = 10.0,
+    step_size: Optional[float] = None,
+    min_usdt_reserve: float = 0.0,
 ) -> StepResult:
-    features = compute_features(ohlcv_df, feature_cfg).dropna(subset=["S", "C"])
-    if isinstance(features.index, pd.DatetimeIndex):
-        features.index = pd.to_datetime(features.index, utc=True)
-    if features.empty:
-        raise ValueError("Insufficient data to compute features.")
-
-    latest_price = float(ohlcv_df["close"].iloc[-1])
-    latest_ts = _to_utc_timestamp(features.index[-1])
-    decision = regime_engine.decide(features)
-    intent = strategy.generate_intent(features)
-
-    current_btc = float(balances.get("btc", 0.0))
-    current_usdt = float(balances.get("usdt", 0.0))
-    equity_usdt = current_usdt + current_btc * latest_price
-
-    if mode == "paper" and broker:
-        bal = broker.balances()
-        current_btc = bal["btc"]
-        current_usdt = bal["usdt"]
-        equity_usdt = broker.equity(latest_price)
-
-    target_btc = compute_target_position(
-        equity_usdt=equity_usdt,
-        price=latest_price,
-        desired_exposure=float(intent.desired_exposure),
-        risk_budget=float(decision.risk_budget),
+    """
+    Compute trading step using unified core engine.
+    
+    This is now a thin wrapper around compute_step_with_core_full that delegates
+    all trading math to the core engine. No cost/hysteresis/rounding is computed here.
+    
+    The only difference from core logic is that paper mode uses PaperBroker for execution,
+    which is handled separately in the orchestration layer.
+    """
+    from spot_bot.core.legacy_adapter import compute_step_with_core_full
+    
+    # Call core adapter
+    result = compute_step_with_core_full(
+        ohlcv_df=ohlcv_df,
+        feature_cfg=feature_cfg,
+        regime_engine=regime_engine,
+        strategy=strategy,
         max_exposure=max_exposure,
-        risk_state=decision.risk_state,
+        fee_rate=fee_rate,
+        balances=balances,
+        slippage_bps=slippage_bps,
+        spread_bps=spread_bps,
+        hyst_k=hyst_k,
+        hyst_floor=hyst_floor,
+        min_notional=min_notional,
+        step_size=step_size,
+        min_usdt_reserve=min_usdt_reserve,
     )
-    target_exposure = (target_btc * latest_price / equity_usdt) if equity_usdt > 0 else 0.0
-    current_exposure = (current_btc * latest_price / equity_usdt) if equity_usdt > 0 else 0.0
-
-    cost = fee_rate + 2 * (slippage_bps / 10_000.0) + (spread_bps / 10_000.0)
-    rv_series = features["rv"] if "rv" in features.columns else pd.Series(dtype=float)
-    rv_series = rv_series.dropna()
-    rv_current = float(rv_series.iloc[-1]) if not rv_series.empty else 0.0
-    rv_ref_candidates = rv_series.tail(500)
-    rv_ref = float(rv_ref_candidates.median()) if not rv_ref_candidates.empty else float(rv_series.median()) if not rv_series.empty else 0.0
-    if rv_ref <= 0.0 and not rv_series.empty:
-        rv_ref = float(rv_series.median())
-    if rv_ref <= 0.0:
-        rv_ref = abs(rv_current)
-    rv_ref = rv_ref if rv_ref and rv_ref > 0.0 else 1.0
-    rv_current_safe = rv_current if rv_current and rv_current > 0.0 else 1e-8
-
-    delta_e = abs(target_exposure - current_exposure)
-    delta_e_min = max(hyst_floor, hyst_k * cost * (rv_ref / rv_current_safe))
-    apply_hysteresis = False
-    if hyst_mode == "zscore":
-        zscore_val = intent.diagnostics.get("zscore") if intent.diagnostics else None
-        if zscore_val is not None:
-            delta_signal = abs(float(zscore_val))
-            delta_signal_min = max(hyst_floor, hyst_k * cost)
-            apply_hysteresis = delta_signal < delta_signal_min
-        else:
-            apply_hysteresis = delta_e < delta_e_min
-    else:
-        apply_hysteresis = delta_e < delta_e_min
-
-    if apply_hysteresis:
-        target_exposure = current_exposure
-        target_btc = current_btc
-
-    delta_btc = target_btc - current_btc
-
-    execution: Optional[Dict[str, Any]] = None
-    if mode == "paper" and broker and abs(delta_btc) > 0:
+    
+    # For paper mode, execute through PaperBroker if needed
+    # This maintains backward compatibility with existing broker integration
+    execution_result = None
+    current_btc = result.equity["btc"]
+    current_usdt = result.equity["usdt"]
+    equity_usdt = result.equity["equity_usdt"]
+    
+    if mode == "paper" and broker and abs(result.delta_btc) > 0:
+        # Execute via PaperBroker
         slip = slippage_bps / 10000.0
-        fill_price = latest_price * (1 + slip if delta_btc > 0 else 1 - slip)
-        execution = broker.trade_to_target_btc(target_btc, fill_price)
+        fill_price = result.close * (1 + slip if result.delta_btc > 0 else 1 - slip)
+        execution_result = broker.trade_to_target_btc(result.target_btc, fill_price)
+        
+        # Update balances from broker
         bal = broker.balances()
         current_btc = bal["btc"]
         current_usdt = bal["usdt"]
-        equity_usdt = broker.equity(latest_price)
-
-    equity_snapshot = {"equity_usdt": equity_usdt, "btc": current_btc, "usdt": current_usdt}
+        equity_usdt = broker.equity(result.close)
+    
+    # Return StepResult compatible with existing orchestration
     return StepResult(
-        ts=latest_ts,
-        close=latest_price,
-        decision=decision,
-        intent=intent,
-        target_exposure=target_exposure,
-        target_btc=target_btc,
-        delta_btc=delta_btc,
-        equity=equity_snapshot,
-        execution=execution,
-        features_row=features.iloc[-1],
+        ts=result.ts,
+        close=result.close,
+        decision=result.decision,
+        intent=result.intent,
+        target_exposure=result.target_exposure,
+        target_btc=result.target_btc,
+        delta_btc=result.delta_btc,
+        equity={"equity_usdt": equity_usdt, "btc": current_btc, "usdt": current_usdt},
+        execution=execution_result,
+        features_row=result.features_row,
     )
 
 
