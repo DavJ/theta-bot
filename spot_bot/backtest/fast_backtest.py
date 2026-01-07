@@ -15,6 +15,7 @@ from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
 
 TIMESTAMP_COL = "timestamp"
+MIN_STANDARD_DEVIATION = 1e-8
 
 
 @dataclass
@@ -22,6 +23,20 @@ class BacktestOutputs:
     equity: pd.DataFrame
     trades: pd.DataFrame
     summary: Dict[str, float]
+
+
+class NullStrategy:
+    """Fallback strategy producing zero desired exposure."""
+
+    def generate_intent(self, features_df):
+        return Intent(desired_exposure=0.0, reason="none", diagnostics={})
+
+
+def _apply_step_size(delta_btc: float, step_size: float | None) -> float:
+    if step_size and step_size > 0:
+        step = float(step_size)
+        return math.copysign(math.floor(abs(delta_btc) / step) * step, delta_btc)
+    return delta_btc
 
 
 def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
@@ -76,9 +91,9 @@ def _meanrev_series(close: pd.Series, strategy: MeanReversionStrategy) -> pd.Ser
     ema = prices.ewm(span=strategy.ema_span, adjust=False).mean()
     rolling_std = prices.rolling(strategy.std_lookback).std(ddof=0)
 
-    safe_std = float(np.std(prices.values)) if len(prices) > 1 else 1e-8
+    safe_std = float(np.std(prices.values)) if len(prices) > 1 else MIN_STANDARD_DEVIATION
     if safe_std <= 0.0:
-        safe_std = 1e-8
+        safe_std = MIN_STANDARD_DEVIATION
     fallback_std = prices.expanding().std(ddof=0).fillna(safe_std).replace(0.0, safe_std)
     effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
 
@@ -87,7 +102,7 @@ def _meanrev_series(close: pd.Series, strategy: MeanReversionStrategy) -> pd.Ser
 
     entry = strategy.entry_z
     full = strategy.full_z
-    scale = ((signal_strength.clip(upper=full) - entry) / max(full - entry, 1e-8)).clip(lower=0.0)
+    scale = ((signal_strength.clip(upper=full) - entry) / max(full - entry, MIN_STANDARD_DEVIATION)).clip(lower=0.0)
     raw_exposure = strategy.min_exposure + (strategy.max_exposure - strategy.min_exposure) * scale
     desired = raw_exposure.where(signal_strength > entry, 0.0).clip(lower=0.0, upper=1.0)
     return desired.reindex(prices.index).fillna(0.0)
@@ -110,7 +125,7 @@ def _kalman_series(close: pd.Series, strategy: KalmanStrategy) -> pd.Series:
         innovation = float(price) - H @ x_pred
         innovation_var = float(H @ P_pred @ H.T + R)
         if math.isnan(innovation_var) or innovation_var <= 0.0:
-            innovation_var = 1e-8
+            innovation_var = MIN_STANDARD_DEVIATION
         K = (P_pred @ H) / innovation_var
         x = x_pred + K * innovation
         P = (np.eye(2) - np.outer(K, H)) @ P_pred
@@ -130,7 +145,8 @@ def _compute_intents(
     close = pd.to_numeric(features["close"], errors="coerce")
     if isinstance(strategy, MeanRevDualKalmanStrategy):
         return (
-            strategy.generate_series(features, risk_budget, apply_budget=False)
+            # Risk budget is applied downstream; dual Kalman emits raw intent here.
+            strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=False)
             .reindex(features.index)
             .fillna(0.0)
         )
@@ -158,6 +174,7 @@ def run_backtest(
     min_notional: float = 5.0,
     step_size: float | None = None,
     bar_state: str = "closed",
+    log: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     df_norm = _normalize_df(df)
     required = {"open", "high", "low", "close", "volume"}
@@ -197,11 +214,7 @@ def run_backtest(
     elif strategy_name == "meanrev":
         strategy = MeanReversionStrategy()
     else:
-        class _NullStrategy:
-            def generate_intent(self, features_df):
-                return Intent(desired_exposure=0.0, reason="none", diagnostics={})
-
-        strategy = _NullStrategy()  # type: ignore
+        strategy = NullStrategy()
 
     intent_series = _compute_intents(features, strategy, risk_budget)
     target_exposure = (intent_series * risk_budget).clip(lower=0.0, upper=float(max_exposure))
@@ -224,10 +237,7 @@ def run_backtest(
             continue
         equity = usdt + btc * price
         target_btc = equity * tgt_exp / price if equity > 0 else 0.0
-        delta_btc = target_btc - btc
-        if step_size and step_size > 0:
-            step = float(step_size)
-            delta_btc = math.copysign(math.floor(abs(delta_btc) / step) * step, delta_btc)
+        delta_btc = _apply_step_size(target_btc - btc, step_size)
         notional_ref = abs(delta_btc) * price
         action = "HOLD"
         fee_paid = 0.0
@@ -295,7 +305,11 @@ def run_backtest(
         if len(equity_df) > 1
         else 0.0
     )
-    cagr = float((equity_series.iloc[-1] / initial_usdt) ** (1 / duration_years) - 1) if duration_years > 0 else total_return
+    duration_threshold = 1e-6
+    if duration_years > duration_threshold:
+        cagr = float((equity_series.iloc[-1] / initial_usdt) ** (1 / duration_years) - 1)
+    else:
+        cagr = total_return
     max_dd = float(equity_df["drawdown"].min()) if not equity_df.empty else 0.0
     turnover = float(turnover_value / initial_usdt) if initial_usdt else 0.0
     time_in_market = float(np.mean(exposures_time)) if exposures_time else 0.0
@@ -312,9 +326,9 @@ def run_backtest(
         "time_in_market": time_in_market,
     }
 
-    print(
-        f"processed bars: {len(equity_df)}, trades: {len(trades_df)}, final equity: {summary['final_equity']:.2f}"
-    )
+    if log:
+        print(
+            f"processed bars: {len(equity_df)}, trades: {len(trades_df)}, final equity: {summary['final_equity']:.2f}"
+        )
 
     return equity_df, trades_df, summary
-

@@ -822,8 +822,19 @@ def main() -> None:
             if not csv_in_path:
                 print("Backtest mode requires --csv-in with historical OHLCV.", file=sys.stderr)
                 sys.exit(1)
-            df_bt = pd.read_csv(csv_in_path, parse_dates=["timestamp"])
-            df_bt["timestamp"] = pd.to_datetime(df_bt["timestamp"], utc=True)
+            try:
+                df_bt = pd.read_csv(csv_in_path)
+            except (FileNotFoundError, pd.errors.EmptyDataError, OSError) as exc:
+                print(f"Failed to read CSV input {csv_in_path}: {exc}", file=sys.stderr)
+                sys.exit(1)
+            if "timestamp" not in df_bt.columns:
+                print("CSV input must contain a 'timestamp' column.", file=sys.stderr)
+                sys.exit(1)
+            try:
+                df_bt["timestamp"] = pd.to_datetime(df_bt["timestamp"], utc=True)
+            except (ValueError, TypeError) as exc:
+                print(f"Failed to parse timestamp column: {exc}", file=sys.stderr)
+                sys.exit(1)
             if args.limit_total:
                 df_bt = df_bt.head(int(args.limit_total))
             equity_df, trades_df, summary = run_backtest(
@@ -844,20 +855,32 @@ def main() -> None:
                 bar_state="closed",
             )
             if args.out_equity:
-                out_e = pathlib.Path(args.out_equity)
-                out_e.parent.mkdir(parents=True, exist_ok=True)
-                equity_df.to_csv(out_e, index=False)
+                try:
+                    out_e = pathlib.Path(args.out_equity)
+                    out_e.parent.mkdir(parents=True, exist_ok=True)
+                    equity_df.to_csv(out_e, index=False)
+                except OSError as exc:
+                    print(f"Failed to write equity output: {exc}", file=sys.stderr)
+                    sys.exit(1)
             if args.out_trades:
-                out_t = pathlib.Path(args.out_trades)
-                out_t.parent.mkdir(parents=True, exist_ok=True)
-                trades_df.to_csv(out_t, index=False)
+                try:
+                    out_t = pathlib.Path(args.out_trades)
+                    out_t.parent.mkdir(parents=True, exist_ok=True)
+                    trades_df.to_csv(out_t, index=False)
+                except OSError as exc:
+                    print(f"Failed to write trades output: {exc}", file=sys.stderr)
+                    sys.exit(1)
             if args.out_summary:
-                out_s = pathlib.Path(args.out_summary)
-                out_s.parent.mkdir(parents=True, exist_ok=True)
-                if out_s.suffix.lower() == ".json":
-                    out_s.write_text(json.dumps(summary, indent=2))
-                else:
-                    pd.DataFrame([summary]).to_csv(out_s, index=False)
+                try:
+                    out_s = pathlib.Path(args.out_summary)
+                    out_s.parent.mkdir(parents=True, exist_ok=True)
+                    if out_s.suffix.lower() == ".json":
+                        out_s.write_text(json.dumps(summary, indent=2))
+                    else:
+                        pd.DataFrame([summary]).to_csv(out_s, index=False)
+                except OSError as exc:
+                    print(f"Failed to write summary output: {exc}", file=sys.stderr)
+                    sys.exit(1)
             print(
                 f"Backtest complete: bars={len(equity_df)}, trades={len(trades_df)}, final_equity={summary.get('final_equity', 0):.2f}"
             )

@@ -5,6 +5,8 @@ import pandas as pd
 
 from spot_bot.backtest import run_backtest
 
+WARMUP_BUFFER = 10
+
 
 def _synthetic_ohlcv(rows: int) -> pd.DataFrame:
     np.random.seed(0)
@@ -25,22 +27,25 @@ def _synthetic_ohlcv(rows: int) -> pd.DataFrame:
 def test_backtest_smoke_kalman_dual():
     rows = 2000
     df = _synthetic_ohlcv(rows)
+    psi_window = 512
+    rv_window = 120
+    conc_window = 256
     equity_df, trades_df, summary = run_backtest(
         df=df,
         timeframe="1m",
         strategy_name="kalman_mr_dual",
         psi_mode="scale_phase",
-        psi_window=512,
-        rv_window=120,
-        conc_window=256,
+        psi_window=psi_window,
+        rv_window=rv_window,
+        conc_window=conc_window,
         base=10.0,
         fee_rate=0.001,
         slippage_bps=5.0,
         max_exposure=0.3,
     )
-    warmup = 512 + 120 + 256
+    warmup = psi_window + rv_window + conc_window
     assert len(equity_df) <= rows
-    assert len(equity_df) >= rows - warmup - 10
+    assert len(equity_df) >= rows - warmup - WARMUP_BUFFER
     assert "final_equity" in summary
     assert "sharpe" in summary
     assert "maxDD" in summary
