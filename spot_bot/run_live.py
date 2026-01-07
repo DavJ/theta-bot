@@ -291,6 +291,7 @@ def compute_step(
     min_notional: float = 10.0,
     step_size: Optional[float] = None,
     min_usdt_reserve: float = 0.0,
+    use_core_sim: bool = False,
 ) -> StepResult:
     """
     Compute trading step using unified core engine.
@@ -298,10 +299,17 @@ def compute_step(
     This is now a thin wrapper around compute_step_with_core_full that delegates
     all trading math to the core engine. No cost/hysteresis/rounding is computed here.
     
-    The only difference from core logic is that paper mode uses PaperBroker for execution,
-    which is handled separately in the orchestration layer.
+    Args:
+        use_core_sim: If True, use core SimExecutor for paper mode instead of PaperBroker.
+                      This ensures identical execution with fast_backtest.
+    
+    The only difference from core logic is that paper mode uses PaperBroker for execution
+    when use_core_sim=False (legacy behavior), or SimExecutor when use_core_sim=True.
     """
     from spot_bot.core.legacy_adapter import compute_step_with_core_full
+    from spot_bot.core.engine import EngineParams, simulate_execution
+    from spot_bot.core.portfolio import apply_fill
+    from spot_bot.core.types import PortfolioState
     
     # Call core adapter
     result = compute_step_with_core_full(
@@ -321,24 +329,70 @@ def compute_step(
         min_usdt_reserve=min_usdt_reserve,
     )
     
-    # For paper mode, execute through PaperBroker if needed
-    # This maintains backward compatibility with existing broker integration
+    # For paper mode, execute the trade
     execution_result = None
     current_btc = result.equity["btc"]
     current_usdt = result.equity["usdt"]
     equity_usdt = result.equity["equity_usdt"]
     
-    if mode == "paper" and broker and abs(result.delta_btc) > 0:
-        # Execute via PaperBroker
-        slip = slippage_bps / 10000.0
-        fill_price = result.close * (1 + slip if result.delta_btc > 0 else 1 - slip)
-        execution_result = broker.trade_to_target_btc(result.target_btc, fill_price)
-        
-        # Update balances from broker
-        bal = broker.balances()
-        current_btc = bal["btc"]
-        current_usdt = bal["usdt"]
-        equity_usdt = broker.equity(result.close)
+    if mode == "paper" and abs(result.delta_btc) > 0:
+        if use_core_sim:
+            # Use core SimExecutor for consistent behavior with fast_backtest
+            params = EngineParams(
+                fee_rate=fee_rate,
+                slippage_bps=slippage_bps,
+                spread_bps=spread_bps,
+                hyst_k=hyst_k,
+                hyst_floor=hyst_floor,
+                min_notional=min_notional,
+                step_size=step_size,
+                min_usdt_reserve=min_usdt_reserve,
+            )
+            core_execution = simulate_execution(result.plan, result.close, params)
+            
+            # Build execution_result dict for backward compatibility
+            if core_execution.status == "filled":
+                side = "buy" if core_execution.filled_base > 0 else "sell"
+                execution_result = {
+                    "status": "filled",
+                    "side": side,
+                    "qty": abs(core_execution.filled_base),
+                    "filled_qty": abs(core_execution.filled_base),
+                    "price": core_execution.avg_price,
+                    "avg_price": core_execution.avg_price,
+                    "fee": core_execution.fee_paid,
+                    "fee_est": core_execution.fee_paid,
+                }
+                
+                # Apply fill to get updated balances
+                portfolio = PortfolioState(
+                    usdt=current_usdt,
+                    base=current_btc,
+                    equity=equity_usdt,
+                    exposure=result.plan.target_exposure if result.plan else 0.0,
+                )
+                updated = apply_fill(portfolio, core_execution)
+                current_btc = updated.base
+                current_usdt = updated.usdt
+                equity_usdt = updated.equity
+                
+                # Update broker state if provided (for state persistence)
+                if broker:
+                    broker.btc = current_btc
+                    broker.usdt = current_usdt
+            else:
+                execution_result = {"status": "noop", "side": "hold", "qty": 0.0}
+        elif broker:
+            # Legacy path: use PaperBroker
+            slip = slippage_bps / 10000.0
+            fill_price = result.close * (1 + slip if result.delta_btc > 0 else 1 - slip)
+            execution_result = broker.trade_to_target_btc(result.target_btc, fill_price)
+            
+            # Update balances from broker
+            bal = broker.balances()
+            current_btc = bal["btc"]
+            current_usdt = bal["usdt"]
+            equity_usdt = broker.equity(result.close)
     
     # Return StepResult compatible with existing orchestration
     return StepResult(
@@ -431,6 +485,7 @@ def run_replay(
                 hyst_k=hyst_k,
                 hyst_floor=hyst_floor,
                 hyst_mode=hyst_mode,
+                use_core_sim=True,  # Use core simulation for replay consistency with fast_backtest
             )
         except ValueError as exc:
             msg = str(exc)

@@ -318,6 +318,18 @@ def run_backtest(
         if not np.isfinite(price) or price <= 0.0:
             continue
 
+        # Recompute portfolio state at current bar's price for consistent exposure
+        # This ensures exposure/equity are computed at the current price, not the
+        # previous fill price, which is critical for correct hysteresis behavior.
+        equity = compute_equity(portfolio.usdt, portfolio.base, price)
+        exposure = compute_exposure(portfolio.base, price, equity)
+        portfolio = PortfolioState(
+            usdt=portfolio.usdt,
+            base=portfolio.base,
+            equity=equity,
+            exposure=exposure,
+        )
+
         # Create market bar
         bar = MarketBar(
             ts=int(ts.value // 1_000_000),
