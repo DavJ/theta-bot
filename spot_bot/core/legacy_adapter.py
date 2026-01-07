@@ -11,15 +11,10 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
-from spot_bot.core import (
-    EngineParams,
-    MarketBar,
-    PortfolioState,
-    StrategyOutput,
-    TradePlan,
-    run_step,
-)
+# Import directly from modules to avoid circular import
+from spot_bot.core.engine import EngineParams, run_step
 from spot_bot.core.portfolio import compute_equity, compute_exposure
+from spot_bot.core.types import MarketBar, PortfolioState, StrategyOutput, TradePlan
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.portfolio.sizer import compute_target_position
 from spot_bot.regime.regime_engine import RegimeEngine
