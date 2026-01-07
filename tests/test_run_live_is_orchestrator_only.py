@@ -112,8 +112,8 @@ class TestRunLiveIsOrchestratorOnly:
         strategy = MeanReversionStrategy()
         balances = {"btc": 0.0, "usdt": 1000.0}
         
-        # Mock core adapter
-        with patch("spot_bot.run_live.compute_step_with_core_full") as mock_core:
+        # Mock core adapter - updated to use plan_from_live_inputs
+        with patch("spot_bot.run_live.plan_from_live_inputs") as mock_core:
             mock_result = StepResultFromCore(
                 ts=pd.Timestamp("2024-01-01", tz="UTC"),
                 close=50000.0,
@@ -217,7 +217,8 @@ class TestRunLiveIsOrchestratorOnly:
         strategy = MeanReversionStrategy()
         balances = {"btc": 0.0, "usdt": 1000.0}
         
-        with patch("spot_bot.run_live.compute_step_with_core_full") as mock_core:
+        # Updated to use plan_from_live_inputs
+        with patch("spot_bot.run_live.plan_from_live_inputs") as mock_core:
             mock_plan = TradePlan(
                 action="BUY",
                 target_exposure=0.5,
