@@ -24,7 +24,7 @@ import yaml
 from spot_bot.backtest import run_backtest
 from spot_bot.core.engine import EngineParams, simulate_execution
 from spot_bot.core.legacy_adapter import compute_step_with_core_full
-from spot_bot.core.portfolio import apply_fill, compute_equity, compute_exposure
+from spot_bot.core.portfolio import apply_fill, apply_live_fill_to_balances, compute_equity, compute_exposure
 from spot_bot.core.types import ExecutionResult, PortfolioState
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.live import PaperBroker
@@ -262,12 +262,8 @@ def _apply_live_fill_to_balances(
     """
     Apply live exchange fill to local balances dictionary.
     
-    NOTE: This function is ONLY used in LIVE mode to update local tracking
-    after a real exchange execution. It uses core types for consistency.
-    For paper/replay/backtest modes, use core.portfolio.apply_fill instead.
-    
-    This wrapper constructs an ExecutionResult and uses core.apply_fill
-    to ensure fill application math is consistent across all modes.
+    This is a PURE DELEGATION to core.portfolio.apply_live_fill_to_balances.
+    No math is performed in run_live.py - all computation is in core.
     
     Args:
         balances: Local balances dict with 'usdt' and 'btc' keys
@@ -279,42 +275,7 @@ def _apply_live_fill_to_balances(
     Returns:
         Fee paid
     """
-    # Build ExecutionResult using core type
-    # delta_base is positive for buy, negative for sell
-    filled_base = qty if side == "buy" else -qty
-    notional = qty * price
-    fee = notional * fee_rate
-    
-    execution = ExecutionResult(
-        filled_base=filled_base,
-        avg_price=price,
-        fee_paid=fee,
-        slippage_paid=0.0,  # Slippage already in price for live
-        status="filled",
-        raw=None,
-    )
-    
-    # Build current portfolio state
-    current_usdt = float(balances.get("usdt", 0.0))
-    current_btc = float(balances.get("btc", 0.0))
-    equity = compute_equity(current_usdt, current_btc, price)
-    exposure = compute_exposure(current_btc, price, equity)
-    
-    portfolio = PortfolioState(
-        usdt=current_usdt,
-        base=current_btc,
-        equity=equity,
-        exposure=exposure,
-    )
-    
-    # Apply fill using core function
-    updated = apply_fill(portfolio, execution)
-    
-    # Update balances dict
-    balances["usdt"] = updated.usdt
-    balances["btc"] = updated.base
-    
-    return fee
+    return apply_live_fill_to_balances(balances, side, qty, price, fee_rate)
 
 
 @dataclass
