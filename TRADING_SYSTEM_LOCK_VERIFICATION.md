@@ -227,7 +227,7 @@ MATCH
 
 ### Requirements
 - [x] `test_run_live_is_orchestrator_only.py` - monkeypatch core.engine.run_step, verify delegation
-- [x] `test_equivalence_fast_vs_replay_small.py` - synthetic OHLCV, deterministic strategy, verify identical trades/equity
+- [x] `test_equivalence_fast_vs_replay_sim.py` - synthetic OHLCV, deterministic strategy, verify identical trades/equity
 
 ### Verification
 
