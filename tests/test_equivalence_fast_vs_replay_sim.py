@@ -58,6 +58,17 @@ def run_replay_sim(
     Run replay-sim backtest using core engine.
     
     This mimics the run_live replay mode but uses core simulation.
+    
+    Args:
+        df: OHLCV DataFrame with columns: timestamp, open, high, low, close, volume
+        params: Dictionary containing backtest parameters including:
+            - base, rv_window, conc_window, psi_mode, psi_window (feature config)
+            - fee_rate, slippage_bps, spread_bps (cost model)
+            - hyst_k, hyst_floor (hysteresis)
+            - min_notional, step_size, max_exposure, initial_usdt (trading constraints)
+    
+    Returns:
+        Tuple of (equity_df, trades_df, summary_dict)
     """
     from spot_bot.backtest.fast_backtest import (
         _compute_intents_with_regime,

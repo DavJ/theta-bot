@@ -22,6 +22,10 @@ import pandas as pd
 import yaml
 
 from spot_bot.backtest import run_backtest
+from spot_bot.core.engine import EngineParams, simulate_execution
+from spot_bot.core.legacy_adapter import compute_step_with_core_full
+from spot_bot.core.portfolio import apply_fill
+from spot_bot.core.types import PortfolioState
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.live import PaperBroker
 from spot_bot.persist import SQLiteLogger
@@ -323,11 +327,6 @@ def compute_step(
     The only difference from core logic is that paper mode uses PaperBroker for execution
     when use_core_sim=False (legacy behavior), or SimExecutor when use_core_sim=True.
     """
-    from spot_bot.core.legacy_adapter import compute_step_with_core_full
-    from spot_bot.core.engine import EngineParams, simulate_execution
-    from spot_bot.core.portfolio import apply_fill
-    from spot_bot.core.types import PortfolioState
-    
     # Call core adapter
     result = compute_step_with_core_full(
         ohlcv_df=ohlcv_df,
@@ -395,8 +394,7 @@ def compute_step(
                 
                 # Update broker state if provided (for state persistence)
                 if broker:
-                    broker.btc = current_btc
-                    broker.usdt = current_usdt
+                    broker.set_balances(current_usdt, current_btc)
             else:
                 execution_result = {"status": "noop", "side": "hold", "qty": 0.0}
         elif broker:
