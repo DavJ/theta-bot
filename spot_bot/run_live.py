@@ -349,18 +349,12 @@ def compute_step(
     min_notional: float = 10.0,
     step_size: Optional[float] = None,
     min_usdt_reserve: float = 0.0,
-    use_core_sim: bool = True,
 ) -> StepResult:
     """
     Compute trading step using unified core engine.
     
-    This is now a thin wrapper around compute_step_with_core_full that delegates
+    This is a thin wrapper around compute_step_with_core_full that delegates
     all trading math to the core engine. No cost/hysteresis/rounding is computed here.
-    
-    Args:
-        use_core_sim: If True (default), use core SimExecutor for paper mode instead 
-                      of legacy PaperBroker. This ensures identical execution with 
-                      fast_backtest. Set to False only for backward compatibility.
     
     All trading decisions (target exposure, hysteresis, costs, rounding, guards, fills)
     are computed ONLY by spot_bot/core. This function is a pure orchestrator.
@@ -390,71 +384,51 @@ def compute_step(
     equity_usdt = result.equity["equity_usdt"]
     
     if mode == "paper" and abs(result.delta_btc) > 0:
-        if use_core_sim:
-            # Use core SimExecutor for consistent behavior with fast_backtest
-            params = EngineParams(
-                fee_rate=fee_rate,
-                slippage_bps=slippage_bps,
-                spread_bps=spread_bps,
-                hyst_k=hyst_k,
-                hyst_floor=hyst_floor,
-                min_notional=min_notional,
-                step_size=step_size,
-                min_usdt_reserve=min_usdt_reserve,
-            )
-            core_execution = simulate_execution(result.plan, result.close, params)
+        # ALWAYS use core SimExecutor for consistent behavior with fast_backtest
+        # The legacy PaperBroker path has been removed to eliminate all math from run_live.py
+        params = EngineParams(
+            fee_rate=fee_rate,
+            slippage_bps=slippage_bps,
+            spread_bps=spread_bps,
+            hyst_k=hyst_k,
+            hyst_floor=hyst_floor,
+            min_notional=min_notional,
+            step_size=step_size,
+            min_usdt_reserve=min_usdt_reserve,
+        )
+        core_execution = simulate_execution(result.plan, result.close, params)
+        
+        # Build execution_result dict for backward compatibility
+        if core_execution.status == "filled":
+            side = "buy" if core_execution.filled_base > 0 else "sell"
+            execution_result = {
+                "status": "filled",
+                "side": side,
+                "qty": abs(core_execution.filled_base),
+                "filled_qty": abs(core_execution.filled_base),
+                "price": core_execution.avg_price,
+                "avg_price": core_execution.avg_price,
+                "fee": core_execution.fee_paid,
+                "fee_est": core_execution.fee_paid,
+            }
             
-            # Build execution_result dict for backward compatibility
-            if core_execution.status == "filled":
-                side = "buy" if core_execution.filled_base > 0 else "sell"
-                execution_result = {
-                    "status": "filled",
-                    "side": side,
-                    "qty": abs(core_execution.filled_base),
-                    "filled_qty": abs(core_execution.filled_base),
-                    "price": core_execution.avg_price,
-                    "avg_price": core_execution.avg_price,
-                    "fee": core_execution.fee_paid,
-                    "fee_est": core_execution.fee_paid,
-                }
-                
-                # Apply fill to get updated balances
-                portfolio = PortfolioState(
-                    usdt=current_usdt,
-                    base=current_btc,
-                    equity=equity_usdt,
-                    exposure=result.plan.target_exposure if result.plan else 0.0,
-                )
-                updated = apply_fill(portfolio, core_execution)
-                current_btc = updated.base
-                current_usdt = updated.usdt
-                equity_usdt = updated.equity
-                
-                # Update broker state if provided (for state persistence)
-                if broker:
-                    broker.set_balances(current_usdt, current_btc)
-            else:
-                execution_result = {"status": "noop", "side": "hold", "qty": 0.0}
-        elif broker:
-            # DEPRECATED: Legacy path using PaperBroker with manual slippage.
-            # This path is only used when use_core_sim=False, which is not 
-            # recommended. Use use_core_sim=True (default) for consistent behavior.
-            import warnings
-            warnings.warn(
-                "Legacy PaperBroker path is deprecated. Use use_core_sim=True for "
-                "consistent execution with fast_backtest and replay modes.",
-                DeprecationWarning,
-                stacklevel=2,
+            # Apply fill to get updated balances
+            portfolio = PortfolioState(
+                usdt=current_usdt,
+                base=current_btc,
+                equity=equity_usdt,
+                exposure=result.plan.target_exposure if result.plan else 0.0,
             )
-            slip = slippage_bps / 10000.0
-            fill_price = result.close * (1 + slip if result.delta_btc > 0 else 1 - slip)
-            execution_result = broker.trade_to_target_btc(result.target_btc, fill_price)
+            updated = apply_fill(portfolio, core_execution)
+            current_btc = updated.base
+            current_usdt = updated.usdt
+            equity_usdt = updated.equity
             
-            # Update balances from broker
-            bal = broker.balances()
-            current_btc = bal["btc"]
-            current_usdt = bal["usdt"]
-            equity_usdt = broker.equity(result.close)
+            # Update broker state if provided (for state persistence)
+            if broker:
+                broker.set_balances(current_usdt, current_btc)
+        else:
+            execution_result = {"status": "noop", "side": "hold", "qty": 0.0}
     
     # Return StepResult compatible with existing orchestration
     return StepResult(
@@ -547,7 +521,6 @@ def run_replay(
                 hyst_k=hyst_k,
                 hyst_floor=hyst_floor,
                 hyst_mode=hyst_mode,
-                use_core_sim=True,  # Use core simulation for replay consistency with fast_backtest
             )
         except ValueError as exc:
             msg = str(exc)
