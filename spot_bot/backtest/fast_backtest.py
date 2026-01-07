@@ -21,6 +21,7 @@ from spot_bot.core import (
     run_step_simulated,
 )
 from spot_bot.core.portfolio import compute_equity, compute_exposure
+from spot_bot.core.rv import compute_rv_ref_series
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.regime.regime_engine import RegimeEngine
 from spot_bot.strategies.base import Intent
@@ -278,9 +279,9 @@ def run_backtest(
         features, strategy_obj, risk_state, risk_budget, max_exposure
     )
 
-    # Compute rv_ref series (rolling median of last 500 bars)
+    # Compute rv_ref series using centralized helper
     rv_series = features["rv"].fillna(0.0)
-    rv_ref_series = rv_series.rolling(window=500, min_periods=1).median().fillna(1.0)
+    rv_ref_series = compute_rv_ref_series(rv_series, window=500)
 
     # Initialize engine params
     engine_params = EngineParams(

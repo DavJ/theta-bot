@@ -7,6 +7,7 @@ maintaining backward compatibility.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -14,10 +15,33 @@ import pandas as pd
 # Import directly from modules to avoid circular import
 from spot_bot.core.engine import EngineParams, run_step
 from spot_bot.core.portfolio import compute_equity, compute_exposure
+from spot_bot.core.rv import compute_rv_ref_scalar
 from spot_bot.core.types import MarketBar, PortfolioState, StrategyOutput, TradePlan
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.portfolio.sizer import compute_target_position
 from spot_bot.regime.regime_engine import RegimeEngine
+
+
+@dataclass
+class StepResultFromCore:
+    """
+    Result of a trading step compatible with run_live.py's StepResult.
+    
+    This is returned by compute_step_with_core_full to maintain
+    backward compatibility with run_live.py orchestration.
+    """
+    ts: pd.Timestamp
+    close: float
+    decision: Any  # RegimeDecision
+    intent: Any  # Intent or StrategyOutput
+    target_exposure: float
+    target_btc: float
+    delta_btc: float
+    equity: Dict[str, float]
+    execution: Optional[Dict[str, Any]]
+    features_row: pd.Series
+    plan: TradePlan  # Additional field with core TradePlan
+    diagnostics: Dict[str, Any]  # Additional diagnostics from core
 
 
 class LegacyStrategyAdapter:
@@ -157,18 +181,11 @@ def compute_step_with_core(
     # Wrap strategy with regime adapter
     adapted_strategy = LegacyStrategyAdapter(strategy, regime_engine, max_exposure)
 
-    # Compute rv_current and rv_ref
+    # Compute rv_current and rv_ref using centralized helper
     rv_series = features["rv"] if "rv" in features.columns else pd.Series(dtype=float)
     rv_series = rv_series.dropna()
     rv_current = float(rv_series.iloc[-1]) if not rv_series.empty else 1e-8
-    rv_ref_candidates = rv_series.tail(500)
-    rv_ref = (
-        float(rv_ref_candidates.median())
-        if not rv_ref_candidates.empty
-        else float(rv_series.median()) if not rv_series.empty else 1.0
-    )
-    if rv_ref <= 0.0:
-        rv_ref = max(abs(rv_current), 1.0)
+    rv_ref = compute_rv_ref_scalar(rv_series, window=500)
 
     # Create engine params
     params = EngineParams(
@@ -197,7 +214,135 @@ def compute_step_with_core(
     return plan
 
 
+def compute_step_with_core_full(
+    ohlcv_df: pd.DataFrame,
+    feature_cfg: FeatureConfig,
+    regime_engine: RegimeEngine,
+    strategy: Any,
+    max_exposure: float,
+    fee_rate: float,
+    balances: Dict[str, float],
+    slippage_bps: float = 0.0,
+    spread_bps: float = 0.0,
+    hyst_k: float = 5.0,
+    hyst_floor: float = 0.02,
+    min_notional: float = 10.0,
+    step_size: Optional[float] = None,
+    min_usdt_reserve: float = 0.0,
+) -> StepResultFromCore:
+    """
+    Compute trading step using core engine and return full StepResult.
+    
+    This is a complete replacement for run_live.py's compute_step that returns
+    all the fields needed by the orchestration layer.
+    
+    Returns:
+        StepResultFromCore with all fields needed by run_live.py
+    """
+    # Compute features
+    features = compute_features(ohlcv_df, feature_cfg).dropna(subset=["S", "C"])
+    if isinstance(features.index, pd.DatetimeIndex):
+        features.index = pd.to_datetime(features.index, utc=True)
+    if features.empty:
+        raise ValueError("Insufficient data to compute features.")
+    
+    # Get latest price
+    latest_price = float(ohlcv_df["close"].iloc[-1])
+    latest_ts_pd = pd.to_datetime(features.index[-1], utc=True)
+    latest_ts_ms = int(latest_ts_pd.value // 1_000_000)
+    
+    # Create market bar
+    bar = MarketBar(
+        ts=latest_ts_ms,
+        open=latest_price,
+        high=latest_price,
+        low=latest_price,
+        close=latest_price,
+        volume=0.0,
+    )
+    
+    # Create portfolio state
+    current_btc = float(balances.get("btc", 0.0))
+    current_usdt = float(balances.get("usdt", 0.0))
+    equity = compute_equity(current_usdt, current_btc, latest_price)
+    exposure = compute_exposure(current_btc, latest_price, equity)
+    
+    portfolio = PortfolioState(
+        usdt=current_usdt,
+        base=current_btc,
+        equity=equity,
+        exposure=exposure,
+    )
+    
+    # Get regime decision (for backward compat logging)
+    decision = regime_engine.decide(features)
+    
+    # Get raw strategy intent (for backward compat logging)
+    intent = strategy.generate_intent(features)
+    
+    # Wrap strategy with regime adapter
+    adapted_strategy = LegacyStrategyAdapter(strategy, regime_engine, max_exposure)
+    
+    # Compute rv_current and rv_ref using centralized helper
+    rv_series = features["rv"] if "rv" in features.columns else pd.Series(dtype=float)
+    rv_series = rv_series.dropna()
+    rv_current = float(rv_series.iloc[-1]) if not rv_series.empty else 1e-8
+    rv_ref = compute_rv_ref_scalar(rv_series, window=500)
+    
+    # Create engine params
+    params = EngineParams(
+        fee_rate=fee_rate,
+        slippage_bps=slippage_bps,
+        spread_bps=spread_bps,
+        hyst_k=hyst_k,
+        hyst_floor=hyst_floor,
+        min_notional=min_notional,
+        step_size=step_size,
+        min_usdt_reserve=min_usdt_reserve,
+        allow_short=False,
+    )
+    
+    # Run core engine step
+    plan, strategy_output, diagnostics = run_step(
+        bar=bar,
+        features_df=features,
+        portfolio=portfolio,
+        strategy=adapted_strategy,
+        params=params,
+        rv_current=rv_current,
+        rv_ref=rv_ref,
+    )
+    
+    # Build StepResult compatible output
+    target_btc = plan.target_base
+    delta_btc = plan.delta_base
+    target_exposure = plan.target_exposure
+    
+    equity_snapshot = {
+        "equity_usdt": equity,
+        "btc": current_btc,
+        "usdt": current_usdt,
+    }
+    
+    return StepResultFromCore(
+        ts=latest_ts_pd,
+        close=latest_price,
+        decision=decision,
+        intent=intent,
+        target_exposure=target_exposure,
+        target_btc=target_btc,
+        delta_btc=delta_btc,
+        equity=equity_snapshot,
+        execution=None,  # Execution happens separately
+        features_row=features.iloc[-1],
+        plan=plan,
+        diagnostics=diagnostics,
+    )
+
+
 __all__ = [
     "LegacyStrategyAdapter",
+    "StepResultFromCore",
     "compute_step_with_core",
+    "compute_step_with_core_full",
 ]
