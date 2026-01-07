@@ -117,9 +117,80 @@ def apply_fill(
     )
 
 
+def apply_live_fill_to_balances(
+    balances: dict[str, float],
+    side: str,
+    qty: float,
+    price: float,
+    fee_rate: float,
+) -> float:
+    """
+    Apply live exchange fill to local balances dictionary.
+    
+    This is a convenience wrapper for live mode that:
+    1. Constructs ExecutionResult from exchange fill data
+    2. Builds PortfolioState from balances dict
+    3. Calls apply_fill to update portfolio
+    4. Updates balances dict with new values
+    
+    Args:
+        balances: Dict with 'usdt' and 'btc' keys (will be mutated)
+        side: 'buy' or 'sell'
+        qty: Quantity filled (always positive)
+        price: Fill price
+        fee_rate: Fee rate used to compute fee
+        
+    Returns:
+        Fee paid
+        
+    Note:
+        This is ONLY for live mode to update local tracking after real exchange execution.
+        For paper/replay/backtest, use apply_fill directly with ExecutionResult.
+    """
+    # Convert side and qty to signed filled_base
+    filled_base = qty if side == "buy" else -qty
+    
+    # Compute fee from exchange fill
+    notional = qty * price
+    fee = notional * fee_rate
+    
+    # Create ExecutionResult
+    execution = ExecutionResult(
+        filled_base=filled_base,
+        avg_price=price,
+        fee_paid=fee,
+        slippage_paid=0.0,  # Slippage already in price for live
+        status="filled",
+        raw=None,
+    )
+    
+    # Build current portfolio state from balances
+    current_usdt = float(balances.get("usdt", 0.0))
+    current_btc = float(balances.get("btc", 0.0))
+    equity = compute_equity(current_usdt, current_btc, price)
+    exposure = compute_exposure(current_btc, price, equity)
+    
+    portfolio = PortfolioState(
+        usdt=current_usdt,
+        base=current_btc,
+        equity=equity,
+        exposure=exposure,
+    )
+    
+    # Apply fill using core logic
+    updated = apply_fill(portfolio, execution)
+    
+    # Update balances dict in place
+    balances["usdt"] = updated.usdt
+    balances["btc"] = updated.base
+    
+    return fee
+
+
 __all__ = [
     "compute_equity",
     "compute_exposure",
     "target_base_from_exposure",
     "apply_fill",
+    "apply_live_fill_to_balances",
 ]
