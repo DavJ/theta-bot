@@ -10,7 +10,7 @@ This package provides a single source of truth for:
 from spot_bot.core.account import AccountProvider, LiveAccountProvider, SimAccountProvider
 from spot_bot.core.cost_model import compute_cost_per_turnover
 from spot_bot.core.engine import EngineParams, run_step, run_step_simulated, simulate_execution
-from spot_bot.core.executor import Executor, SimExecutor
+from spot_bot.core.executor import Executor, LiveExecutor, SimExecutor
 from spot_bot.core.hysteresis import apply_hysteresis, compute_hysteresis_threshold
 from spot_bot.core.legacy_adapter import (
     LegacyStrategyAdapter,
@@ -70,6 +70,7 @@ __all__ = [
     # Executors
     "Executor",
     "SimExecutor",
+    "LiveExecutor",
     # Legacy compatibility
     "LegacyStrategyAdapter",
     "StepResultFromCore",

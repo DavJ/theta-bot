@@ -28,7 +28,7 @@ def compute_rv_ref_series(rv_series: pd.Series, window: int = 500) -> pd.Series:
     3. Defaults to 1.0 for any remaining NaN
     """
     rv_ref = rv_series.rolling(window=window, min_periods=1).median()
-    rv_ref = rv_ref.fillna(method='ffill')
+    rv_ref = rv_ref.ffill()
     rv_ref = rv_ref.fillna(1.0)
     return rv_ref
 
