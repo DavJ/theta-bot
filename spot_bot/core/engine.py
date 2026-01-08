@@ -128,22 +128,22 @@ def run_step(
         max_delta_e_min=params.max_delta_e_min,
     )
     
-    if getattr(params, "debug", False):
-        print(
-                f"DBG hyst: edge_bps={params.edge_bps} k_vol={params.k_vol} "
-                f"rv_cur={rv_current:.6g} rv_ref={rv_ref:.6g} "
-                f"delta_e_min={delta_e_min:.6g} "
-                f"cur={current_exposure:.3f} tgt={target_exposure:.3f} final={target_exposure_final:.3f} "
-                f"supp={suppressed}"
-    )
-
-
     # Step 4: Apply hysteresis
     target_exposure_final, suppressed = apply_hysteresis(
         current_exposure=portfolio.exposure,
         target_exposure=target_exposure_raw,
         delta_e_min=delta_e_min,
     )
+
+    if params.debug:
+        print(
+            f"DBG hyst: edge_bps={params.edge_bps} k_vol={params.k_vol} "
+            f"rv_cur={rv_current:.6g} rv_ref={rv_ref:.6g} "
+            f"delta_e_min={delta_e_min:.6g} "
+            f"cur={portfolio.exposure:.3f} tgt_raw={target_exposure_raw:.3f} "
+            f"tgt_final={target_exposure_final:.3f} supp={suppressed}"
+        )
+
 
     # Step 5: Plan trade
     plan = plan_trade(

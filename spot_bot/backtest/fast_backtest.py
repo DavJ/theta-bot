@@ -299,7 +299,7 @@ def run_backtest(
         min_notional=min_notional,
         step_size=step_size,
         allow_short=False,
-        debug=True
+        debug=False
     )
 
     # Initialize portfolio
@@ -363,9 +363,8 @@ def run_backtest(
                 rv_current=float(rv_current),
                 rv_ref=float(rv_ref),
             )
-        except Exception:
-            # Skip this bar on error
-            continue
+        except Exception as e:
+            raise RuntimeError(f"Backtest failed at i={i}, ts={ts}, price={price}: {e}") from e
 
         # Record trade if executed
         action = plan.action

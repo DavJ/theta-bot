@@ -1,0 +1,15 @@
+Theta-bot patch (overlay zip)
+
+What it fixes:
+- spot_bot/core/engine.py: moves debug print AFTER apply_hysteresis and uses defined variables.
+- spot_bot/backtest/fast_backtest.py:
+  - sets EngineParams(debug=False) by default
+  - stops swallowing exceptions in the per-bar loop (now raises RuntimeError with context)
+
+How to apply:
+1) From your repo root, unzip with overwrite:
+   unzip -o theta-bot-patch.zip
+2) (Optional) clear caches:
+   find . -name "__pycache__" -type d -prune -exec rm -rf {} +
+3) Run:
+   PYTHONPATH=. python scripts/run_backtest.py --csv data/ohlcv_1h/BTCUSDT.csv --timeframe 1h --print_metrics
