@@ -25,6 +25,7 @@ HYST_K = 25.0    # 15.0
 HYST_FLOOR = 0.30    # 0.12
 K_VOL = 0.5 # multiplikativni parametr kontrolujici velikost dynamicky vypocitane hystereze
 EDGE_BPS = 5.0 # minimalni zisk v procentech ...> kontroluje hysterezi (aditivni parametr)
+MAX_DELTA_E_MIN = 0.3  # maximum cap for hysteresis threshold
 
 def load_df(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -64,7 +65,8 @@ def main():
             hyst_floor=HYST_FLOOR,
             spread_bps=SPREAD_BPS,
             k_vol=K_VOL,
-            edge_bps=EDGE_BPS
+            edge_bps=EDGE_BPS,
+            max_delta_e_min=MAX_DELTA_E_MIN,
         )
 
         final_eq = float(metrics.get("final_equity", equity_curve["equity"].iloc[-1]))

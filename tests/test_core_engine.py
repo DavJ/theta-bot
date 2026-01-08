@@ -64,31 +64,84 @@ class TestHysteresis:
     """Tests for hysteresis.py"""
 
     def test_hysteresis_threshold_calculation(self):
-        """Verify threshold computation."""
+        """Verify threshold computation with new formula."""
+        # New formula: delta_e_min = hyst_k * (cost_r + edge_r + vol_r)
+        # where cost_r = 2*fee + (slip+spread)*1e-4, edge_r = edge_bps*1e-4, vol_r = k_vol*rv
+        rv_current = 0.02
+        rv_ref = 0.03  # Not used in new formula
+        fee_rate = 0.001
+        slippage_bps = 0.0
+        spread_bps = 0.0
         hyst_k = 5.0
         hyst_floor = 0.02
-        cost = 0.002
-        rv_ref = 0.03
-        rv_current = 0.02
+        k_vol = 0.5
+        edge_bps = 5.0
 
-        delta_e_min = compute_hysteresis_threshold(hyst_k, hyst_floor, cost, rv_ref, rv_current)
+        delta_e_min = compute_hysteresis_threshold(
+            rv_current=rv_current,
+            rv_ref=rv_ref,
+            fee_rate=fee_rate,
+            slippage_bps=slippage_bps,
+            spread_bps=spread_bps,
+            hyst_k=hyst_k,
+            hyst_floor=hyst_floor,
+            k_vol=k_vol,
+            edge_bps=edge_bps,
+            max_delta_e_min=0.3,
+        )
 
-        # Expected: max(0.02, 5.0 * 0.002 * (0.03 / 0.02))
-        # = max(0.02, 0.01 * 1.5) = max(0.02, 0.015) = 0.02
-        assert abs(delta_e_min - 0.02) < 1e-10
+        # Expected: hyst_k * (cost_r + edge_r + vol_r)
+        # cost_r = 2*0.001 = 0.002
+        # edge_r = 5.0*1e-4 = 0.0005
+        # vol_r = 0.5*0.02 = 0.01
+        # total = 0.002 + 0.0005 + 0.01 = 0.0125
+        # delta_e_min = 5.0 * 0.0125 = 0.0625
+        # max(0.02, 0.0625) = 0.0625
+        expected = 0.0625
+        assert abs(delta_e_min - expected) < 1e-6
 
     def test_hysteresis_threshold_high_vol(self):
-        """When rv_current > rv_ref, threshold should be lower."""
-        delta_e_min = compute_hysteresis_threshold(5.0, 0.01, 0.002, 0.02, 0.04)
-        # max(0.01, 5.0 * 0.002 * (0.02 / 0.04)) = max(0.01, 0.01 * 0.5) = 0.01
-        assert abs(delta_e_min - 0.01) < 1e-10
+        """When rv_current is high, threshold should be higher."""
+        delta_e_min = compute_hysteresis_threshold(
+            rv_current=0.04,
+            rv_ref=0.02,
+            fee_rate=0.001,
+            slippage_bps=0.0,
+            spread_bps=0.0,
+            hyst_k=5.0,
+            hyst_floor=0.01,
+            k_vol=0.5,
+            edge_bps=5.0,
+            max_delta_e_min=0.3,
+        )
+        # cost_r = 2*0.001 = 0.002
+        # edge_r = 5.0*1e-4 = 0.0005
+        # vol_r = 0.5*0.04 = 0.02
+        # total = 0.002 + 0.0005 + 0.02 = 0.0225
+        # delta_e_min = 5.0 * 0.0225 = 0.1125
+        expected = 0.1125
+        assert abs(delta_e_min - expected) < 1e-6
 
     def test_hysteresis_threshold_zero_rv_current(self):
         """Handle zero rv_current gracefully."""
-        delta_e_min = compute_hysteresis_threshold(5.0, 0.02, 0.002, 0.03, 0.0)
-        # rv_current_safe = 1e-8, so threshold will be very high
-        # but should be at least hyst_floor
+        delta_e_min = compute_hysteresis_threshold(
+            rv_current=0.0,
+            rv_ref=0.03,
+            fee_rate=0.001,
+            slippage_bps=0.0,
+            spread_bps=0.0,
+            hyst_k=5.0,
+            hyst_floor=0.02,
+            k_vol=0.5,
+            edge_bps=5.0,
+            max_delta_e_min=0.3,
+        )
+        # rv_current is clamped to 1e-12, so vol_r is tiny
+        # Should return close to hyst_floor or slightly above due to costs + edge
+        # cost_r = 0.002, edge_r = 0.0005, vol_r ≈ 0
+        # delta_e_min = 5.0 * 0.0025 = 0.0125, but max(0.02, ...) = 0.02
         assert delta_e_min >= 0.02
+        assert delta_e_min < 0.03  # Should be close to floor
 
     def test_hysteresis_suppression(self):
         """Test trade suppression when delta is small."""
