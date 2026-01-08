@@ -225,6 +225,8 @@ def run_backtest(
     k_vol: float = 0.5,
     edge_bps: float = 5.0,
     max_delta_e_min: float = 0.5,
+    alpha_floor: float = 6.0,
+    alpha_cap: float = 6.0,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -296,6 +298,8 @@ def run_backtest(
         k_vol=k_vol,
         edge_bps=edge_bps,
         max_delta_e_min=max_delta_e_min,
+        alpha_floor=alpha_floor,
+        alpha_cap=alpha_cap,
         min_notional=min_notional,
         step_size=step_size,
         allow_short=False,

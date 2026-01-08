@@ -43,6 +43,8 @@ def main() -> None:
     p.add_argument("--k_vol", type=float, default=0.5)
     p.add_argument("--edge_bps", type=float, default=5.0)
     p.add_argument("--max_delta_e_min", type=float, default=0.3)
+    p.add_argument("--alpha_floor", type=float, default=6.0)
+    p.add_argument("--alpha_cap", type=float, default=6.0)
 
     p.add_argument("--out_equity", default=None)
     p.add_argument("--out_trades", default=None)
@@ -74,6 +76,8 @@ def main() -> None:
         k_vol=args.k_vol,
         edge_bps=args.edge_bps,
         max_delta_e_min=args.max_delta_e_min,
+        alpha_floor=args.alpha_floor,
+        alpha_cap=args.alpha_cap,
     )
 
     if args.out_equity:

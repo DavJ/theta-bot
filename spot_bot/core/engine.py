@@ -45,6 +45,8 @@ class EngineParams:
     k_vol: float = 0.5
     edge_bps: float = 5.0
     max_delta_e_min: float = 0.3
+    alpha_floor: float = 6.0
+    alpha_cap: float = 6.0
     min_notional: float = 10.0
     step_size: Optional[float] = None
     min_usdt_reserve: float = 0.0
@@ -126,6 +128,8 @@ def run_step(
         k_vol=params.k_vol,
         edge_bps=params.edge_bps,
         max_delta_e_min=params.max_delta_e_min,
+        alpha_floor=params.alpha_floor,
+        alpha_cap=params.alpha_cap,
     )
     
     # Step 4: Apply hysteresis
