@@ -50,6 +50,7 @@ class EngineParams:
     min_usdt_reserve: float = 0.0
     max_notional_per_trade: Optional[float] = None
     allow_short: bool = False
+    debug: bool = False
 
 
 def run_step(
@@ -125,6 +126,15 @@ def run_step(
         k_vol=params.k_vol,
         edge_bps=params.edge_bps,
         max_delta_e_min=params.max_delta_e_min,
+    )
+    
+    if getattr(params, "debug", False):
+        print(
+                f"DBG hyst: edge_bps={params.edge_bps} k_vol={params.k_vol} "
+                f"rv_cur={rv_current:.6g} rv_ref={rv_ref:.6g} "
+                f"delta_e_min={delta_e_min:.6g} "
+                f"cur={current_exposure:.3f} tgt={target_exposure:.3f} final={target_exposure_final:.3f} "
+                f"supp={suppressed}"
     )
 
 

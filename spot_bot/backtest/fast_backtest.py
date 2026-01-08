@@ -299,6 +299,7 @@ def run_backtest(
         min_notional=min_notional,
         step_size=step_size,
         allow_short=False,
+        debug=True
     )
 
     # Initialize portfolio
