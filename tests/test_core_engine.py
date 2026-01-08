@@ -88,6 +88,8 @@ class TestHysteresis:
             k_vol=k_vol,
             edge_bps=edge_bps,
             max_delta_e_min=0.3,
+            alpha_floor=100.0,  # Very high alpha for near-hard bounds
+            alpha_cap=100.0,
         )
 
         # Expected: hyst_k * (cost_r + edge_r + vol_r)
@@ -98,7 +100,8 @@ class TestHysteresis:
         # delta_e_min = 5.0 * 0.0125 = 0.0625
         # max(0.02, 0.0625) = 0.0625
         expected = 0.0625
-        assert abs(delta_e_min - expected) < 1e-6
+        # With very high alpha (100), soft bounds are nearly but not exactly hard bounds
+        assert abs(delta_e_min - expected) < 1e-5
 
     def test_hysteresis_threshold_high_vol(self):
         """When rv_current is high, threshold should be higher."""
@@ -113,6 +116,8 @@ class TestHysteresis:
             k_vol=0.5,
             edge_bps=5.0,
             max_delta_e_min=0.3,
+            alpha_floor=100.0,  # Very high alpha for near-hard bounds
+            alpha_cap=100.0,
         )
         # cost_r = 2*0.001 = 0.002
         # edge_r = 5.0*1e-4 = 0.0005
@@ -166,6 +171,54 @@ class TestHysteresis:
         # delta = 0.05 >= 0.02, should not suppress
         assert not suppressed
         assert final_target == target_exposure
+
+    def test_hysteresis_smooth_bounds(self):
+        """Test that smooth bounds work correctly and differ from hard bounds."""
+        # Test soft floor: raw value below floor should smoothly approach floor
+        
+        # With high alpha (nearly hard bounds)
+        result_hard = compute_hysteresis_threshold(
+            rv_current=0.001,
+            rv_ref=0.05,
+            fee_rate=0.0001,
+            slippage_bps=0.0,
+            spread_bps=0.0,
+            hyst_k=0.5,
+            hyst_floor=0.02,
+            k_vol=0.1,
+            edge_bps=1.0,
+            max_delta_e_min=0.3,
+            alpha_floor=100.0,
+            alpha_cap=100.0,
+        )
+        
+        # With low alpha (more smooth)
+        result_smooth = compute_hysteresis_threshold(
+            rv_current=0.001,
+            rv_ref=0.05,
+            fee_rate=0.0001,
+            slippage_bps=0.0,
+            spread_bps=0.0,
+            hyst_k=0.5,
+            hyst_floor=0.02,
+            k_vol=0.1,
+            edge_bps=1.0,
+            max_delta_e_min=0.3,
+            alpha_floor=2.0,
+            alpha_cap=2.0,
+        )
+        
+        # Hard bounds should be very close to floor (raw is way below floor)
+        assert abs(result_hard - 0.02) < 1e-3
+        
+        # Smooth bounds with low alpha should show significant smoothing effect
+        # The result will be between raw (~0.0002) and midpoint between raw and floor
+        # With alpha=2.0, expect significant deviation from hard floor
+        assert result_smooth > 0.005  # Above raw value
+        assert result_smooth < 0.15   # But not too high (midpoint is ~0.01)
+        
+        # They should differ significantly
+        assert abs(result_hard - result_smooth) > 0.005
 
 
 class TestPortfolio:
