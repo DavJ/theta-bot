@@ -44,7 +44,7 @@ class EngineParams:
     hyst_floor: float = 0.02
     k_vol: float = 0.5
     edge_bps: float = 5.0
-    max_delta_e_min: float = 0.5
+    max_delta_e_min: float = 0.3
     min_notional: float = 10.0
     step_size: Optional[float] = None
     min_usdt_reserve: float = 0.0

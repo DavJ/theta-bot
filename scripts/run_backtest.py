@@ -42,7 +42,7 @@ def main() -> None:
     p.add_argument("--hyst_floor", type=float, default=0.02)
     p.add_argument("--k_vol", type=float, default=0.5)
     p.add_argument("--edge_bps", type=float, default=5.0)
-    p.add_argument("--max_delta_e_min", type=float, default=0.5)
+    p.add_argument("--max_delta_e_min", type=float, default=0.3)
 
     p.add_argument("--out_equity", default=None)
     p.add_argument("--out_trades", default=None)
