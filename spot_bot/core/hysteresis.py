@@ -114,8 +114,8 @@ def compute_hysteresis_threshold(
     raw = float(hyst_k) * (cost_r + edge_r + vol_r)
     
     # Apply smooth floor and cap for stability (avoid binary transitions)
-    x = soft_max(raw, float(hyst_floor), float(alpha_floor))
-    x = soft_min(x, float(max_delta_e_min), float(alpha_cap))
+    x = soft_max(raw, float(hyst_floor), float(alpha_floor))      # enforce floor smoothly
+    x = soft_min(x, float(max_delta_e_min), float(alpha_cap))     # enforce cap smoothly
     
     return float(x)
 

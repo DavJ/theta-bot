@@ -212,10 +212,12 @@ class TestHysteresis:
         assert abs(result_hard - 0.02) < 1e-3
         
         # Smooth bounds with low alpha should show significant smoothing effect
-        # The result will be between raw (~0.0002) and midpoint between raw and floor
-        # With alpha=2.0, expect significant deviation from hard floor
+        # Raw threshold calculation: cost_r=2*0.0001=0.0002, edge_r=1.0*1e-4=0.0001, vol_r=0.1*0.001=0.0001
+        # raw = 0.5 * (0.0002 + 0.0001 + 0.0001) = 0.0002
+        # With alpha=2.0, soft_max(0.0002, 0.02, 2.0) gives value between raw and floor,
+        # then soft_min adds further smoothing effect with the cap
         assert result_smooth > 0.005  # Above raw value
-        assert result_smooth < 0.15   # But not too high (midpoint is ~0.01)
+        assert result_smooth < 0.15   # But not too high
         
         # They should differ significantly
         assert abs(result_hard - result_smooth) > 0.005
