@@ -112,11 +112,16 @@ def run_step(
 
     # Step 3: Compute hysteresis threshold
     delta_e_min = compute_hysteresis_threshold(
-        hyst_k=params.hyst_k,
-        hyst_floor=params.hyst_floor,
-        cost=cost,
-        rv_ref=rv_ref,
         rv_current=rv_current,
+        rv_ref=rv_ref,
+        fee_rate=fee_rate,
+        slippage_bps=slippage_bps,
+        spread_bps=spread_bps,
+        hyst_k=hyst_k,
+        hyst_floor=hyst_floor,
+        k_vol=k_vol,           # NEW (z configu)
+        edge_bps=edge_bps,     # NEW (z configu)
+        max_delta_e_min=0.5,   # NEW (volitelné)
     )
 
     # Step 4: Apply hysteresis

@@ -14,15 +14,17 @@ PSI_WINDOW = 200
 RV_WINDOW = 500
 CONC_WINDOW = 200
 BASE = 2.0
-FEE_RATE = 0.001
-SLIPPAGE_BPS = 2.0
+FEE_RATE =  0.001
+SLIPPAGE_BPS =  2.0
 SPREAD_BPS = 0.0
 MAX_EXPOSURE = 1.0
 INITIAL_USDT = 1000.0
 MIN_NOTIONAL = 5.0
 STEP_SIZE = None
-HYST_K = 5.0
-HYST_FLOOR = 0.02
+HYST_K = 25.0    # 15.0
+HYST_FLOOR = 0.30    # 0.12
+K_VOL = 0.5 # multiplikativni parametr kontrolujici velikost dynamicky vypocitane hystereze
+EDGE_BPS = 5.0 # minimalni zisk v procentech ...> kontroluje hysterezi (aditivni parametr)
 
 def load_df(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -61,6 +63,8 @@ def main():
             hyst_k=HYST_K,
             hyst_floor=HYST_FLOOR,
             spread_bps=SPREAD_BPS,
+            k_vol=K_VOL,
+            edge_bps=EDGE_BPS
         )
 
         final_eq = float(metrics.get("final_equity", equity_curve["equity"].iloc[-1]))

@@ -5,37 +5,51 @@ Single source of truth for hysteresis threshold computation and application.
 """
 
 from typing import Tuple
-
+# spot_bot/core/hysteresis.py
+from __future__ import annotations
 
 def compute_hysteresis_threshold(
+    *,
+    rv_current: float,
+    rv_ref: float,
+    fee_rate: float,
+    slippage_bps: float,
+    spread_bps: float,
     hyst_k: float,
     hyst_floor: float,
-    cost: float,
-    rv_ref: float,
-    rv_current: float,
+    # nové, defaulty aby nic nerozbily
+    k_vol: float = 0.5,
+    edge_bps: float = 5.0,
+    max_delta_e_min: float = 0.5,
 ) -> float:
     """
-    Compute minimum exposure delta required to trade.
-
-    Args:
-        hyst_k: Hysteresis multiplier (typically 5.0)
-        hyst_floor: Minimum threshold regardless of volatility (e.g., 0.02)
-        cost: Cost per unit of turnover from cost_model
-        rv_ref: Reference realized volatility (e.g., median of last 500 bars)
-        rv_current: Current realized volatility
-
-    Returns:
-        Minimum absolute exposure change required to trade.
-
-    Formula:
-        rv_current_safe = max(rv_current, 1e-8)
-        delta_e_min = max(hyst_floor, hyst_k * cost * (rv_ref / rv_current_safe))
-
-    When volatility is low (rv_current < rv_ref), threshold increases,
-    making it harder to trade. This prevents overtrading in calm markets.
+    Dynamic hysteresis:
+      delta_e_min = max(hyst_floor, hyst_k * (cost + vol_term + edge))
+    where:
+      cost = fee + slippage + spread
+      vol_term = k_vol * (rv_current/rv_ref)
+      edge = edge_bps (bps)
     """
-    rv_current_safe = max(rv_current, 1e-8)
-    delta_e_min = max(hyst_floor, hyst_k * cost * (rv_ref / rv_current_safe))
+
+    # costs in fraction
+    cost = float(fee_rate) + float(slippage_bps) * 1e-4 + float(spread_bps) * 1e-4
+
+    rv_ref_safe = float(rv_ref) if rv_ref and rv_ref > 1e-12 else 1e-12
+    rv_cur_safe = float(rv_current) if rv_current and rv_current > 0.0 else 0.0
+
+    # volatility term (dimensionless; grows when current vol > typical)
+    vol_term = float(k_vol) * (rv_cur_safe / rv_ref_safe)
+
+    # edge buffer in fraction
+    edge = float(edge_bps) * 1e-4
+
+    threshold = cost + vol_term + edge
+    delta_e_min = float(hyst_k) * threshold
+
+    # clamp + floor
+    if max_delta_e_min is not None:
+        delta_e_min = min(delta_e_min, float(max_delta_e_min))
+    delta_e_min = max(float(hyst_floor), delta_e_min)
     return float(delta_e_min)
 
 
