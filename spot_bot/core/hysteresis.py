@@ -16,39 +16,59 @@ def compute_hysteresis_threshold(
     spread_bps: float,
     hyst_k: float,
     hyst_floor: float,
-    # nové, defaulty aby nic nerozbily
     k_vol: float = 0.5,
     edge_bps: float = 5.0,
-    max_delta_e_min: float = 0.5,
+    max_delta_e_min: float = 0.3,
 ) -> float:
     """
-    Dynamic hysteresis:
-      delta_e_min = max(hyst_floor, hyst_k * (cost + vol_term + edge))
-    where:
-      cost = fee + slippage + spread
-      vol_term = k_vol * (rv_current/rv_ref)
-      edge = edge_bps (bps)
+    Stable hysteresis threshold based on costs + volatility + edge.
+    
+    Computes minimum exposure change threshold (delta_e_min) to prevent
+    excessive trading in noisy markets. The threshold is scaled by trading
+    costs, current volatility, and required edge.
+    
+    Args:
+        rv_current: Current realized volatility
+        rv_ref: Reference realized volatility (unused in stable formula)
+        fee_rate: Exchange fee rate (e.g., 0.001 for 0.1%)
+        slippage_bps: Slippage in basis points
+        spread_bps: Spread in basis points
+        hyst_k: Hysteresis scaling factor (converts return threshold to exposure threshold)
+        hyst_floor: Minimum threshold floor
+        k_vol: Volatility multiplier for threshold
+        edge_bps: Required edge in basis points
+        max_delta_e_min: Maximum threshold cap (default 0.3)
+    
+    Returns:
+        delta_e_min: Minimum exposure change threshold in [0, 1]
+    
+    Formula:
+        rv = max(rv_current, 1e-12)
+        cost_r = 2.0*fee_rate + (slippage_bps + spread_bps)*1e-4  # round-trip approx
+        edge_r = edge_bps*1e-4
+        vol_r  = k_vol * rv
+        delta_e_min = hyst_k * (cost_r + edge_r + vol_r)
+        delta_e_min = max(hyst_floor, min(max_delta_e_min, delta_e_min))
     """
-
-    # costs in fraction
-    cost = float(fee_rate) + float(slippage_bps) * 1e-4 + float(spread_bps) * 1e-4
-
-    rv_ref_safe = float(rv_ref) if rv_ref and rv_ref > 1e-12 else 1e-12
-    rv_cur_safe = float(rv_current) if rv_current and rv_current > 0.0 else 0.0
-
-    # volatility term (dimensionless; grows when current vol > typical)
-    vol_term = float(k_vol) * (rv_cur_safe / rv_ref_safe)
-
-    # edge buffer in fraction
-    edge = float(edge_bps) * 1e-4
-
-    threshold = cost + vol_term + edge
-    delta_e_min = float(hyst_k) * threshold
-
-    # clamp + floor
-    if max_delta_e_min is not None:
-        delta_e_min = min(delta_e_min, float(max_delta_e_min))
+    # Ensure rv_current is valid
+    rv = max(float(rv_current) if rv_current else 0.0, 1e-12)
+    
+    # Convert costs into return units (round-trip approximation)
+    cost_r = 2.0 * float(fee_rate) + (float(slippage_bps) + float(spread_bps)) * 1e-4
+    
+    # Add small extra required edge in bps
+    edge_r = float(edge_bps) * 1e-4
+    
+    # Add volatility term proportional to rv_current (NOT ratios rv_ref/rv_current)
+    vol_r = float(k_vol) * rv
+    
+    # Map return threshold to exposure threshold via hyst_k scaling
+    delta_e_min = float(hyst_k) * (cost_r + edge_r + vol_r)
+    
+    # Apply floor and cap for stability
     delta_e_min = max(float(hyst_floor), delta_e_min)
+    delta_e_min = min(float(max_delta_e_min), delta_e_min)
+    
     return float(delta_e_min)
 
 
