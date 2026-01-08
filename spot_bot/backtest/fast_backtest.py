@@ -30,6 +30,8 @@ from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
 
 TIMESTAMP_COL = "timestamp"
+SECONDS_PER_DAY = 24 * 3600
+DEFAULT_RV_REF_DAYS = 30
 
 
 @dataclass
@@ -224,9 +226,11 @@ def run_backtest(
     spread_bps: float = 0.0,
     k_vol: float = 0.5,
     edge_bps: float = 5.0,
-    max_delta_e_min: float = 0.5,
+    max_delta_e_min: float = 0.3,
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
+    vol_hyst_mode: str = "increase",
+    rv_ref_window: int | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -284,9 +288,20 @@ def run_backtest(
         features, strategy_obj, risk_state, risk_budget, max_exposure
     )
 
-    # Compute rv_ref series using centralized helper
+    # Compute rv_ref series using centralized helper with configurable window
+    # Default to 30 days in bars if not specified
+    if rv_ref_window is None:
+        # Parse timeframe to compute bars per day
+        try:
+            delta = _timeframe_to_timedelta(timeframe)
+            bars_per_day = SECONDS_PER_DAY / delta.total_seconds()
+            rv_ref_window = int(bars_per_day * DEFAULT_RV_REF_DAYS)
+        except Exception:
+            # Fallback: assume 1h timeframe (24*30)
+            rv_ref_window = 720
+    
     rv_series = features["rv"].fillna(0.0)
-    rv_ref_series = compute_rv_ref_series(rv_series, window=500)
+    rv_ref_series = compute_rv_ref_series(rv_series, window=rv_ref_window)
 
     # Initialize engine params
     engine_params = EngineParams(
@@ -300,6 +315,7 @@ def run_backtest(
         max_delta_e_min=max_delta_e_min,
         alpha_floor=alpha_floor,
         alpha_cap=alpha_cap,
+        vol_hyst_mode=vol_hyst_mode,
         min_notional=min_notional,
         step_size=step_size,
         allow_short=False,
