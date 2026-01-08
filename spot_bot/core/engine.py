@@ -42,6 +42,9 @@ class EngineParams:
     spread_bps: float = 0.0
     hyst_k: float = 5.0
     hyst_floor: float = 0.02
+    k_vol: float = 0.5
+    edge_bps: float = 5.0
+    max_delta_e_min: float = 0.5
     min_notional: float = 10.0
     step_size: Optional[float] = None
     min_usdt_reserve: float = 0.0
@@ -114,15 +117,16 @@ def run_step(
     delta_e_min = compute_hysteresis_threshold(
         rv_current=rv_current,
         rv_ref=rv_ref,
-        fee_rate=fee_rate,
-        slippage_bps=slippage_bps,
-        spread_bps=spread_bps,
-        hyst_k=hyst_k,
-        hyst_floor=hyst_floor,
-        k_vol=k_vol,           # NEW (z configu)
-        edge_bps=edge_bps,     # NEW (z configu)
-        max_delta_e_min=0.5,   # NEW (volitelné)
+        fee_rate=params.fee_rate,
+        slippage_bps=params.slippage_bps,
+        spread_bps=params.spread_bps,
+        hyst_k=params.hyst_k,
+        hyst_floor=params.hyst_floor,
+        k_vol=params.k_vol,
+        edge_bps=params.edge_bps,
+        max_delta_e_min=params.max_delta_e_min,
     )
+
 
     # Step 4: Apply hysteresis
     target_exposure_final, suppressed = apply_hysteresis(

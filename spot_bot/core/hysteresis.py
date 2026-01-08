@@ -3,10 +3,9 @@ Hysteresis logic to prevent excessive trading in noisy markets.
 
 Single source of truth for hysteresis threshold computation and application.
 """
-
+from __future__ import annotations
 from typing import Tuple
 # spot_bot/core/hysteresis.py
-from __future__ import annotations
 
 def compute_hysteresis_threshold(
     *,
