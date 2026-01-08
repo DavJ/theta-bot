@@ -62,6 +62,7 @@ def compute_hysteresis_threshold(
     max_delta_e_min: float = 0.3,
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
+    vol_hyst_mode: str = "increase",
 ) -> float:
     """
     Stable hysteresis threshold based on costs + volatility + edge with smooth bounds.
@@ -73,7 +74,7 @@ def compute_hysteresis_threshold(
     
     Args:
         rv_current: Current realized volatility
-        rv_ref: Reference realized volatility (unused in stable formula)
+        rv_ref: Reference realized volatility (long-horizon stable anchor)
         fee_rate: Exchange fee rate (e.g., 0.001 for 0.1%)
         slippage_bps: Slippage in basis points
         spread_bps: Spread in basis points
@@ -84,22 +85,38 @@ def compute_hysteresis_threshold(
         max_delta_e_min: Maximum threshold cap (maximum allowed hysteresis, default 0.3)
         alpha_floor: Smoothness parameter for minimum bound (default 6.0)
         alpha_cap: Smoothness parameter for maximum bound (default 6.0)
+        vol_hyst_mode: Volatility hysteresis mode ("increase"|"decrease"|"none")
     
     Returns:
         delta_e_min: Minimum exposure change threshold in [0, 1]
     
     Formula:
         rv = max(rv_current, 1e-12)
+        rv_ref_safe = max(rv_ref, 1e-12)
+        rv_norm = rv / rv_ref_safe
         cost_r = 2.0*fee_rate + (slippage_bps + spread_bps)*1e-4  # round-trip approx
         edge_r = edge_bps*1e-4
-        vol_r  = k_vol * rv
-        raw = hyst_k * (cost_r + edge_r + vol_r)
+        
+        # Volatility multiplier based on mode
+        if vol_hyst_mode == "increase":
+            vol_mult = 1.0 + k_vol * rv_norm
+        elif vol_hyst_mode == "decrease":
+            vol_mult = 1.0 / (1.0 + k_vol * rv_norm)
+        else:  # "none"
+            vol_mult = 1.0
+            
+        raw = hyst_k * (cost_r + edge_r) * vol_mult
+        
         # Smooth minimum + smooth maximum (avoid binary transitions)
         x = soft_max(raw, hyst_floor, alpha_floor)         # enforce MIN hysteresis smoothly
         x = soft_min(x, max_delta_e_min, alpha_cap)        # enforce MAX hysteresis smoothly
     """
-    # Ensure rv_current is valid
+    # Ensure rv_current and rv_ref are valid
     rv = max(float(rv_current) if rv_current else 0.0, 1e-12)
+    rv_ref_safe = max(float(rv_ref) if rv_ref else 0.0, 1e-12)
+    
+    # Compute normalized volatility
+    rv_norm = rv / rv_ref_safe
     
     # Convert costs into return units (round-trip approximation)
     cost_r = 2.0 * float(fee_rate) + (float(slippage_bps) + float(spread_bps)) * 1e-4
@@ -107,11 +124,26 @@ def compute_hysteresis_threshold(
     # Add small extra required edge in bps
     edge_r = float(edge_bps) * 1e-4
     
-    # Add volatility term proportional to rv_current (NOT ratios rv_ref/rv_current)
-    vol_r = float(k_vol) * rv
+    # Compute volatility multiplier based on mode
+    mode = str(vol_hyst_mode).strip().lower()
+    if mode == "increase":
+        # Higher volatility -> higher threshold (more conservative)
+        vol_mult = 1.0 + float(k_vol) * rv_norm
+    elif mode == "decrease":
+        # Higher volatility -> lower threshold (less conservative)
+        vol_mult = 1.0 / (1.0 + float(k_vol) * rv_norm)
+    elif mode == "none":
+        # No volatility adjustment
+        vol_mult = 1.0
+    else:
+        raise ValueError(
+            f"Invalid vol_hyst_mode: {vol_hyst_mode!r}. "
+            f"Must be one of: 'increase', 'decrease', 'none'"
+        )
     
     # Map return threshold to exposure threshold via hyst_k scaling
-    raw = float(hyst_k) * (cost_r + edge_r + vol_r)
+    # Apply volatility multiplier to the combined cost+edge
+    raw = float(hyst_k) * (cost_r + edge_r) * vol_mult
     
     # Apply smooth floor and cap for stability (avoid binary transitions)
     x = soft_max(raw, float(hyst_floor), float(alpha_floor))      # enforce floor smoothly

@@ -47,6 +47,7 @@ class EngineParams:
     max_delta_e_min: float = 0.3
     alpha_floor: float = 6.0
     alpha_cap: float = 6.0
+    vol_hyst_mode: str = "increase"
     min_notional: float = 10.0
     step_size: Optional[float] = None
     min_usdt_reserve: float = 0.0
@@ -130,6 +131,7 @@ def run_step(
         max_delta_e_min=params.max_delta_e_min,
         alpha_floor=params.alpha_floor,
         alpha_cap=params.alpha_cap,
+        vol_hyst_mode=params.vol_hyst_mode,
     )
     
     # Step 4: Apply hysteresis

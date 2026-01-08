@@ -45,6 +45,19 @@ def main() -> None:
     p.add_argument("--max_delta_e_min", type=float, default=0.3)
     p.add_argument("--alpha_floor", type=float, default=6.0)
     p.add_argument("--alpha_cap", type=float, default=6.0)
+    p.add_argument(
+        "--vol_hyst_mode",
+        choices=["increase", "decrease", "none"],
+        default="increase",
+        help="Volatility hysteresis mode: increase (higher vol -> higher threshold), "
+        "decrease (higher vol -> lower threshold), none (no vol adjustment)",
+    )
+    p.add_argument(
+        "--rv_ref_window",
+        type=int,
+        default=None,
+        help="Reference volatility window in bars (default: 30 days based on timeframe)",
+    )
 
     p.add_argument("--out_equity", default=None)
     p.add_argument("--out_trades", default=None)
@@ -78,6 +91,8 @@ def main() -> None:
         max_delta_e_min=args.max_delta_e_min,
         alpha_floor=args.alpha_floor,
         alpha_cap=args.alpha_cap,
+        vol_hyst_mode=args.vol_hyst_mode,
+        rv_ref_window=args.rv_ref_window,
     )
 
     if args.out_equity:
