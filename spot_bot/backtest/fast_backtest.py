@@ -113,20 +113,26 @@ def _compute_intents_with_regime(
 
     # Generate raw intent from strategy
     if isinstance(strategy, MeanRevDualKalmanStrategy):
-        # Dual Kalman generates series directly
-        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=False)
+        # Dual Kalman generates series directly with confidence built-in
+        # Note: we pass apply_budget=True so that confidence is applied internally
+        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=True)
         raw_intent = raw_intent.reindex(features.index).fillna(0.0)
+        # Do NOT apply risk_budget again - it's already applied inside generate_series with confidence
+        target_exposure = raw_intent.clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, MeanReversionStrategy):
         # Use mean reversion series logic from strategy
         raw_intent = _meanrev_series_from_strategy(close, strategy)
+        # Apply risk budget and max exposure
+        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, KalmanStrategy):
         # Use Kalman series logic
         raw_intent = _kalman_series_from_strategy(close, strategy)
+        # Apply risk budget and max exposure
+        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
     else:
         raw_intent = pd.Series(0.0, index=features.index, dtype=float)
-
-    # Apply risk budget and max exposure
-    target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
+        # Apply risk budget and max exposure
+        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
     # Turn off when risk state is OFF
     target_exposure = target_exposure.where(risk_state == "ON", 0.0)
 
