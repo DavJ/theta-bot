@@ -241,6 +241,8 @@ def run_backtest(
     rv_ref_window: int | None = None,
     conf_power: float = 1.0,
     hyst_conf_k: float = 0.0,
+    snr_s0: float = 0.02,
+    snr_enabled: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -285,7 +287,11 @@ def run_backtest(
     # Instantiate strategy
     strategy_obj: Any
     if strategy_name == "kalman_mr_dual":
-        strategy_obj = MeanRevDualKalmanStrategy(conf_power=conf_power)
+        strategy_obj = MeanRevDualKalmanStrategy(
+            conf_power=conf_power,
+            snr_s0=snr_s0,
+            snr_enabled=snr_enabled,
+        )
     elif strategy_name == "kalman":
         strategy_obj = KalmanStrategy()
     elif strategy_name == "meanrev":

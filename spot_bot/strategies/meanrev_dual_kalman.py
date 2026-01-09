@@ -45,6 +45,8 @@ class DualKalmanParams:
     r_max: float = 8.0  # Maximum allowed value for r_hat to prevent exp overflow
     conf_floor: float = 0.05  # Minimum confidence value
     conf_power: float = 1.0  # Power to apply to confidence when scaling risk budget
+    snr_s0: float = 0.02  # SNR normalization constant (default 0.02, range 0.01-0.05 for crypto)
+    snr_enabled: bool = False  # Enable SNR-based confidence component
 
 
 class MeanRevDualKalmanStrategy(Strategy):
@@ -112,6 +114,32 @@ class MeanRevDualKalmanStrategy(Strategy):
     def _raw_signal(self, u_t: float) -> float:
         return -self.params.k_u * u_t
 
+    def _compute_snr_confidence(self, slope: float, price: float, rv: float) -> tuple[float, float]:
+        """
+        Compute SNR-based confidence component.
+        
+        Args:
+            slope: Kalman filter slope estimate
+            price: Current price (for normalization)
+            rv: Realized volatility
+            
+        Returns:
+            (snr_raw, snr_conf) tuple
+        """
+        eps = 1e-12
+        
+        # Normalize slope to returns units if needed
+        # slope is already in price units from Kalman, so divide by price
+        slope_rel = slope / max(price, eps)
+        
+        # SNR = signal strength / noise strength
+        snr_raw = abs(slope_rel) / (rv + eps)
+        
+        # Convert to [0, 1] confidence
+        snr_conf = snr_raw / (snr_raw + self.params.snr_s0)
+        
+        return float(snr_raw), float(snr_conf)
+
     def _target_exposure(self, u_t: float, risk_budget: float, *, apply_budget: bool = True) -> float:
         raw = self._raw_signal(u_t)
         target = float(np.clip(raw, -self.params.emax, self.params.emax))
@@ -139,10 +167,23 @@ class MeanRevDualKalmanStrategy(Strategy):
             sigma = np.sqrt(MIN_VARIANCE)
         u_t = residual / sigma
 
-        # Compute NIS and confidence
+        # Compute NIS-based confidence
         nis = (residual * residual) / max(innovation_var, MIN_VARIANCE)
-        conf = float(np.exp(-0.5 * nis))
-        conf = float(np.clip(conf, self.params.conf_floor, 1.0))
+        conf_nis = float(np.exp(-0.5 * nis))
+        conf_nis = float(np.clip(conf_nis, self.params.conf_floor, 1.0))
+
+        # Compute SNR-based confidence if enabled
+        snr_raw = 0.0
+        snr_conf = 1.0
+        if self.params.snr_enabled:
+            # Get RV from features
+            last_row = features_df.iloc[-1]
+            rv = float(last_row.get("rv", 0.02)) if isinstance(last_row, pd.Series) else 0.02
+            price = float(close.iloc[-1])
+            snr_raw, snr_conf = self._compute_snr_confidence(slope, price, rv)
+        
+        # Combine confidences
+        conf_eff = conf_nis * snr_conf
 
         last_row = features_df.iloc[-1]
         if isinstance(last_row, pd.Series) and "risk_budget" in last_row:
@@ -150,8 +191,8 @@ class MeanRevDualKalmanStrategy(Strategy):
         else:
             risk_budget = 1.0
 
-        # Apply confidence to risk budget
-        risk_budget_eff = risk_budget * (conf ** self.params.conf_power)
+        # Apply effective confidence to risk budget
+        risk_budget_eff = risk_budget * (conf_eff ** self.params.conf_power)
         desired_exposure = self._target_exposure(u_t, risk_budget=risk_budget_eff, apply_budget=True)
 
         raw_signal = self._raw_signal(u_t)
@@ -166,7 +207,10 @@ class MeanRevDualKalmanStrategy(Strategy):
             "scale": last_scale,
             "innovation_var": innovation_var,
             "nis": nis,
-            "confidence": conf,
+            "confidence": conf_nis,
+            "snr_raw": snr_raw,
+            "snr_conf": snr_conf,
+            "conf_eff": conf_eff,
         }
         return Intent(desired_exposure=desired_exposure, reason="Dual Kalman mean reversion", diagnostics=diagnostics)
 
@@ -189,6 +233,11 @@ class MeanRevDualKalmanStrategy(Strategy):
                 else pd.Series(1.0, index=close.index)
             )
         budgets = budgets.reindex(close.index).fillna(1.0)
+        
+        # Get RV series if SNR is enabled
+        rv_series = None
+        if self.params.snr_enabled and "rv" in features_df:
+            rv_series = pd.to_numeric(features_df.get("rv"), errors="coerce").reindex(close.index).fillna(0.02)
 
         regime = RegimeKalman1D(q=self.params.q_r, r=self.params.r_z, mean=0.0, var=1.0)
         main = AdaptiveLevelTrendKalman(
@@ -200,21 +249,30 @@ class MeanRevDualKalmanStrategy(Strategy):
 
         exposures = []
         sigma2 = self.params.r
-        for price, z_val, budget in zip(close, z, budgets):
+        for i, (price, z_val, budget) in enumerate(zip(close, z, budgets)):
             r_hat = regime.step(z_val)
             r_hat = np.clip(r_hat, -self.params.r_max, self.params.r_max)
             scale = float(np.clip(np.exp(r_hat), self.params.s_min, self.params.s_max))
-            _, _, residual, sigma2 = main.step(price, scale=scale)
+            level, slope, residual, sigma2 = main.step(price, scale=scale)
             sigma = float(np.sqrt(max(sigma2, MIN_VARIANCE)))
             u_t = residual / sigma if sigma > 0 else 0.0
             
-            # Compute confidence per bar
+            # Compute NIS-based confidence per bar
             nis = (residual * residual) / max(sigma2, MIN_VARIANCE)
-            conf = float(np.exp(-0.5 * nis))
-            conf = float(np.clip(conf, self.params.conf_floor, 1.0))
+            conf_nis = float(np.exp(-0.5 * nis))
+            conf_nis = float(np.clip(conf_nis, self.params.conf_floor, 1.0))
             
-            # Apply confidence to budget
-            budget_eff = float(budget) * (conf ** self.params.conf_power)
+            # Compute SNR-based confidence if enabled
+            snr_conf = 1.0
+            if self.params.snr_enabled and rv_series is not None:
+                rv = float(rv_series.iloc[i])
+                _, snr_conf = self._compute_snr_confidence(slope, price, rv)
+            
+            # Combine confidences
+            conf_eff = conf_nis * snr_conf
+            
+            # Apply effective confidence to budget
+            budget_eff = float(budget) * (conf_eff ** self.params.conf_power)
             exposures.append(self._target_exposure(u_t, budget_eff, apply_budget=apply_budget))
         return pd.Series(exposures, index=close.index, dtype=float)
 
