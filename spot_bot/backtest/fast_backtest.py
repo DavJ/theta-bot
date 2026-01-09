@@ -113,20 +113,28 @@ def _compute_intents_with_regime(
 
     # Generate raw intent from strategy
     if isinstance(strategy, MeanRevDualKalmanStrategy):
-        # Dual Kalman generates series directly
-        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=False)
+        # Dual Kalman generates series with confidence built-in
+        # We pass apply_budget=True so confidence is applied internally as:
+        #   budget_eff = risk_budget * (confidence^conf_power)
+        # This means the strategy already applies both risk_budget AND confidence scaling
+        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=True)
         raw_intent = raw_intent.reindex(features.index).fillna(0.0)
+        # Do NOT apply risk_budget again here - it's already applied inside generate_series
+        target_exposure = raw_intent.clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, MeanReversionStrategy):
         # Use mean reversion series logic from strategy
         raw_intent = _meanrev_series_from_strategy(close, strategy)
+        # Apply risk budget and max exposure
+        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, KalmanStrategy):
         # Use Kalman series logic
         raw_intent = _kalman_series_from_strategy(close, strategy)
+        # Apply risk budget and max exposure
+        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
     else:
         raw_intent = pd.Series(0.0, index=features.index, dtype=float)
-
-    # Apply risk budget and max exposure
-    target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
+        # Apply risk budget and max exposure
+        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
     # Turn off when risk state is OFF
     target_exposure = target_exposure.where(risk_state == "ON", 0.0)
 
@@ -231,6 +239,8 @@ def run_backtest(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     rv_ref_window: int | None = None,
+    conf_power: float = 1.0,
+    hyst_conf_k: float = 0.0,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -275,7 +285,7 @@ def run_backtest(
     # Instantiate strategy
     strategy_obj: Any
     if strategy_name == "kalman_mr_dual":
-        strategy_obj = MeanRevDualKalmanStrategy()
+        strategy_obj = MeanRevDualKalmanStrategy(conf_power=conf_power)
     elif strategy_name == "kalman":
         strategy_obj = KalmanStrategy()
     elif strategy_name == "meanrev":
@@ -319,7 +329,8 @@ def run_backtest(
         min_notional=min_notional,
         step_size=step_size,
         allow_short=False,
-        debug=False  # Keep debug False - do not enable
+        debug=False,  # Keep debug False - do not enable
+        hyst_conf_k=hyst_conf_k,
     )
 
     # Initialize portfolio
