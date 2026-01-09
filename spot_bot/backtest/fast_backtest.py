@@ -113,11 +113,13 @@ def _compute_intents_with_regime(
 
     # Generate raw intent from strategy
     if isinstance(strategy, MeanRevDualKalmanStrategy):
-        # Dual Kalman generates series directly with confidence built-in
-        # Note: we pass apply_budget=True so that confidence is applied internally
+        # Dual Kalman generates series with confidence built-in
+        # We pass apply_budget=True so confidence is applied internally as:
+        #   budget_eff = risk_budget * (confidence^conf_power)
+        # This means the strategy already applies both risk_budget AND confidence scaling
         raw_intent = strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=True)
         raw_intent = raw_intent.reindex(features.index).fillna(0.0)
-        # Do NOT apply risk_budget again - it's already applied inside generate_series with confidence
+        # Do NOT apply risk_budget again here - it's already applied inside generate_series
         target_exposure = raw_intent.clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, MeanReversionStrategy):
         # Use mean reversion series logic from strategy

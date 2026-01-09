@@ -100,7 +100,14 @@ class MeanRevDualKalmanStrategy(Strategy):
             level, slope, residual, sigma2 = main.step(y, scale=scale)
         sigma = float(np.sqrt(max(sigma2, MIN_VARIANCE)))
         last_scale = float(scale_vals[-1]) if scale_vals else 1.0
-        return FilterOutput(level=level, slope=slope, residual=residual, sigma=sigma, scale=last_scale, innovation_var=float(sigma2))
+        return FilterOutput(
+            level=level,
+            slope=slope,
+            residual=residual,
+            sigma=sigma,
+            scale=last_scale,
+            innovation_var=float(sigma2),
+        )
 
     def _raw_signal(self, u_t: float) -> float:
         return -self.params.k_u * u_t
