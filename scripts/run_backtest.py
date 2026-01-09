@@ -58,6 +58,18 @@ def main() -> None:
         default=None,
         help="Reference volatility window in bars (default: 30 days based on timeframe)",
     )
+    p.add_argument(
+        "--conf_power",
+        type=float,
+        default=1.0,
+        help="Power to apply to confidence when scaling risk budget (default: 1.0)",
+    )
+    p.add_argument(
+        "--hyst_conf_k",
+        type=float,
+        default=0.0,
+        help="Confidence-based hysteresis adjustment coefficient (default: 0.0 = disabled)",
+    )
 
     p.add_argument("--out_equity", default=None)
     p.add_argument("--out_trades", default=None)
@@ -93,6 +105,8 @@ def main() -> None:
         alpha_cap=args.alpha_cap,
         vol_hyst_mode=args.vol_hyst_mode,
         rv_ref_window=args.rv_ref_window,
+        conf_power=args.conf_power,
+        hyst_conf_k=args.hyst_conf_k,
     )
 
     if args.out_equity:

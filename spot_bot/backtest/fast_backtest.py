@@ -231,6 +231,8 @@ def run_backtest(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     rv_ref_window: int | None = None,
+    conf_power: float = 1.0,
+    hyst_conf_k: float = 0.0,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -275,7 +277,7 @@ def run_backtest(
     # Instantiate strategy
     strategy_obj: Any
     if strategy_name == "kalman_mr_dual":
-        strategy_obj = MeanRevDualKalmanStrategy()
+        strategy_obj = MeanRevDualKalmanStrategy(conf_power=conf_power)
     elif strategy_name == "kalman":
         strategy_obj = KalmanStrategy()
     elif strategy_name == "meanrev":
@@ -319,7 +321,8 @@ def run_backtest(
         min_notional=min_notional,
         step_size=step_size,
         allow_short=False,
-        debug=False  # Keep debug False - do not enable
+        debug=False,  # Keep debug False - do not enable
+        hyst_conf_k=hyst_conf_k,
     )
 
     # Initialize portfolio
