@@ -126,7 +126,7 @@ class MeanRevDualKalmanStrategy(Strategy):
         Returns:
             (snr_raw, snr_conf) tuple
         """
-        eps = 1e-12
+        eps = 1e-12  # Small constant for numerical stability
         
         # Normalize slope to returns units if needed
         # slope is already in price units from Kalman, so divide by price

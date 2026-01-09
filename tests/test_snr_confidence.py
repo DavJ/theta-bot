@@ -177,7 +177,7 @@ def test_snr_compute_helper():
     eps = 1e-12
     slope_rel = slope / price
     expected_snr_raw = abs(slope_rel) / (rv + eps)
-    expected_snr_conf = expected_snr_raw / (expected_snr_raw + 1.0)
+    expected_snr_conf = expected_snr_raw / (expected_snr_raw + strat.params.snr_s0)
     
     assert abs(snr_raw - expected_snr_raw) < 1e-9
     assert abs(snr_conf - expected_snr_conf) < 1e-9
