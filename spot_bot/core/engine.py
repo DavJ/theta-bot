@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Protocol, Tuple
 
+import numpy as np
 import pandas as pd
 
 from spot_bot.core.cost_model import compute_cost_per_turnover
@@ -54,6 +55,7 @@ class EngineParams:
     max_notional_per_trade: Optional[float] = None
     allow_short: bool = False
     debug: bool = False
+    hyst_conf_k: float = 0.0  # Confidence-based hysteresis adjustment (0 = disabled)
 
 
 def run_step(
@@ -133,6 +135,12 @@ def run_step(
         alpha_cap=params.alpha_cap,
         vol_hyst_mode=params.vol_hyst_mode,
     )
+    
+    # Step 3.5: Apply confidence-based hysteresis adjustment (if enabled)
+    if params.hyst_conf_k > 0:
+        confidence = float(diagnostics_strategy.get("confidence", 1.0))
+        confidence = float(np.clip(confidence, 0.0, 1.0))
+        delta_e_min = delta_e_min * (1.0 + params.hyst_conf_k * (1.0 - confidence))
     
     # Step 4: Apply hysteresis
     target_exposure_final, suppressed = apply_hysteresis(
