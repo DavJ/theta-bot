@@ -24,6 +24,7 @@ class FilterOutput(NamedTuple):
     residual: float
     sigma: float
     scale: float
+    innovation_var: float
 
 
 @dataclass
@@ -42,6 +43,8 @@ class DualKalmanParams:
     sigma_window: int = 32
     emax: float = 1.0
     r_max: float = 8.0  # Maximum allowed value for r_hat to prevent exp overflow
+    conf_floor: float = 0.05  # Minimum confidence value
+    conf_power: float = 1.0  # Power to apply to confidence when scaling risk budget
 
 
 class MeanRevDualKalmanStrategy(Strategy):
@@ -97,7 +100,7 @@ class MeanRevDualKalmanStrategy(Strategy):
             level, slope, residual, sigma2 = main.step(y, scale=scale)
         sigma = float(np.sqrt(max(sigma2, MIN_VARIANCE)))
         last_scale = float(scale_vals[-1]) if scale_vals else 1.0
-        return FilterOutput(level=level, slope=slope, residual=residual, sigma=sigma, scale=last_scale)
+        return FilterOutput(level=level, slope=slope, residual=residual, sigma=sigma, scale=last_scale, innovation_var=float(sigma2))
 
     def _raw_signal(self, u_t: float) -> float:
         return -self.params.k_u * u_t
@@ -123,11 +126,16 @@ class MeanRevDualKalmanStrategy(Strategy):
 
         z = self._build_regime_signal(features_df.loc[close.index]).reindex(close.index).fillna(0.0)
         filter_out = self._run_filters(close, z)
-        level, slope, residual, sigma, last_scale = filter_out
+        level, slope, residual, sigma, last_scale, innovation_var = filter_out
 
         if sigma <= 0.0 or np.isnan(sigma):
             sigma = np.sqrt(MIN_VARIANCE)
         u_t = residual / sigma
+
+        # Compute NIS and confidence
+        nis = (residual * residual) / max(innovation_var, MIN_VARIANCE)
+        conf = float(np.exp(-0.5 * nis))
+        conf = float(np.clip(conf, self.params.conf_floor, 1.0))
 
         last_row = features_df.iloc[-1]
         if isinstance(last_row, pd.Series) and "risk_budget" in last_row:
@@ -135,7 +143,9 @@ class MeanRevDualKalmanStrategy(Strategy):
         else:
             risk_budget = 1.0
 
-        desired_exposure = self._target_exposure(u_t, risk_budget=risk_budget, apply_budget=True)
+        # Apply confidence to risk budget
+        risk_budget_eff = risk_budget * (conf ** self.params.conf_power)
+        desired_exposure = self._target_exposure(u_t, risk_budget=risk_budget_eff, apply_budget=True)
 
         raw_signal = self._raw_signal(u_t)
         diagnostics = {
@@ -147,6 +157,9 @@ class MeanRevDualKalmanStrategy(Strategy):
             "risk_budget": risk_budget,
             "desired_raw": float(np.clip(raw_signal, -self.params.emax, self.params.emax)),
             "scale": last_scale,
+            "innovation_var": innovation_var,
+            "nis": nis,
+            "confidence": conf,
         }
         return Intent(desired_exposure=desired_exposure, reason="Dual Kalman mean reversion", diagnostics=diagnostics)
 
@@ -187,7 +200,15 @@ class MeanRevDualKalmanStrategy(Strategy):
             _, _, residual, sigma2 = main.step(price, scale=scale)
             sigma = float(np.sqrt(max(sigma2, MIN_VARIANCE)))
             u_t = residual / sigma if sigma > 0 else 0.0
-            exposures.append(self._target_exposure(u_t, float(budget), apply_budget=apply_budget))
+            
+            # Compute confidence per bar
+            nis = (residual * residual) / max(sigma2, MIN_VARIANCE)
+            conf = float(np.exp(-0.5 * nis))
+            conf = float(np.clip(conf, self.params.conf_floor, 1.0))
+            
+            # Apply confidence to budget
+            budget_eff = float(budget) * (conf ** self.params.conf_power)
+            exposures.append(self._target_exposure(u_t, budget_eff, apply_budget=apply_budget))
         return pd.Series(exposures, index=close.index, dtype=float)
 
     # Compatibility wrapper for backtests returning StrategyOutput
