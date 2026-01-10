@@ -50,9 +50,9 @@ class TestRunLiveIsOrchestratorOnly:
         """Verify compute_step doesn't compute hysteresis threshold locally."""
         source = inspect.getsource(compute_step)
         
-        # These patterns indicate local hysteresis computation
+        # These patterns indicate local hysteresis COMPUTATION (not just parameter names)
         forbidden_patterns = [
-            "delta_e_min",
+            "delta_e_min =",  # Assignment indicates local computation
             "hyst_k * cost",
             "max(hyst_floor,",
         ]
