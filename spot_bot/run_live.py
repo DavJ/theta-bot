@@ -366,6 +366,7 @@ def compute_step(
             spread_bps=spread_bps,
             hyst_k=hyst_k,
             hyst_floor=hyst_floor,
+            hyst_mode=hyst_mode,
             k_vol=k_vol,
             edge_bps=edge_bps,
             max_delta_e_min=max_delta_e_min,
@@ -937,6 +938,7 @@ def main() -> None:
                 bar_state="closed",
                 hyst_k=args.hyst_k,
                 hyst_floor=args.hyst_floor,
+                hyst_mode=args.hyst_mode,
                 spread_bps=spread_bps,
                 k_vol=args.k_vol,
                 edge_bps=args.edge_bps,
@@ -1143,6 +1145,15 @@ def main() -> None:
             balances["usdt"] = float(equity_usdt - current_btc * result.close)
             latest_action = action
 
+            # Extract diagnostics for logging
+            diag = result.diagnostics if hasattr(result, 'diagnostics') else {}
+            target_raw = diag.get('target_exposure_raw', result.target_exposure)
+            target_clamped = diag.get('target_exposure_clamped', result.target_exposure)
+            delta_e = diag.get('delta_e', 0.0)
+            delta_e_min = diag.get('delta_e_min', 0.0)
+            suppressed = diag.get('hysteresis_suppressed', False)
+            clamped = diag.get('clamped_long_only', False)
+
             summary = (
                 f"{result.ts} | mode={args.mode} price={result.close:.2f} "
                 f"S={result.features_row.get('S', float('nan')):.4f} "
@@ -1151,7 +1162,10 @@ def main() -> None:
                 f"psi={result.features_row.get('psi', float('nan')):.4f} "
                 f"rv={result.features_row.get('rv', float('nan')):.4f} "
                 f"risk={result.decision.risk_state} budget={result.decision.risk_budget:.3f} "
-                f"intent={result.intent.desired_exposure:.3f} target_exp={result.target_exposure:.3f} "
+                f"intent={result.intent.desired_exposure:.3f} tgt_raw={target_raw:.3f} "
+                f"tgt_clmp={target_clamped:.3f} tgt_final={result.target_exposure:.3f} "
+                f"delta_e={delta_e:.3f} delta_e_min={delta_e_min:.3f} "
+                f"supp={suppressed} clmp={clamped} "
                 f"delta_btc={result.delta_btc:.6f} equity={equity_usdt:.2f} action={action} bar_state={bar_state}"
             )
             print(summary)

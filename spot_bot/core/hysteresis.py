@@ -156,6 +156,9 @@ def apply_hysteresis(
     current_exposure: float,
     target_exposure: float,
     delta_e_min: float,
+    mode: str = "exposure",
+    current_zscore: float = 0.0,
+    target_zscore: float = 0.0,
 ) -> Tuple[float, bool]:
     """
     Apply hysteresis to suppress small exposure changes.
@@ -164,19 +167,42 @@ def apply_hysteresis(
         current_exposure: Current exposure fraction
         target_exposure: Desired target exposure fraction
         delta_e_min: Minimum threshold from compute_hysteresis_threshold
+        mode: Hysteresis mode - "exposure" or "zscore"
+        current_zscore: Current z-score (only used if mode="zscore")
+        target_zscore: Target z-score (only used if mode="zscore")
 
     Returns:
         Tuple of (final_target_exposure, suppressed)
         - final_target_exposure: Target after hysteresis (may equal current)
         - suppressed: True if trade was suppressed by hysteresis
 
-    If abs(target - current) < delta_e_min, we suppress the trade by
-    setting target = current.
+    Modes:
+        - "exposure": Compare abs(target_exposure - current_exposure) <= delta_e_min
+        - "zscore": Compare abs(target_zscore - current_zscore) <= delta_e_min
+          (Note: In zscore mode, delta_e_min is interpreted as minimum z-score change)
+
+    If the threshold is not exceeded, we suppress the trade by setting target = current.
+    
+    Boundary semantics: Uses <= comparison so that delta_e_min is the MINIMUM
+    allowed threshold (i.e., changes exactly equal to delta_e_min are suppressed).
     """
-    delta_e = abs(target_exposure - current_exposure)
-    if delta_e < delta_e_min:
-        return float(current_exposure), True
-    return float(target_exposure), False
+    if mode == "exposure":
+        delta_e = abs(target_exposure - current_exposure)
+        # Use <= so that delta_e_min is a true floor: changes AT the floor are suppressed
+        if delta_e <= delta_e_min:
+            return float(current_exposure), True
+        return float(target_exposure), False
+    elif mode == "zscore":
+        # Z-score mode: compare z-score deltas instead of exposure deltas
+        # This is useful when strategy operates in z-score space
+        delta_z = abs(target_zscore - current_zscore)
+        if delta_z <= delta_e_min:
+            return float(current_exposure), True
+        return float(target_exposure), False
+    else:
+        raise ValueError(
+            f"Invalid hysteresis mode: {mode!r}. Must be 'exposure' or 'zscore'."
+        )
 
 
 __all__ = [
