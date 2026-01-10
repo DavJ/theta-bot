@@ -1,5 +1,23 @@
 # Changelog  
 
+## [2026-01-10] Fix Z-score Hysteresis Mode Validation
+
+### Fixed
+- **Z-score Mode Validation**: Fixed `hyst_mode=zscore` to raise a clear RuntimeError when z-score is not available in strategy diagnostics, preventing silent failures.
+  - Error message: "hyst_mode=zscore not supported: missing zscore in step context"
+  - Previously defaulted to 0.0, making zscore mode ineffective
+
+### Added
+- **Test Coverage**: Added `test_zscore_mode_requires_zscore_in_engine` to verify error is raised when zscore mode is used without zscore diagnostics
+
+### Verified
+- All existing hysteresis tests pass (12/12)
+- Manual acceptance test confirms hysteresis parameters affect trade count:
+  - `hyst-floor 0.02`: 134 trades
+  - `hyst-floor 0.12`: 0 trades
+- Core engine tests pass (27/27)
+- Parameter plumbing verified end-to-end
+
 ## [2025-01-10] Fix Hysteresis Parameter Plumbing and Diagnostics
 
 ### Fixed
