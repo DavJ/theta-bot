@@ -340,6 +340,7 @@ def compute_step(
         spread_bps=spread_bps,
         hyst_k=hyst_k,
         hyst_floor=hyst_floor,
+        hyst_mode=hyst_mode,
         min_notional=min_notional,
         step_size=step_size,
         min_usdt_reserve=min_usdt_reserve,
