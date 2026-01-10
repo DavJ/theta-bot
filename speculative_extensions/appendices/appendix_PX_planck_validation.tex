@@ -1,0 +1,45 @@
+\section{Planck 2018 Parameter Mapping and Falsifiability Test}
+
+This section provides a pre-registered, falsifiable comparison between UBT predictions and Planck 2018 cosmological observables. All mappings are fixed a priori; no post-hoc parameter tuning is allowed. Agreement is evaluated simultaneously across multiple independent observables to ensure that any apparent concordance is not the result of selective reporting or parameter adjustment.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\hline
+Parameter & UBT Theoretical Mapping & Predicted Value & Planck 2018 (Observed) \\
+\hline
+$\Omega_b h^2$ & $M_{\mathrm{payload}}(R,D)$ & 0.02231 & $0.02237 \pm 0.00015$ \\
+$\Omega_c h^2$ & $M_{\mathrm{parity}}(R,D)$  & 0.1192  & $0.1200 \pm 0.0012$ \\
+$n_s$         & $1 - \frac{9}{255}$          & 0.9647  & $0.9649 \pm 0.0042$ \\
+$\theta_*$   & $M_{\mathrm{phase}}(R,D)$    & TBD     & $1.0411 \pm 0.0003$ \\
+$\sigma_8$    & $M_{\mathrm{SNR}}(R,D)$      & TBD     & $0.811 \pm 0.006$ \\
+\hline
+\end{tabular}
+\caption{Pre-registered UBT-to-Planck parameter mapping.}
+\end{table}
+
+\subsection{Interpretation of the Mapping}
+
+The parameters $\Omega_b h^2$ (baryon density), $\Omega_c h^2$ (cold dark matter density), and $n_s$ (scalar spectral index) represent genuine predictions derived from the UBT digital architecture. These values emerge from the fixed RS(255,200) Reed-Solomon code structure over GF($2^8$) without adjustable parameters once the architecture is specified. The mapping functions $M_{\mathrm{payload}}(R,D)$, $M_{\mathrm{parity}}(R,D)$, and the expression $1 - \frac{9}{255}$ are deterministic consequences of the code parameters.
+
+In contrast, $\theta_*$ (acoustic scale) and $\sigma_8$ (matter fluctuation amplitude) are designated as open predictions that remain to be derived (TBD). The mapping functions $M_{\mathrm{phase}}(R,D)$ and $M_{\mathrm{SNR}}(R,D)$ have been identified as the appropriate theoretical constructs, but their numerical evaluation within the UBT framework has not yet been completed.
+
+It is explicitly stated that partial agreement with a subset of observables does not constitute validation of the UBT digital-architecture hypothesis. A complete test requires that all listed parameters, including $\theta_*$ and $\sigma_8$, be reproduced from the same fixed architecture without introducing additional free parameters or post-hoc adjustments.
+
+\subsection{Falsifiability Criterion}
+
+The UBT digital-architecture hypothesis is considered empirically supported only if at least three independent Planck observables are reproduced within their respective experimental uncertainties using a single fixed architecture. The current results show compatibility with three parameters ($\Omega_b h^2$, $\Omega_c h^2$, and $n_s$), which represents a necessary but not sufficient condition for validation.
+
+Failure to reproduce $\theta_*$ or $\sigma_8$ without introducing new free parameters would falsify the RS/OFDM-based interpretation as a physical theory of cosmological structure. The hypothesis is structured such that it can be refuted: if the derivation of the remaining TBD quantities requires parameter tuning, architecture modifications, or produces values inconsistent with observations, the interpretation is rejected.
+
+Agreement with a single parameter (for example, $\Omega_b h^2$ alone) is explicitly declared insufficient to support the hypothesis. The requirement for simultaneous, multi-parameter agreement ensures that any concordance is not attributable to chance or selective fitting.
+
+\subsection{Statistical Caveats}
+
+No p-values or claims of "one-in-a-million" probability are made in this analysis. The evaluation is based on direct comparison of predicted values to observed values with their stated uncertainties. Post-hoc fits are explicitly excluded: the code parameters RS(255,200) and GF($2^8$) were established prior to the comparison with Planck data.
+
+Potential sources of bias are acknowledged. Discrete lattice effects inherent to finite Galois field structures, look-elsewhere effects from considering multiple possible mappings, and the possibility of numerical coincidence have not been rigorously quantified. This appendix follows a pre-registered-test philosophy, where the theoretical mappings are stated in advance and then compared to observations without subsequent modification.
+
+The statistical significance of the agreement, if any, cannot be properly assessed without a well-defined prior probability distribution over possible digital architectures and mapping functions. In the absence of such a framework, the results are presented as consistent with observations, but claims of confirmation or statistical proof are avoided.
+
+If future work derives $\theta_*$ and $\sigma_8$ from the same mapping without introducing additional degrees of freedom, the digital-architecture hypothesis would become fully testable across all major cosmological observables.
