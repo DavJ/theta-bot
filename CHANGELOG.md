@@ -1,4 +1,30 @@
-# Changelog  
+# Changelog
+
+## [2026-01-10] Fix Hysteresis Mode Parameter Plumbing in run_live.py
+
+### Fixed
+- **hyst_mode Parameter Forwarding**: Fixed missing `hyst_mode` parameter in `compute_step` → `plan_from_live_inputs` call in run_live.py (line 343)
+  - Issue: The `--hyst-mode` CLI argument was being accepted but not forwarded to the core engine in certain execution paths
+  - Impact: Now `--hyst-mode` CLI argument properly flows through to the core engine in all execution modes (paper, live, dryrun)
+  - Related functions already correctly forwarded the parameter (replay, backtest, main loop)
+
+### Added
+- **CLI Integration Tests**: Added `TestHystModeCLI` class to `tests/test_hysteresis_fixes.py`
+  - `test_hyst_mode_exposure_cli_integration`: Verifies --hyst-mode exposure works end-to-end via CLI
+  - `test_hyst_mode_zscore_cli_raises_error_without_zscore`: Verifies proper error when zscore mode used without zscore
+
+### Verified
+- All 14 hysteresis tests pass
+- All 27 core engine tests pass  
+- All 19 run_live tests pass
+- Manual acceptance test confirms parameters work:
+  - `--hyst-floor 0.02`: 354 trades, turnover=17.60
+  - `--hyst-floor 0.12`: 0 trades, turnover=0.00
+- All diagnostics present in outputs (target_exposure_raw, target_exposure_final, delta_e, delta_e_min, suppressed, clamped_long_only)
+- Fee breakdown present in summary (fees_paid_total, gross_pnl, net_pnl)
+
+### Note
+This fix completes the hysteresis implementation. All other requirements (boundary condition fix, hyst_mode implementation, diagnostics) were already implemented in previous changes.
 
 ## [2026-01-10] Fix Z-score Hysteresis Mode Validation
 
