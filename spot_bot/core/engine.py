@@ -175,10 +175,16 @@ def run_step(
     )
     
     # Check if target was clamped by long-only restriction
+    # Clamping occurs when target_exposure_final (post-hysteresis) is outside [0, 1]
+    # and allow_short is False
     clamped_long_only = False
     if not params.allow_short:
-        # If raw target was negative or > 1.0, it was clamped
-        if target_exposure_raw < 0.0 or target_exposure_raw > 1.0:
+        # The trade planner clamps to [0, 1], so check if the post-hysteresis target
+        # would have been outside bounds
+        if target_exposure_final < 0.0 or target_exposure_final > 1.0:
+            clamped_long_only = True
+        # Also check if the raw target was outside bounds (even if hysteresis brought it back)
+        elif target_exposure_raw < 0.0 or target_exposure_raw > 1.0:
             clamped_long_only = True
 
     # If hysteresis suppressed the trade, update reason

@@ -112,6 +112,12 @@ def compute_step_with_core(
     min_notional: float = 10.0,
     step_size: Optional[float] = None,
     min_usdt_reserve: float = 0.0,
+    k_vol: float = 0.5,
+    edge_bps: float = 5.0,
+    max_delta_e_min: float = 0.3,
+    alpha_floor: float = 6.0,
+    alpha_cap: float = 6.0,
+    vol_hyst_mode: str = "increase",
 ) -> TradePlan:
     """
     Compute trading step using unified core engine.
@@ -194,6 +200,12 @@ def compute_step_with_core(
         spread_bps=spread_bps,
         hyst_k=hyst_k,
         hyst_floor=hyst_floor,
+        k_vol=k_vol,
+        edge_bps=edge_bps,
+        max_delta_e_min=max_delta_e_min,
+        alpha_floor=alpha_floor,
+        alpha_cap=alpha_cap,
+        vol_hyst_mode=vol_hyst_mode,
         min_notional=min_notional,
         step_size=step_size,
         min_usdt_reserve=min_usdt_reserve,
