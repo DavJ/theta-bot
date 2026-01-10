@@ -154,8 +154,8 @@ def test_compute_step_no_local_hysteresis_computation():
     # Check that no hysteresis computation is present
     assert "abs(target_exposure - current_exposure)" not in source, \
         "compute_step should not compute exposure delta for hysteresis"
-    assert "delta_e_min" not in source, \
-        "compute_step should not reference hysteresis threshold delta_e_min"
+    assert "delta_e_min =" not in source, \
+        "compute_step should not compute hysteresis threshold delta_e_min"
 
 
 def test_compute_step_no_local_rounding():

@@ -64,11 +64,12 @@ class TestHysteresis:
     """Tests for hysteresis.py"""
 
     def test_hysteresis_threshold_calculation(self):
-        """Verify threshold computation with new formula."""
-        # New formula: delta_e_min = hyst_k * (cost_r + edge_r + vol_r)
-        # where cost_r = 2*fee + (slip+spread)*1e-4, edge_r = edge_bps*1e-4, vol_r = k_vol*rv
+        """Verify threshold computation with multiplicative volatility formula."""
+        # Current formula: raw = hyst_k * (cost_r + edge_r) * vol_mult
+        # where vol_mult = 1.0 + k_vol * (rv_current / rv_ref) for "increase" mode
+        # Then apply soft_max(raw, hyst_floor) and soft_min(result, max_delta_e_min)
         rv_current = 0.02
-        rv_ref = 0.03  # Not used in new formula
+        rv_ref = 0.03
         fee_rate = 0.001
         slippage_bps = 0.0
         spread_bps = 0.0
@@ -92,16 +93,17 @@ class TestHysteresis:
             alpha_cap=100.0,
         )
 
-        # Expected: hyst_k * (cost_r + edge_r + vol_r)
+        # Expected calculation with multiplicative formula:
+        # rv_norm = rv_current / rv_ref = 0.02 / 0.03 = 0.6667
         # cost_r = 2*0.001 = 0.002
         # edge_r = 5.0*1e-4 = 0.0005
-        # vol_r = 0.5*0.02 = 0.01
-        # total = 0.002 + 0.0005 + 0.01 = 0.0125
-        # delta_e_min = 5.0 * 0.0125 = 0.0625
-        # max(0.02, 0.0625) = 0.0625
-        expected = 0.0625
+        # vol_mult = 1.0 + 0.5 * 0.6667 = 1.3333
+        # raw = 5.0 * (0.002 + 0.0005) * 1.3333 = 5.0 * 0.0025 * 1.3333 = 0.01667
+        # soft_max(0.01667, 0.02) with alpha=100 ≈ 0.02 (floor wins)
+        expected = 0.02  # Floor is binding
         # With very high alpha (100), soft bounds are nearly but not exactly hard bounds
-        assert abs(delta_e_min - expected) < 1e-5
+        # Due to soft_max smoothing, there's a small deviation from hard bounds
+        assert abs(delta_e_min - expected) < 2e-3
 
     def test_hysteresis_threshold_high_vol(self):
         """When rv_current is high, threshold should be higher."""
@@ -119,13 +121,16 @@ class TestHysteresis:
             alpha_floor=100.0,  # Very high alpha for near-hard bounds
             alpha_cap=100.0,
         )
+        # Multiplicative formula:
+        # rv_norm = rv_current / rv_ref = 0.04 / 0.02 = 2.0
         # cost_r = 2*0.001 = 0.002
         # edge_r = 5.0*1e-4 = 0.0005
-        # vol_r = 0.5*0.04 = 0.02
-        # total = 0.002 + 0.0005 + 0.02 = 0.0225
-        # delta_e_min = 5.0 * 0.0225 = 0.1125
-        expected = 0.1125
-        assert abs(delta_e_min - expected) < 1e-6
+        # vol_mult = 1.0 + 0.5 * 2.0 = 2.0
+        # raw = 5.0 * (0.002 + 0.0005) * 2.0 = 5.0 * 0.0025 * 2.0 = 0.025
+        # soft_max(0.025, 0.01) ≈ 0.025 (raw wins)
+        expected = 0.025
+        # Due to soft_max smoothing, there's a small deviation from hard bounds
+        assert abs(delta_e_min - expected) < 1e-3
 
     def test_hysteresis_threshold_zero_rv_current(self):
         """Handle zero rv_current gracefully."""

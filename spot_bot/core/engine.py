@@ -43,6 +43,7 @@ class EngineParams:
     spread_bps: float = 0.0
     hyst_k: float = 5.0
     hyst_floor: float = 0.02
+    hyst_mode: str = "exposure"  # "exposure" or "zscore"
     k_vol: float = 0.5
     edge_bps: float = 5.0
     max_delta_e_min: float = 0.3
@@ -142,11 +143,21 @@ def run_step(
         confidence = float(np.clip(confidence, 0.0, 1.0))
         delta_e_min = delta_e_min * (1.0 + params.hyst_conf_k * (1.0 - confidence))
     
+    # Extract z-scores if available for zscore mode
+    # Note: For zscore mode to work properly, strategy must provide zscore in diagnostics
+    # Current implementation: we use the strategy's zscore for target, and default 0.0 for current
+    # This makes zscore mode equivalent to exposure mode unless strategy provides varying zscores
+    current_zscore = 0.0  # Default: no current state zscore available
+    target_zscore = float(diagnostics_strategy.get("zscore", 0.0))
+    
     # Step 4: Apply hysteresis
     target_exposure_final, suppressed = apply_hysteresis(
         current_exposure=portfolio.exposure,
         target_exposure=target_exposure_raw,
         delta_e_min=delta_e_min,
+        mode=params.hyst_mode,
+        current_zscore=current_zscore,
+        target_zscore=target_zscore,
     )
     
     # Calculate delta_e for diagnostics
@@ -174,17 +185,14 @@ def run_step(
         allow_short=params.allow_short,
     )
     
-    # Check if target was clamped by long-only restriction
-    # Clamping occurs when target_exposure_final (post-hysteresis) is outside [0, 1]
-    # and allow_short is False
+    # Compute clamped value for diagnostics (always, regardless of allow_short)
+    # This shows what the target would be after long-only clamping
+    target_exposure_clamped = max(0.0, min(1.0, target_exposure_raw))
+    
+    # Check if clamping actually occurred (only relevant when allow_short=False)
     clamped_long_only = False
     if not params.allow_short:
-        # The trade planner clamps to [0, 1], so check if the post-hysteresis target
-        # would have been outside bounds
-        if target_exposure_final < 0.0 or target_exposure_final > 1.0:
-            clamped_long_only = True
-        # Also check if the raw target was outside bounds (even if hysteresis brought it back)
-        elif target_exposure_raw < 0.0 or target_exposure_raw > 1.0:
+        if target_exposure_raw < 0.0 or target_exposure_raw > 1.0:
             clamped_long_only = True
 
     # If hysteresis suppressed the trade, update reason
@@ -200,6 +208,7 @@ def run_step(
             diagnostics={
                 **plan.diagnostics,
                 "target_exposure_raw": target_exposure_raw,
+                "target_exposure_clamped": target_exposure_clamped,
                 "delta_e": delta_e,
                 "delta_e_min": delta_e_min,
                 "suppressed": True,
@@ -221,6 +230,7 @@ def run_step(
         "rv_current": rv_current,
         "rv_ref": rv_ref,
         "target_exposure_raw": target_exposure_raw,
+        "target_exposure_clamped": target_exposure_clamped,
         "target_exposure_final": target_exposure_final,
         "hysteresis_suppressed": suppressed,
         "clamped_long_only": clamped_long_only,
