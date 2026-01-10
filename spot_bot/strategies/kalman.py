@@ -96,7 +96,10 @@ class KalmanStrategy(Strategy):
         latest_price = float(prices.iloc[-1])
         z = (latest_price - level_est) / float(np.sqrt(innovation_var) if innovation_var > 0 else MIN_VARIANCE)
 
-        exposure_raw = 1.0 / (1.0 + float(np.exp(self.params.k * z)))
+        # Numerically-stable logistic squashing
+        x = float(self.params.k * z)
+        x = float(np.clip(x, -60.0, 60.0))
+        exposure_raw = 1.0 / (1.0 + float(np.exp(x)))
         desired_exposure = clip01(exposure_raw)
         diagnostics = {
             "level": level_est,

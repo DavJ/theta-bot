@@ -189,7 +189,10 @@ def _kalman_series_from_strategy(close: pd.Series, strategy: KalmanStrategy) -> 
         level = float(x[0])
         trend = float(x[1])
         z = (float(price) - level) / math.sqrt(innovation_var) if innovation_var > 0 else 0.0
-        exposure_raw = 1.0 / (1.0 + float(np.exp(strategy.params.k * z)))
+        # Numerically-stable logistic squashing
+        x_sig = float(strategy.params.k * z)
+        x_sig = float(np.clip(x_sig, -60.0, 60.0))
+        exposure_raw = 1.0 / (1.0 + float(np.exp(x_sig)))
         exposures.append(min(1.0, max(0.0, exposure_raw)))
     exposures_series = pd.Series(exposures, index=prices.index, dtype=float)
     exposures_series.iloc[: strategy.params.min_bars - 1] = 0.0
