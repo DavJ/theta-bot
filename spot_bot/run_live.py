@@ -311,6 +311,12 @@ def compute_step(
     min_notional: float = 10.0,
     step_size: Optional[float] = None,
     min_usdt_reserve: float = 0.0,
+    k_vol: float = 0.5,
+    edge_bps: float = 5.0,
+    max_delta_e_min: float = 0.3,
+    alpha_floor: float = 6.0,
+    alpha_cap: float = 6.0,
+    vol_hyst_mode: str = "increase",
 ) -> StepResult:
     """
     Compute trading step using unified core engine.
@@ -337,6 +343,12 @@ def compute_step(
         min_notional=min_notional,
         step_size=step_size,
         min_usdt_reserve=min_usdt_reserve,
+        k_vol=k_vol,
+        edge_bps=edge_bps,
+        max_delta_e_min=max_delta_e_min,
+        alpha_floor=alpha_floor,
+        alpha_cap=alpha_cap,
+        vol_hyst_mode=vol_hyst_mode,
     )
     
     # For paper mode, execute the trade
@@ -354,6 +366,12 @@ def compute_step(
             spread_bps=spread_bps,
             hyst_k=hyst_k,
             hyst_floor=hyst_floor,
+            k_vol=k_vol,
+            edge_bps=edge_bps,
+            max_delta_e_min=max_delta_e_min,
+            alpha_floor=alpha_floor,
+            alpha_cap=alpha_cap,
+            vol_hyst_mode=vol_hyst_mode,
             min_notional=min_notional,
             step_size=step_size,
             min_usdt_reserve=min_usdt_reserve,
@@ -431,6 +449,12 @@ def run_replay(
     equity_path: pathlib.Path,
     trades_path: pathlib.Path,
     features_path: Optional[pathlib.Path] = None,
+    k_vol: float = 0.5,
+    edge_bps: float = 5.0,
+    max_delta_e_min: float = 0.3,
+    alpha_floor: float = 6.0,
+    alpha_cap: float = 6.0,
+    vol_hyst_mode: str = "increase",
 ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
     if ohlcv_df is None or ohlcv_df.empty:
         raise ValueError("Replay requires non-empty OHLCV data.")
@@ -483,6 +507,12 @@ def run_replay(
                 hyst_k=hyst_k,
                 hyst_floor=hyst_floor,
                 hyst_mode=hyst_mode,
+                k_vol=k_vol,
+                edge_bps=edge_bps,
+                max_delta_e_min=max_delta_e_min,
+                alpha_floor=alpha_floor,
+                alpha_cap=alpha_cap,
+                vol_hyst_mode=vol_hyst_mode,
             )
         except ValueError as exc:
             msg = str(exc)
@@ -671,6 +701,12 @@ def run_once_on_df(
     hyst_k: float = 5.0,
     hyst_floor: float = 0.02,
     hyst_mode: str = "exposure",
+    k_vol: float = 0.5,
+    edge_bps: float = 5.0,
+    max_delta_e_min: float = 0.3,
+    alpha_floor: float = 6.0,
+    alpha_cap: float = 6.0,
+    vol_hyst_mode: str = "increase",
 ) -> StepResult:
     return compute_step(
         ohlcv_df=ohlcv_df,
@@ -687,6 +723,12 @@ def run_once_on_df(
         hyst_k=hyst_k,
         hyst_floor=hyst_floor,
         hyst_mode=hyst_mode,
+        k_vol=k_vol,
+        edge_bps=edge_bps,
+        max_delta_e_min=max_delta_e_min,
+        alpha_floor=alpha_floor,
+        alpha_cap=alpha_cap,
+        vol_hyst_mode=vol_hyst_mode,
     )
 
 
@@ -707,6 +749,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--hyst-k", dest="hyst_k", type=float, default=5.0)
     parser.add_argument("--hyst-floor", dest="hyst_floor", type=float, default=0.02)
     parser.add_argument("--hyst-mode", dest="hyst_mode", choices=["exposure", "zscore"], default="exposure")
+    parser.add_argument("--k-vol", dest="k_vol", type=float, default=0.5, help="Volatility multiplier for hysteresis threshold")
+    parser.add_argument("--edge-bps", dest="edge_bps", type=float, default=5.0, help="Required edge in basis points")
+    parser.add_argument("--max-delta-e-min", dest="max_delta_e_min", type=float, default=0.3, help="Maximum hysteresis threshold cap")
+    parser.add_argument("--alpha-floor", dest="alpha_floor", type=float, default=6.0, help="Smoothness parameter for minimum bound")
+    parser.add_argument("--alpha-cap", dest="alpha_cap", type=float, default=6.0, help="Smoothness parameter for maximum bound")
+    parser.add_argument("--vol-hyst-mode", dest="vol_hyst_mode", type=str, default="increase", choices=["increase", "decrease", "none"], help="Volatility hysteresis mode")
     parser.add_argument("--loop", action="store_true", help="Run in continuous loop mode.")
     parser.add_argument("--poll-seconds", dest="poll_seconds", type=float, default=10.0)
     parser.add_argument("--trade-on", dest="trade_on", choices=["bar_close", "tick"], default="bar_close")
@@ -887,6 +935,15 @@ def main() -> None:
                 min_notional=min_notional,
                 step_size=step_size,
                 bar_state="closed",
+                hyst_k=args.hyst_k,
+                hyst_floor=args.hyst_floor,
+                spread_bps=spread_bps,
+                k_vol=args.k_vol,
+                edge_bps=args.edge_bps,
+                max_delta_e_min=args.max_delta_e_min,
+                alpha_floor=args.alpha_floor,
+                alpha_cap=args.alpha_cap,
+                vol_hyst_mode=args.vol_hyst_mode,
             )
             if args.out_equity:
                 try:
@@ -949,6 +1006,12 @@ def main() -> None:
                 equity_path=pathlib.Path(args.replay_equity_out),
                 trades_path=pathlib.Path(args.replay_trades_out),
                 features_path=pathlib.Path(args.replay_features_out) if args.replay_features_out else None,
+                k_vol=args.k_vol,
+                edge_bps=args.edge_bps,
+                max_delta_e_min=args.max_delta_e_min,
+                alpha_floor=args.alpha_floor,
+                alpha_cap=args.alpha_cap,
+                vol_hyst_mode=args.vol_hyst_mode,
             )
             print(f"Replay finished: {len(equity_df)} steps, {len(trades_df)} trades, equity_out={args.replay_equity_out}")
             if logger:
@@ -1017,6 +1080,12 @@ def main() -> None:
                     hyst_k=args.hyst_k,
                     hyst_floor=args.hyst_floor,
                     hyst_mode=args.hyst_mode,
+                    k_vol=args.k_vol,
+                    edge_bps=args.edge_bps,
+                    max_delta_e_min=args.max_delta_e_min,
+                    alpha_floor=args.alpha_floor,
+                    alpha_cap=args.alpha_cap,
+                    vol_hyst_mode=args.vol_hyst_mode,
                 )
             except ValueError as exc:
                 print(str(exc))
