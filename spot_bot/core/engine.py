@@ -144,7 +144,10 @@ def run_step(
         delta_e_min = delta_e_min * (1.0 + params.hyst_conf_k * (1.0 - confidence))
     
     # Extract z-scores if available for zscore mode
-    current_zscore = float(diagnostics_strategy.get("zscore", 0.0))
+    # Note: For zscore mode to work properly, strategy must provide zscore in diagnostics
+    # Current implementation: we use the strategy's zscore for target, and default 0.0 for current
+    # This makes zscore mode equivalent to exposure mode unless strategy provides varying zscores
+    current_zscore = 0.0  # Default: no current state zscore available
     target_zscore = float(diagnostics_strategy.get("zscore", 0.0))
     
     # Step 4: Apply hysteresis
@@ -182,15 +185,13 @@ def run_step(
         allow_short=params.allow_short,
     )
     
-    # Check if target was clamped by long-only restriction
-    # Clamping occurs when target_exposure_final (post-hysteresis) is outside [0, 1]
-    # and allow_short is False
+    # Compute clamped value for diagnostics (always, regardless of allow_short)
+    # This shows what the target would be after long-only clamping
+    target_exposure_clamped = max(0.0, min(1.0, target_exposure_raw))
+    
+    # Check if clamping actually occurred (only relevant when allow_short=False)
     clamped_long_only = False
-    target_exposure_clamped = target_exposure_raw
     if not params.allow_short:
-        # Clamp to [0, 1] for long-only
-        target_exposure_clamped = max(0.0, min(1.0, target_exposure_raw))
-        # Check if clamping occurred
         if target_exposure_raw < 0.0 or target_exposure_raw > 1.0:
             clamped_long_only = True
 
