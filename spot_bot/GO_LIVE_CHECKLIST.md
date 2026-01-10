@@ -26,9 +26,22 @@
    - Use the single-line summary for quick checks (ts, price, S/C, psi, rv, risk, exposures, equity).
 
 5. **Going live (explicit opt-in)**
-   - Ensure API keys are configured for ccxt outside source control.
-   - Run with acknowledgement flag:  
-     `python -m spot_bot.run_live --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h --limit-total 2000`
+   - Ensure API keys are configured for ccxt **outside source control**. Recommended: environment variables:
+     - `BINANCE_API_KEY`
+     - `BINANCE_API_SECRET`
+
+     Example (macOS/zsh):
+     ```bash
+     export BINANCE_API_KEY="..."
+     export BINANCE_API_SECRET="..."
+     ```
+
+   - Run with acknowledgement flag (and optionally select exchange):
+     `python -m spot_bot.run_live --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h --limit-total 2000 --exchange-id binance`
+
+     You may also pass credentials explicitly (not recommended in shell history):
+     `python -m spot_bot.run_live --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --api-key ... --api-secret ...`
+
    - Confirm ccxt connectivity; slippage/reserve guards should block abnormal fills.
 
 6. **Stopping safely**

@@ -7,6 +7,7 @@ import json
 import pathlib
 import sys
 import time
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import re
@@ -724,6 +725,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--csv", type=str, default=None, help="(Deprecated) Use --csv-in/--csv-out instead.")
     parser.add_argument("--cache", type=str, default=None, help="Optional cache file for OHLCV.")
     parser.add_argument("--config", type=str, default=str(pathlib.Path(__file__).parent / "config.yaml"))
+    parser.add_argument("--exchange-id", dest="exchange_id", type=str, default="binance",
+                        help="CCXT exchange id for live trading (default: binance)")
+    parser.add_argument("--api-key", dest="api_key", type=str, default=None,
+                        help="API key for live trading (or env BINANCE_API_KEY)")
+    parser.add_argument("--api-secret", dest="api_secret", type=str, default=None,
+                        help="API secret for live trading (or env BINANCE_API_SECRET)")
     parser.add_argument("--i-understand-live-risk", action="store_true", help="Required to enable live execution.")
     parser.add_argument("--replay-equity-out", dest="replay_equity_out", type=str, default="equity_curve.csv")
     parser.add_argument("--replay-trades-out", dest="replay_trades_out", type=str, default="trades.csv")
@@ -1028,13 +1035,22 @@ def main() -> None:
                 except Exception as exc:  # pragma: no cover - optional dependency
                     print(f"Live execution unavailable: {exc}")
                     sys.exit(1)
+                api_key = args.api_key or os.getenv('BINANCE_API_KEY') or os.getenv('CCXT_API_KEY')
+                api_secret = args.api_secret or os.getenv('BINANCE_API_SECRET') or os.getenv('CCXT_API_SECRET')
+                if not api_key or not api_secret:
+                    print('Missing API credentials for live mode. Set env BINANCE_API_KEY and BINANCE_API_SECRET (recommended) or pass --api-key/--api-secret.')
+                    sys.exit(1)
+
                 exec_cfg = ExecutorConfig(
+                    exchange_id=args.exchange_id,
                     symbol=symbol,
-                    max_notional_per_trade=cfg.get("max_notional_per_trade", 300.0),
-                    max_trades_per_day=cfg.get("max_trades_per_day", 10),
-                    max_turnover_per_day=cfg.get("max_turnover_per_day", 2000.0),
-                    slippage_bps_limit=cfg.get("slippage_bps_limit", 10.0),
-                    min_balance_reserve_usdt=cfg.get("min_usdt_reserve", 50.0),
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    max_notional_per_trade=cfg.get('max_notional_per_trade', 300.0),
+                    max_trades_per_day=cfg.get('max_trades_per_day', 10),
+                    max_turnover_per_day=cfg.get('max_turnover_per_day', 2000.0),
+                    slippage_bps_limit=cfg.get('slippage_bps_limit', 10.0),
+                    min_balance_reserve_usdt=cfg.get('min_usdt_reserve', 50.0),
                     fee_rate=fee_rate,
                     min_notional=min_notional,
                 )
