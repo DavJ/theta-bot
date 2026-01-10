@@ -70,6 +70,18 @@ def main() -> None:
         default=0.0,
         help="Confidence-based hysteresis adjustment coefficient (default: 0.0 = disabled)",
     )
+    p.add_argument(
+        "--snr_s0",
+        type=float,
+        default=0.02,
+        help="SNR normalization constant (default: 0.02, range 0.01-0.05 for crypto)",
+    )
+    p.add_argument(
+        "--snr_enabled",
+        action="store_true",
+        default=False,
+        help="Enable SNR-based confidence component (default: disabled)",
+    )
 
     p.add_argument("--out_equity", default=None)
     p.add_argument("--out_trades", default=None)
@@ -107,6 +119,8 @@ def main() -> None:
         rv_ref_window=args.rv_ref_window,
         conf_power=args.conf_power,
         hyst_conf_k=args.hyst_conf_k,
+        snr_s0=args.snr_s0,
+        snr_enabled=args.snr_enabled,
     )
 
     if args.out_equity:

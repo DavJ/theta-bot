@@ -1,0 +1,219 @@
+=========================================
+CONFIDENCE BENCHMARK - PART 1
+=========================================
+
+>>> SWEEP 1: conf_power=0 (confidence disabled)
+=== BTCUSDT conf_power=0 ===
+{
+  "cagr": -0.6996319309550608,
+  "final_equity": 300.3680690449392,
+  "maxDD": -0.7014214951481171,
+  "sharpe": -0.10198603246654353,
+  "time_in_market": 0.4028628925256153,
+  "total_return": -0.6996319309550608,
+  "trades_count": 772.0,
+  "turnover": 462.1513316938547,
+  "vol": 0.29428513052991495
+}
+
+=== ETHUSDT conf_power=0 ===
+{
+  "cagr": 34.693377320336246,
+  "final_equity": 35693.37732033624,
+  "maxDD": -0.1548897237218659,
+  "sharpe": 0.1553054482108656,
+  "time_in_market": 0.4094376701453569,
+  "total_return": 34.693377320336246,
+  "trades_count": 1565.0,
+  "turnover": 11986.990424498332,
+  "vol": 0.5958335259570494
+}
+
+=== XRPUSDT conf_power=0 ===
+{
+  "cagr": 34.296093417667564,
+  "final_equity": 35296.093417667566,
+  "maxDD": -0.13693637753957086,
+  "sharpe": 0.16585222803680494,
+  "time_in_market": 0.3836842813930827,
+  "total_return": 34.296093417667564,
+  "trades_count": 1707.0,
+  "turnover": 12155.736572628577,
+  "vol": 0.5547170777633661
+}
+
+=== DOTUSDT conf_power=0 ===
+{
+  "cagr": 54.496599943994184,
+  "final_equity": 55496.59994399418,
+  "maxDD": -0.15330923154638076,
+  "sharpe": 0.16933331770966778,
+  "time_in_market": 0.4045238856865807,
+  "total_return": 54.496599943994184,
+  "trades_count": 1617.0,
+  "turnover": 17642.963185042914,
+  "vol": 0.6132656678997226
+}
+
+>>> SWEEP 2: conf_power=1 (default confidence)
+=== BTCUSDT conf_power=1 ===
+{
+  "cagr": -0.059359015741062726,
+  "final_equity": 940.6409842589372,
+  "maxDD": -0.0596370699223603,
+  "sharpe": -0.10516714107908327,
+  "time_in_market": 0.020173176230262144,
+  "total_return": -0.059359015741062726,
+  "trades_count": 774.0,
+  "turnover": 38.422971966698256,
+  "vol": 0.014735709053567782
+}
+
+=== ETHUSDT conf_power=1 ===
+{
+  "cagr": 0.1978746869899617,
+  "final_equity": 1197.8746869899617,
+  "maxDD": -0.008120310801414203,
+  "sharpe": 0.15508600111885482,
+  "time_in_market": 0.020391389949040654,
+  "total_return": 0.1978746869899617,
+  "trades_count": 1369.0,
+  "turnover": 74.79981407944378,
+  "vol": 0.029535721069247244
+}
+
+=== XRPUSDT conf_power=1 ===
+{
+  "cagr": 0.08006065684580155,
+  "final_equity": 1080.0606568458015,
+  "maxDD": -0.05956945800831563,
+  "sharpe": 0.01926747733002068,
+  "time_in_market": 0.045985047275704204,
+  "total_return": 0.08006065684580155,
+  "trades_count": 1641.0,
+  "turnover": 254.36138472454306,
+  "vol": 0.10432821586410473
+}
+
+=== DOTUSDT conf_power=1 ===
+{
+  "cagr": 0.2254835870036922,
+  "final_equity": 1225.4835870036923,
+  "maxDD": -0.00781787150332977,
+  "sharpe": 0.16953099509739636,
+  "time_in_market": 0.02014220482524497,
+  "total_return": 0.2254835870036922,
+  "trades_count": 1388.0,
+  "turnover": 77.0436714639099,
+  "vol": 0.030427438416932632
+}
+
+>>> SWEEP 3: conf_power=2 (stronger confidence gating)
+=== BTCUSDT conf_power=2 ===
+{
+  "cagr": -0.0015078923877216432,
+  "final_equity": 998.4921076122783,
+  "maxDD": -0.0019280420683689518,
+  "sharpe": -0.020817579801595893,
+  "time_in_market": 0.0016118592570121388,
+  "total_return": -0.0015078923877216432,
+  "trades_count": 4.0,
+  "turnover": 0.786109993343207,
+  "vol": 0.0018362666018847524
+}
+
+=== ETHUSDT conf_power=2 ===
+{
+  "cagr": 0.0,
+  "final_equity": 1000.0,
+  "maxDD": 0.0,
+  "sharpe": 0.0,
+  "time_in_market": 0.0,
+  "total_return": 0.0,
+  "trades_count": 0.0,
+  "turnover": 0.0,
+  "vol": 0.0
+}
+
+=== XRPUSDT conf_power=2 ===
+{
+  "cagr": -0.07766263346348634,
+  "final_equity": 922.3373665365136,
+  "maxDD": -0.08139385908487308,
+  "sharpe": -0.03015095612530602,
+  "time_in_market": 0.019107717630026874,
+  "total_return": -0.07766263346348634,
+  "trades_count": 495.0,
+  "turnover": 117.65068268670842,
+  "vol": 0.0671551865751001
+}
+
+=== DOTUSDT conf_power=2 ===
+{
+  "cagr": 0.0,
+  "final_equity": 1000.0,
+  "maxDD": 0.0,
+  "sharpe": 0.0,
+  "time_in_market": 0.0,
+  "total_return": 0.0,
+  "trades_count": 0.0,
+  "turnover": 0.0,
+  "vol": 0.0
+}
+
+>>> SWEEP 4: conf_power=1 hyst_conf_k=0.5 (confidence-based hysteresis)
+=== BTCUSDT conf_power=1 hyst_conf_k=0.5 ===
+{
+  "cagr": -0.059359015741062726,
+  "final_equity": 940.6409842589372,
+  "maxDD": -0.0596370699223603,
+  "sharpe": -0.10516714107908327,
+  "time_in_market": 0.020173176230262144,
+  "total_return": -0.059359015741062726,
+  "trades_count": 774.0,
+  "turnover": 38.422971966698256,
+  "vol": 0.014735709053567782
+}
+
+=== ETHUSDT conf_power=1 hyst_conf_k=0.5 ===
+{
+  "cagr": 0.1978746869899617,
+  "final_equity": 1197.8746869899617,
+  "maxDD": -0.008120310801414203,
+  "sharpe": 0.15508600111885482,
+  "time_in_market": 0.020391389949040654,
+  "total_return": 0.1978746869899617,
+  "trades_count": 1369.0,
+  "turnover": 74.79981407944378,
+  "vol": 0.029535721069247244
+}
+
+=== XRPUSDT conf_power=1 hyst_conf_k=0.5 ===
+{
+  "cagr": 0.08006065684580155,
+  "final_equity": 1080.0606568458015,
+  "maxDD": -0.05956945800831563,
+  "sharpe": 0.01926747733002068,
+  "time_in_market": 0.045985047275704204,
+  "total_return": 0.08006065684580155,
+  "trades_count": 1641.0,
+  "turnover": 254.36138472454306,
+  "vol": 0.10432821586410473
+}
+
+=== DOTUSDT conf_power=1 hyst_conf_k=0.5 ===
+{
+  "cagr": 0.2254835870036922,
+  "final_equity": 1225.4835870036923,
+  "maxDD": -0.00781787150332977,
+  "sharpe": 0.16953099509739636,
+  "time_in_market": 0.02014220482524497,
+  "total_return": 0.2254835870036922,
+  "trades_count": 1388.0,
+  "turnover": 77.0436714639099,
+  "vol": 0.030427438416932632
+}
+
+=========================================
+CONFIDENCE BENCHMARK COMPLETE
+=========================================
