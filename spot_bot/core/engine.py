@@ -148,6 +148,9 @@ def run_step(
         target_exposure=target_exposure_raw,
         delta_e_min=delta_e_min,
     )
+    
+    # Calculate delta_e for diagnostics
+    delta_e = abs(target_exposure_raw - portfolio.exposure)
 
     if params.debug:
         print(
@@ -170,6 +173,13 @@ def run_step(
         max_notional_per_trade=params.max_notional_per_trade,
         allow_short=params.allow_short,
     )
+    
+    # Check if target was clamped by long-only restriction
+    clamped_long_only = False
+    if not params.allow_short:
+        # If raw target was negative or > 1.0, it was clamped
+        if target_exposure_raw < 0.0 or target_exposure_raw > 1.0:
+            clamped_long_only = True
 
     # If hysteresis suppressed the trade, update reason
     if suppressed and plan.action == "HOLD":
@@ -184,8 +194,10 @@ def run_step(
             diagnostics={
                 **plan.diagnostics,
                 "target_exposure_raw": target_exposure_raw,
+                "delta_e": delta_e,
                 "delta_e_min": delta_e_min,
                 "suppressed": True,
+                "clamped_long_only": clamped_long_only,
             },
         )
 
@@ -199,11 +211,13 @@ def run_step(
     diagnostics = {
         "cost": cost,
         "delta_e_min": delta_e_min,
+        "delta_e": delta_e,
         "rv_current": rv_current,
         "rv_ref": rv_ref,
         "target_exposure_raw": target_exposure_raw,
         "target_exposure_final": target_exposure_final,
         "hysteresis_suppressed": suppressed,
+        "clamped_long_only": clamped_long_only,
     }
 
     return plan, strategy_output, diagnostics

@@ -418,6 +418,12 @@ def run_backtest(
                     "fee": execution.fee_paid,
                     "slippage": execution.slippage_paid,
                     "notional": abs(execution.filled_base) * execution.avg_price,
+                    "target_exposure_raw": diagnostics.get("target_exposure_raw", target_exp),
+                    "target_exposure_final": diagnostics.get("target_exposure_final", target_exp),
+                    "delta_e": diagnostics.get("delta_e", 0.0),
+                    "delta_e_min": diagnostics.get("delta_e_min", 0.0),
+                    "suppressed": diagnostics.get("hysteresis_suppressed", False),
+                    "clamped_long_only": diagnostics.get("clamped_long_only", False),
                 }
             )
 
@@ -436,6 +442,12 @@ def run_backtest(
                 "target_exposure": target_exp,
                 "action": action,
                 "bar_state": bar_state,
+                "target_exposure_raw": diagnostics.get("target_exposure_raw", target_exp),
+                "target_exposure_final": diagnostics.get("target_exposure_final", target_exp),
+                "delta_e": diagnostics.get("delta_e", 0.0),
+                "delta_e_min": diagnostics.get("delta_e_min", 0.0),
+                "suppressed": diagnostics.get("hysteresis_suppressed", False),
+                "clamped_long_only": diagnostics.get("clamped_long_only", False),
             }
         )
 
@@ -467,9 +479,16 @@ def run_backtest(
     turnover_value = sum(t["notional"] for t in trade_rows)
     turnover = float(turnover_value / initial_usdt) if initial_usdt else 0.0
     time_in_market = float(np.mean(exposures_time)) if exposures_time else 0.0
+    
+    # Calculate PnL breakdown
+    fees_paid_total = sum(t.get("fee", 0.0) for t in trade_rows)
+    slippage_paid_total = sum(t.get("slippage", 0.0) for t in trade_rows)
+    final_equity = float(equity_series.iloc[-1]) if not equity_series.empty else float(initial_usdt)
+    net_pnl = final_equity - initial_usdt
+    gross_pnl = net_pnl + fees_paid_total + slippage_paid_total
 
     summary = {
-        "final_equity": float(equity_series.iloc[-1]) if not equity_series.empty else float(initial_usdt),
+        "final_equity": final_equity,
         "total_return": total_return,
         "cagr": cagr,
         "vol": vol,
@@ -478,6 +497,10 @@ def run_backtest(
         "trades_count": float(len(trades_df)),
         "turnover": turnover,
         "time_in_market": time_in_market,
+        "gross_pnl": gross_pnl,
+        "fees_paid_total": fees_paid_total,
+        "slippage_paid_total": slippage_paid_total,
+        "net_pnl": net_pnl,
     }
 
     if log:
