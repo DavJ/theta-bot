@@ -210,6 +210,39 @@ class TestHysteresisMode:
                 delta_e_min=0.05,
                 mode="invalid_mode",
             )
+    
+    def test_zscore_mode_requires_zscore_in_engine(self):
+        """Engine should raise error when zscore mode is used without zscore in diagnostics."""
+        from spot_bot.core.engine import run_step, EngineParams
+        from spot_bot.core.types import MarketBar, PortfolioState
+        from spot_bot.strategies.base import Intent
+        import pandas as pd
+        
+        # Create a simple strategy without zscore in diagnostics
+        class NoZscoreStrategy:
+            def generate_intent(self, features_df):
+                return Intent(
+                    desired_exposure=0.2,
+                    reason="test",
+                    diagnostics={}  # No zscore!
+                )
+        
+        bar = MarketBar(ts=1000, open=100.0, high=100.0, low=100.0, close=100.0, volume=1.0)
+        features_df = pd.DataFrame({"close": [100.0]})
+        portfolio = PortfolioState(usdt=1000.0, base=0.0, equity=1000.0, exposure=0.0)
+        strategy = NoZscoreStrategy()
+        params = EngineParams(hyst_mode="zscore")  # Request zscore mode
+        
+        with pytest.raises(RuntimeError, match="hyst_mode=zscore not supported: missing zscore"):
+            run_step(
+                bar=bar,
+                features_df=features_df,
+                portfolio=portfolio,
+                strategy=strategy,
+                params=params,
+                rv_current=0.05,
+                rv_ref=0.05,
+            )
 
 
 class TestHysteresisEffect:

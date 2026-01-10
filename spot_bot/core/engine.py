@@ -145,10 +145,20 @@ def run_step(
     
     # Extract z-scores if available for zscore mode
     # Note: For zscore mode to work properly, strategy must provide zscore in diagnostics
-    # Current implementation: we use the strategy's zscore for target, and default 0.0 for current
-    # This makes zscore mode equivalent to exposure mode unless strategy provides varying zscores
     current_zscore = 0.0  # Default: no current state zscore available
-    target_zscore = float(diagnostics_strategy.get("zscore", 0.0))
+    target_zscore = 0.0
+    
+    # If zscore mode is requested, verify that zscore is available
+    if params.hyst_mode == "zscore":
+        if "zscore" not in diagnostics_strategy:
+            raise RuntimeError(
+                "hyst_mode=zscore not supported: missing zscore in step context. "
+                "Strategy must provide 'zscore' in diagnostics to use zscore hysteresis mode."
+            )
+        target_zscore = float(diagnostics_strategy["zscore"])
+    else:
+        # For exposure mode, we don't need zscore (set to 0.0)
+        target_zscore = float(diagnostics_strategy.get("zscore", 0.0))
     
     # Step 4: Apply hysteresis
     target_exposure_final, suppressed = apply_hysteresis(
