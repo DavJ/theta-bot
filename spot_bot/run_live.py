@@ -817,6 +817,50 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--strategy", type=str, choices=["none", "meanrev", "kalman", "kalman_mr_dual"], default="meanrev"
     )
+    # Execution type flags
+    parser.add_argument(
+        "--order-type",
+        dest="order_type",
+        type=str,
+        choices=["market", "limit_maker"],
+        default="market",
+        help="Order execution type: market (immediate fill) or limit_maker (post-only limit order)",
+    )
+    parser.add_argument(
+        "--maker-offset-bps",
+        dest="maker_offset_bps",
+        type=float,
+        default=1.0,
+        help="Offset in basis points from best bid/ask for limit maker orders (default: 1.0)",
+    )
+    parser.add_argument(
+        "--order-validity-seconds",
+        dest="order_validity_seconds",
+        type=int,
+        default=60,
+        help="Cancel limit maker orders older than this many seconds (default: 60)",
+    )
+    parser.add_argument(
+        "--max-spread-bps",
+        dest="max_spread_bps",
+        type=float,
+        default=20.0,
+        help="Maximum allowed spread in basis points for limit maker orders (default: 20.0)",
+    )
+    parser.add_argument(
+        "--maker-fee-rate",
+        dest="maker_fee_rate",
+        type=float,
+        default=None,
+        help="Fee rate for maker orders (default: same as --fee-rate)",
+    )
+    parser.add_argument(
+        "--taker-fee-rate",
+        dest="taker_fee_rate",
+        type=float,
+        default=None,
+        help="Fee rate for taker orders (default: same as --fee-rate)",
+    )
     return parser
 
 
@@ -1113,6 +1157,10 @@ def main() -> None:
                     print('Missing API credentials for live mode. Set env BINANCE_API_KEY and BINANCE_API_SECRET (recommended) or pass --api-key/--api-secret.')
                     sys.exit(1)
 
+                # Determine fee rates
+                maker_fee = args.maker_fee_rate if args.maker_fee_rate is not None else fee_rate
+                taker_fee = args.taker_fee_rate if args.taker_fee_rate is not None else fee_rate
+
                 exec_cfg = ExecutorConfig(
                     exchange_id=args.exchange_id,
                     symbol=symbol,
@@ -1125,6 +1173,12 @@ def main() -> None:
                     min_balance_reserve_usdt=cfg.get('min_usdt_reserve', 50.0),
                     fee_rate=fee_rate,
                     min_notional=min_notional,
+                    order_type=args.order_type,
+                    maker_offset_bps=args.maker_offset_bps,
+                    order_validity_seconds=args.order_validity_seconds,
+                    max_spread_bps=args.max_spread_bps,
+                    maker_fee_rate=maker_fee,
+                    taker_fee_rate=taker_fee,
                 )
                 executor = CCXTExecutor(exec_cfg)
                 if abs(result.delta_btc) > 0:
