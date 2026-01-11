@@ -1,3 +1,3 @@
-from .ccxt_executor import CCXTExecutor, ExecutorConfig, ExecutionResult
+from .ccxt_executor import CCXTExecutor, ExecutorConfig, CCXTExecutionResult
 
-__all__ = ["CCXTExecutor", "ExecutorConfig", "ExecutionResult"]
+__all__ = ["CCXTExecutor", "ExecutorConfig", "CCXTExecutionResult"]

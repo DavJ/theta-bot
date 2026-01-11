@@ -86,6 +86,7 @@ class LiveExecutor(Executor):
         Note:
             If plan.action is HOLD or delta_base is 0, returns SKIPPED result.
             Otherwise, calls CCXT executor and converts result to ExecutionResult.
+            For limit_maker orders, returns OPEN status for unfilled orders.
         """
         # Skip if no action needed
         if plan.action == "HOLD" or plan.delta_base == 0.0:
@@ -104,7 +105,12 @@ class LiveExecutor(Executor):
 
         # Execute via CCXT
         try:
-            ccxt_result = self.ccxt_executor.place_market_order(side, qty, price)
+            # Cancel stale orders if using limit_maker
+            if self.ccxt_executor.config.order_type == "limit_maker":
+                self.ccxt_executor.cancel_stale_orders()
+                ccxt_result = self.ccxt_executor.place_limit_maker_order(side, qty, price)
+            else:
+                ccxt_result = self.ccxt_executor.place_market_order(side, qty, price)
         except Exception as exc:
             # Handle unexpected CCXT errors gracefully
             return ExecutionResult(
@@ -136,6 +142,20 @@ class LiveExecutor(Executor):
                 fee_paid=fee_est,
                 slippage_paid=slippage_paid,
                 status="filled",
+                raw=ccxt_result,
+            )
+        elif status == "open":
+            # Limit maker order placed but not filled yet
+            # Return OPEN status with filled_base=0
+            limit_price = float(ccxt_result.get("limit_price", price))
+            fee_est = float(ccxt_result.get("fee_est", 0.0))
+            
+            return ExecutionResult(
+                filled_base=0.0,
+                avg_price=limit_price,
+                fee_paid=0.0,
+                slippage_paid=0.0,
+                status="OPEN",
                 raw=ccxt_result,
             )
         else:

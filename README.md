@@ -43,10 +43,34 @@ python -m spot_bot.run_live --mode backtest --csv-in data/btc_1m.csv --timeframe
   `python -m spot_bot.run_live --mode dryrun --symbol BTC/USDT --timeframe 1h --limit-total 2000 --db bot.db --cache data/latest.csv`
 - Paper trading (simulated fills at close, restartable from DB):  
   `python -m spot_bot.run_live --mode paper --db bot.db --initial-usdt 1000 --fee-rate 0.001 --max-exposure 0.3`
-- Live execution requires explicit opt-in flag:  
+- Live execution (market orders) requires explicit opt-in flag:  
   `python -m spot_bot.run_live --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h`
+- Live execution with limit maker orders (post-only):  
+  `python -m spot_bot.run_live --mode live --i-understand-live-risk --db bot.db --symbol BTC/USDT --timeframe 1h --order-type limit_maker --maker-offset-bps 1 --max-spread-bps 15 --order-validity-seconds 120 --maker-fee-rate 0.0001 --taker-fee-rate 0.001`
 
 Note: If running as a script instead of module mode, use `PYTHONPATH=.` to resolve imports.
+
+### Limit Maker Orders
+
+Limit maker orders are post-only orders that provide liquidity rather than taking it. They offer several advantages:
+
+- **Lower fees**: Maker orders typically have lower fees (or even rebates) compared to taker orders
+- **Better execution price**: Orders are placed at a favorable price (slightly better than current best bid/ask)
+- **No immediate impact**: Orders don't execute immediately, avoiding market impact
+
+**Key parameters:**
+- `--order-type limit_maker`: Enable limit maker execution (default: `market`)
+- `--maker-offset-bps 1.0`: Place orders 1 basis point better than current best bid/ask (default: 1.0)
+- `--order-validity-seconds 60`: Cancel orders older than 60 seconds (default: 60)
+- `--max-spread-bps 20.0`: Reject orders if spread exceeds 20 basis points (default: 20.0)
+- `--maker-fee-rate 0.0001`: Fee rate for maker orders (default: same as --fee-rate)
+- `--taker-fee-rate 0.001`: Fee rate for taker/market orders (default: same as --fee-rate)
+
+**Important notes:**
+- Limit maker orders return status `OPEN` and don't update portfolio balances until filled
+- Orders are automatically cancelled if they remain unfilled beyond `order-validity-seconds`
+- Wide spreads (beyond `max-spread-bps`) will reject order placement to avoid poor execution
+- Paper and dryrun modes still use simulated execution (not limit orders)
 
 ### Manual Testing Steps
 
