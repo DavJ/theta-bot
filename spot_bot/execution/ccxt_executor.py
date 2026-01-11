@@ -297,7 +297,13 @@ class CCXTExecutor:
         
         return edge_bps_total, components
 
-    def place_limit_maker_order(self, side: str, qty: float, last_close: float) -> CCXTExecutionResult:
+    def place_limit_maker_order(
+        self, 
+        side: str, 
+        qty: float, 
+        last_close: float,
+        portfolio_avg_entry_price: Optional[float] = None,
+    ) -> CCXTExecutionResult:
         """
         Place a limit maker (post-only) order.
         
@@ -305,6 +311,7 @@ class CCXTExecutor:
             side: "buy" or "sell"
             qty: Quantity to trade (positive)
             last_close: Last close price for reference
+            portfolio_avg_entry_price: Average entry price for SELL guard (optional)
             
         Returns:
             CCXTExecutionResult with status "open", "filled", "rejected", or "error"
@@ -365,6 +372,21 @@ class CCXTExecutor:
                 limit_price = reference_price * (1.0 + edge)
                 # Apply additional maker offset (move further away from book)
                 limit_price *= (1.0 + maker_offset)
+                
+                # SELL NO-LOSS GUARD: ensure we don't sell below avg_entry_price + edge
+                if portfolio_avg_entry_price is not None:
+                    required_exit_price = portfolio_avg_entry_price * (1.0 + edge)
+                    
+                    if limit_price < required_exit_price:
+                        # Guard activated: raise limit price to prevent loss
+                        computed_limit = limit_price
+                        limit_price = required_exit_price
+                        
+                        print(
+                            f"SELL_GUARDED: avg_entry={portfolio_avg_entry_price:.2f} "
+                            f"edge={edge:.4f} required_exit={required_exit_price:.2f} "
+                            f"computed_limit={computed_limit:.2f} final_limit={limit_price:.2f}"
+                        )
             
             # Quantize price
             limit_price = self.quantize_price(limit_price)

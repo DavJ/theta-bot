@@ -50,6 +50,8 @@ class PortfolioState:
     base: float  # Base currency position (e.g., BTC)
     equity: float  # Total equity in quote currency
     exposure: float  # Current exposure as fraction (base * price / equity)
+    avg_entry_price: Optional[float] = None  # Average entry price for current net-long position
+    realized_pnl_quote: float = 0.0  # Realized P&L in quote currency
 
     def __post_init__(self) -> None:
         """Ensure values are floats."""
@@ -57,6 +59,9 @@ class PortfolioState:
         self.base = float(self.base)
         self.equity = float(self.equity)
         self.exposure = float(self.exposure)
+        if self.avg_entry_price is not None:
+            self.avg_entry_price = float(self.avg_entry_price)
+        self.realized_pnl_quote = float(self.realized_pnl_quote)
 
 
 @dataclass(frozen=True)
