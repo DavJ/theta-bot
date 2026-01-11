@@ -6,6 +6,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, TypedDict
 
 
+# Numerical stability constant for division guards
+_EPSILON = 1e-12
+
+
 class CCXTExecutionResult(TypedDict, total=False):
     """
     CCXT-layer execution result (dict format for exchange API compatibility).
@@ -244,7 +248,7 @@ class CCXTExecutor:
         """
         # Compute spread in bps
         mid = (bid + ask) / 2.0
-        spread_bps = (ask - bid) / max(mid, 1e-12) * 10000.0
+        spread_bps = (ask - bid) / max(mid, _EPSILON) * 10000.0
         
         # Fee component
         fee_bps_maker = self.config.maker_fee_rate * 10000.0
@@ -340,8 +344,9 @@ class CCXTExecutor:
             if components["spread_bps"] > self.config.max_spread_bps:
                 return {"status": "rejected", "reason": "spread_guard"}
             
-            # Convert edge from bps to fraction
+            # Convert edge and maker offset from bps to fraction
             edge = edge_bps_total * 1e-4
+            maker_offset = self.config.maker_offset_bps * 1e-4
             
             # Compute limit price with correct direction
             # BUY: cheaper than bid (bid * (1 - edge))
@@ -352,14 +357,14 @@ class CCXTExecutor:
                 # Apply edge: buy cheaper
                 limit_price = reference_price * (1.0 - edge)
                 # Apply additional maker offset (move further away from book)
-                limit_price *= (1.0 - self.config.maker_offset_bps * 1e-4)
+                limit_price *= (1.0 - maker_offset)
             else:  # sell
                 # Reference price is ask for selling
                 reference_price = ask
                 # Apply edge: sell higher
                 limit_price = reference_price * (1.0 + edge)
                 # Apply additional maker offset (move further away from book)
-                limit_price *= (1.0 + self.config.maker_offset_bps * 1e-4)
+                limit_price *= (1.0 + maker_offset)
             
             # Quantize price
             limit_price = self.quantize_price(limit_price)
