@@ -105,14 +105,19 @@ def apply_fill(
         usdt -= notional + total_cost
         
         # Update avg_entry_price using weighted average
-        if base <= 0.0:
-            # No existing position (or short, which we don't support)
+        if base <= 0.0 or avg_entry_price is None:
+            # No existing position (or short, or missing avg_entry_price)
             # Set avg_entry_price to this buy price
             avg_entry_price = execution.avg_price
         else:
             # Existing long position - compute weighted average
             total_base = base + execution.filled_base
-            avg_entry_price = (base * avg_entry_price + execution.filled_base * execution.avg_price) / total_base
+            # Guard against division by zero (shouldn't happen but be defensive)
+            if total_base > 1e-12:
+                avg_entry_price = (base * avg_entry_price + execution.filled_base * execution.avg_price) / total_base
+            else:
+                # Fallback: use current price if total is too small
+                avg_entry_price = execution.avg_price
         
         base += execution.filled_base
     else:

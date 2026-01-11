@@ -224,7 +224,7 @@ class TestAvgEntryPriceTracking:
         portfolio = apply_fill(portfolio, sell1)
         assert portfolio.avg_entry_price is None
         
-        # PnL from round trip 1: (55000 - 50000) * 0.1 - 5.0 - 5.5 = 489.5
+        # PnL from round trip 1: (55000 - 50000) * 0.1 - 5.5 = 500 - 5.5 = 494.5
         expected_pnl_1 = (55000.0 - 50000.0) * 0.1 - 5.5
         assert abs(portfolio.realized_pnl_quote - expected_pnl_1) < 0.01
         
