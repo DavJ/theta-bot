@@ -764,7 +764,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--alpha-floor", dest="alpha_floor", type=float, default=6.0, help="Smoothness parameter for minimum bound")
     parser.add_argument("--alpha-cap", dest="alpha_cap", type=float, default=6.0, help="Smoothness parameter for maximum bound")
     parser.add_argument("--vol-hyst-mode", dest="vol_hyst_mode", type=str, default="increase", choices=["increase", "decrease", "none"], help="Volatility hysteresis mode")
-    parser.add_argument("--min-profit-bps", dest="min_profit_bps", type=float, default=5.0, help="Minimum profit buffer in basis points")
     parser.add_argument("--loop", action="store_true", help="Run in continuous loop mode.")
     parser.add_argument("--poll-seconds", dest="poll_seconds", type=float, default=10.0)
     parser.add_argument("--trade-on", dest="trade_on", choices=["bar_close", "tick"], default="bar_close")
