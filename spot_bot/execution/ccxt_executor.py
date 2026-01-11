@@ -5,13 +5,20 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, TypedDict
 
 
-class ExecutionResult(TypedDict, total=False):
+class CCXTExecutionResult(TypedDict, total=False):
+    """
+    CCXT-layer execution result (dict format for exchange API compatibility).
+    
+    This is distinct from core.types.ExecutionResult (dataclass) which is used
+    by the core engine. LiveExecutor converts between these types.
+    """
     status: str
     order_id: str
     filled_qty: float
     avg_price: float
     fee_est: float
     reason: str
+    limit_price: float  # Only for limit orders
 
 
 @dataclass
@@ -111,7 +118,9 @@ class CCXTExecutor:
                 "limits": market.get("limits", {}),
             }
         except Exception:
-            # Fallback to defaults if market info unavailable
+            # Fallback to conservative defaults if market info unavailable
+            # These defaults work for most major pairs (BTC/USDT, ETH/USDT, etc.)
+            # but may need adjustment for exotic pairs
             self._market_info = {
                 "precision": {"price": 2, "amount": 8},
                 "limits": {"cost": {"min": self.config.min_notional}},
@@ -156,7 +165,12 @@ class CCXTExecutor:
         return amount
 
     def cancel_stale_orders(self) -> None:
-        """Cancel open orders older than order_validity_seconds."""
+        """
+        Cancel open orders older than order_validity_seconds.
+        
+        Uses fail-safe approach: if API errors occur, does nothing rather than failing.
+        This prevents order cancellation issues from blocking new order placement.
+        """
         try:
             open_orders = self.exchange.fetch_open_orders(self.config.symbol)
             now = datetime.datetime.now(datetime.timezone.utc)
@@ -171,13 +185,15 @@ class CCXTExecutor:
                         try:
                             self.exchange.cancel_order(order["id"], self.config.symbol)
                         except Exception:
-                            # Fail safe - if cancel fails, continue
+                            # Fail safe - individual order cancellation errors are non-fatal
+                            # Order may have already been filled or cancelled
                             pass
         except Exception:
-            # Fail safe - if fetching orders fails, do nothing
+            # Fail safe - if fetching orders fails entirely, do nothing
+            # This could happen due to network issues or exchange API errors
             pass
 
-    def place_limit_maker_order(self, side: str, qty: float, last_close: float) -> ExecutionResult:
+    def place_limit_maker_order(self, side: str, qty: float, last_close: float) -> CCXTExecutionResult:
         """
         Place a limit maker (post-only) order.
         
@@ -187,7 +203,7 @@ class CCXTExecutor:
             last_close: Last close price for reference
             
         Returns:
-            ExecutionResult with status "open", "filled", "rejected", or "error"
+            CCXTExecutionResult with status "open", "filled", "rejected", or "error"
         """
         self._ensure_exchange()
         self._reset_counters()
@@ -247,8 +263,9 @@ class CCXTExecutor:
                 return {"status": "rejected", "reason": "min_notional_after_quantize"}
             
             # Create limit order with postOnly
-            # Binance supports both postOnly and timeInForce:GTX
-            # Try postOnly first, fallback to GTX if needed
+            # Different exchanges support different parameters for post-only orders:
+            # - Most exchanges: {"postOnly": True}
+            # - Binance: {"timeInForce": "GTX"} (Good-Til-Crossing)
             params = {"postOnly": True}
             
             try:
@@ -261,8 +278,10 @@ class CCXTExecutor:
                     params=params
                 )
             except Exception as e:
-                # Try with GTX as fallback for Binance
-                if "binance" in self.config.exchange_id.lower():
+                # Fallback for exchanges that don't support postOnly parameter
+                # Binance and similar exchanges may require timeInForce=GTX instead
+                error_msg = str(e).lower()
+                if "postonly" in error_msg or "timeInForce" in error_msg or "binance" in self.config.exchange_id.lower():
                     params = {"timeInForce": "GTX"}
                     order = self.exchange.create_order(
                         symbol=self.config.symbol,
@@ -310,7 +329,7 @@ class CCXTExecutor:
         except Exception as exc:
             return {"status": "error", "reason": str(exc)}
 
-    def place_market_order(self, side: str, qty: float, last_close: float) -> ExecutionResult:
+    def place_market_order(self, side: str, qty: float, last_close: float) -> CCXTExecutionResult:
         self._ensure_exchange()
         self._reset_counters()
         notional = abs(qty) * last_close
@@ -351,4 +370,4 @@ class CCXTExecutor:
             return {"status": "error", "reason": str(exc)}
 
 
-__all__ = ["CCXTExecutor", "ExecutorConfig", "ExecutionResult"]
+__all__ = ["CCXTExecutor", "ExecutorConfig", "CCXTExecutionResult"]

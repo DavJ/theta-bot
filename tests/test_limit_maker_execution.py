@@ -8,7 +8,7 @@ quantization, spread guards, and OPEN order status handling.
 import pytest
 from unittest.mock import Mock, MagicMock
 
-from spot_bot.execution.ccxt_executor import CCXTExecutor, ExecutorConfig, ExecutionResult
+from spot_bot.execution.ccxt_executor import CCXTExecutor, ExecutorConfig, CCXTExecutionResult
 from spot_bot.core.executor import LiveExecutor
 from spot_bot.core.types import TradePlan
 
