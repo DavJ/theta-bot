@@ -40,6 +40,7 @@ def plan_trade(
     min_usdt_reserve: float = 0.0,
     max_notional_per_trade: Optional[float] = None,
     allow_short: bool = False,
+    return_threshold: Optional[float] = None,
 ) -> TradePlan:
     """
     Plan a trade given current portfolio and target exposure.
@@ -53,9 +54,10 @@ def plan_trade(
         min_usdt_reserve: Minimum USDT balance to maintain (spot only)
         max_notional_per_trade: Maximum notional per trade (optional cap)
         allow_short: Allow negative positions (False for spot)
+        return_threshold: Return threshold for limit pricing and sell guard (optional)
 
     Returns:
-        TradePlan with action, deltas, and diagnostics.
+        TradePlan with action, deltas, limit_price, and diagnostics.
 
     Guards applied in order:
     1. Clamp target_exposure to [0, 1] if not allow_short
@@ -63,7 +65,9 @@ def plan_trade(
     3. Check min_notional
     4. Apply USDT reserve guard for BUY
     5. Apply max_notional_per_trade cap
-    6. Determine action (HOLD, BUY, SELL)
+    6. Apply sell guard (if return_threshold and avg_entry_price available)
+    7. Determine action (HOLD, BUY, SELL)
+    8. Compute limit_price based on return_threshold
     """
     # Clamp target exposure for spot (no shorting)
     if not allow_short:
@@ -80,6 +84,8 @@ def plan_trade(
             exec_price_hint=price,
             reason="invalid_price",
             diagnostics={"price": price},
+            limit_price=None,
+            order_type="limit",
         )
 
     equity = portfolio.equity
@@ -107,6 +113,8 @@ def plan_trade(
                 "delta_base_raw": delta_base,
                 "step_size": step_size,
             },
+            limit_price=None,
+            order_type="limit",
         )
 
     notional = abs(delta_base_rounded) * price
@@ -125,6 +133,8 @@ def plan_trade(
                 "notional": notional,
                 "min_notional": min_notional,
             },
+            limit_price=None,
+            order_type="limit",
         )
 
     # Reserve guard for BUY (spot only)
@@ -147,6 +157,8 @@ def plan_trade(
                         "usdt": portfolio.usdt,
                         "min_usdt_reserve": min_usdt_reserve,
                     },
+                    limit_price=None,
+                    order_type="limit",
                 )
             # Cap delta_base by max_spend
             max_base = max_spend / price
@@ -164,6 +176,8 @@ def plan_trade(
                         "max_spend": max_spend,
                         "max_base": max_base,
                     },
+                    limit_price=None,
+                    order_type="limit",
                 )
             notional = abs(delta_base_rounded) * price
 
@@ -186,6 +200,8 @@ def plan_trade(
                 diagnostics={
                     "max_notional_per_trade": max_notional_per_trade,
                 },
+                limit_price=None,
+                order_type="limit",
             )
 
     # Determine action
@@ -195,8 +211,53 @@ def plan_trade(
     elif delta_base_rounded < 0:
         action = "SELL"
 
+    # Sell guard: prevent selling below entry + return_threshold
+    sell_guard_triggered = False
+    min_sell_price = None
+    if (
+        action == "SELL"
+        and return_threshold is not None
+        and portfolio.avg_entry_price is not None
+        and portfolio.base > 0
+    ):
+        min_sell_price = portfolio.avg_entry_price * (1.0 + return_threshold)
+        if price < min_sell_price:
+            # Suppress the SELL - convert to HOLD
+            sell_guard_triggered = True
+            return TradePlan(
+                action="HOLD",
+                target_exposure=portfolio.exposure,
+                target_base=portfolio.base,
+                delta_base=0.0,
+                notional=0.0,
+                exec_price_hint=price,
+                reason="sell_guard",
+                diagnostics={
+                    "sell_guard": True,
+                    "min_sell_price": min_sell_price,
+                    "avg_entry_price": portfolio.avg_entry_price,
+                    "price": price,
+                    "return_threshold": return_threshold,
+                },
+                limit_price=None,
+                order_type="limit",
+            )
+
     # Final target_base after rounding
     final_target_base = portfolio.base + delta_base_rounded
+    
+    # Compute limit price based on return_threshold
+    limit_price = None
+    if return_threshold is not None and action != "HOLD":
+        if action == "BUY":
+            # BUY lower: limit_price = price * (1 - return_threshold)
+            limit_price = price * (1.0 - return_threshold)
+        elif action == "SELL":
+            # SELL higher: limit_price = price * (1 + return_threshold)
+            limit_price = price * (1.0 + return_threshold)
+            # Also enforce sell guard minimum
+            if min_sell_price is not None:
+                limit_price = max(limit_price, min_sell_price)
 
     return TradePlan(
         action=action,
@@ -210,7 +271,13 @@ def plan_trade(
             "delta_base_raw": delta_base,
             "delta_base_rounded": delta_base_rounded,
             "notional": notional,
+            "return_threshold": return_threshold if return_threshold else 0.0,
+            "limit_price": limit_price,
+            "sell_guard": sell_guard_triggered,
+            "min_sell_price": min_sell_price,
         },
+        limit_price=limit_price,
+        order_type="limit",
     )
 
 

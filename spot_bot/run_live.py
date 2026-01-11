@@ -317,6 +317,7 @@ def compute_step(
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
+    min_profit_bps: float = 5.0,
 ) -> StepResult:
     """
     Compute trading step using unified core engine.
@@ -350,6 +351,7 @@ def compute_step(
         alpha_floor=alpha_floor,
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
+        min_profit_bps=min_profit_bps,
     )
     
     # For paper mode, execute the trade
@@ -377,6 +379,7 @@ def compute_step(
             min_notional=min_notional,
             step_size=step_size,
             min_usdt_reserve=min_usdt_reserve,
+            min_profit_bps=min_profit_bps,
         )
         core_execution = simulate_execution(result.plan, result.close, params)
         
@@ -457,6 +460,7 @@ def run_replay(
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
+    min_profit_bps: float = 5.0,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
     if ohlcv_df is None or ohlcv_df.empty:
         raise ValueError("Replay requires non-empty OHLCV data.")
@@ -515,6 +519,7 @@ def run_replay(
                 alpha_floor=alpha_floor,
                 alpha_cap=alpha_cap,
                 vol_hyst_mode=vol_hyst_mode,
+                min_profit_bps=min_profit_bps,
             )
         except ValueError as exc:
             msg = str(exc)
@@ -709,6 +714,7 @@ def run_once_on_df(
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
+    min_profit_bps: float = 5.0,
 ) -> StepResult:
     return compute_step(
         ohlcv_df=ohlcv_df,
@@ -731,6 +737,7 @@ def run_once_on_df(
         alpha_floor=alpha_floor,
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
+        min_profit_bps=min_profit_bps,
     )
 
 

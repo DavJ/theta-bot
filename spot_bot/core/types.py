@@ -76,6 +76,8 @@ class TradePlan:
     exec_price_hint: float  # Reference price for execution
     reason: str  # Human-readable reason for action
     diagnostics: Dict[str, Any] = field(default_factory=dict)
+    limit_price: Optional[float] = None  # Limit price for order (None = market)
+    order_type: str = "limit"  # Order type: "limit" or "market"
 
 
 @dataclass
