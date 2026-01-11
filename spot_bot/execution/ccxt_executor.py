@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import math
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, TypedDict
 
@@ -41,6 +42,12 @@ class ExecutorConfig:
     max_spread_bps: float = 20.0  # if spread too wide, reject placing maker order
     maker_fee_rate: float = 0.001  # default maker fee rate
     taker_fee_rate: float = 0.001  # default taker fee rate
+    # Edge/hysteresis calculation settings
+    slippage_bps: float = 0.0  # expected slippage in bps
+    min_profit_bps: float = 5.0  # minimum profit target in bps
+    edge_softmax_alpha: float = 20.0  # smoothness for soft max
+    edge_floor_bps: float = 0.0  # minimum edge threshold
+    fee_roundtrip_mode: str = "maker_maker"  # "maker_maker" or "maker_taker"
 
 
 class CCXTExecutor:
@@ -193,6 +200,99 @@ class CCXTExecutor:
             # This could happen due to network issues or exchange API errors
             pass
 
+    def _smooth_max(self, a: float, b: float, alpha: float) -> float:
+        """
+        Smooth maximum function using tanh for differentiability.
+        
+        Returns approximately max(a, b) but smoothly transitions.
+        Formula: 0.5*(a+b) + 0.5*(a-b)*tanh(alpha*(a-b))
+        
+        Args:
+            a: First value
+            b: Second value
+            alpha: Smoothness parameter (higher = sharper transition)
+            
+        Returns:
+            Smooth maximum of a and b
+        """
+        diff = a - b
+        # Use tanh for smooth transition
+        return 0.5 * (a + b) + 0.5 * diff * math.tanh(alpha * diff)
+
+    def _compute_edge_bps_total(
+        self,
+        bid: float,
+        ask: float,
+    ) -> tuple[float, Dict[str, float]]:
+        """
+        Compute total edge threshold in basis points for limit order pricing.
+        
+        The edge includes:
+        - Fee component (roundtrip fees)
+        - Spread component (half-spread for maker model)
+        - Slippage component
+        - Minimum profit requirement
+        - Floor threshold (via smooth max)
+        
+        Args:
+            bid: Best bid price
+            ask: Best ask price
+            
+        Returns:
+            Tuple of (edge_bps_total, components_dict)
+            components_dict contains breakdown of all components for logging
+        """
+        # Compute spread in bps
+        mid = (bid + ask) / 2.0
+        spread_bps = (ask - bid) / max(mid, 1e-12) * 10000.0
+        
+        # Fee component
+        fee_bps_maker = self.config.maker_fee_rate * 10000.0
+        fee_bps_taker = self.config.taker_fee_rate * 10000.0
+        
+        if self.config.fee_roundtrip_mode == "maker_maker":
+            fee_component_bps = 2.0 * fee_bps_maker
+        else:  # maker_taker
+            fee_component_bps = fee_bps_maker + fee_bps_taker
+        
+        # Spread component (maker model: we capture half the spread)
+        spread_component_bps = 0.5 * spread_bps
+        
+        # Slippage component
+        slippage_component_bps = self.config.slippage_bps
+        
+        # Profit component
+        profit_component_bps = self.config.min_profit_bps
+        
+        # Compute total (sum of all components)
+        computed_bps = (
+            fee_component_bps
+            + spread_component_bps
+            + slippage_component_bps
+            + profit_component_bps
+        )
+        
+        # Apply smooth max with floor
+        edge_bps_total = self._smooth_max(
+            self.config.edge_floor_bps,
+            computed_bps,
+            self.config.edge_softmax_alpha
+        )
+        
+        # Return total and components for logging
+        components = {
+            "spread_bps": spread_bps,
+            "fee_component_bps": fee_component_bps,
+            "spread_component_bps": spread_component_bps,
+            "slippage_component_bps": slippage_component_bps,
+            "profit_component_bps": profit_component_bps,
+            "computed_bps": computed_bps,
+            "edge_floor_bps": self.config.edge_floor_bps,
+            "edge_bps_total": edge_bps_total,
+        }
+        
+        return edge_bps_total, components
+
     def place_limit_maker_order(self, side: str, qty: float, last_close: float) -> CCXTExecutionResult:
         """
         Place a limit maker (post-only) order.
@@ -233,20 +333,33 @@ class CCXTExecutor:
             if bid is None or ask is None:
                 return {"status": "rejected", "reason": "no_bid_ask"}
             
-            # Compute spread and check spread guard
-            mid = (bid + ask) / 2.0
-            spread_bps = (ask - bid) / max(mid, 1e-12) * 10000.0
+            # Compute edge threshold and components
+            edge_bps_total, components = self._compute_edge_bps_total(bid, ask)
             
-            if spread_bps > self.config.max_spread_bps:
+            # Check spread guard
+            if components["spread_bps"] > self.config.max_spread_bps:
                 return {"status": "rejected", "reason": "spread_guard"}
             
-            # Compute limit price
+            # Convert edge from bps to fraction
+            edge = edge_bps_total * 1e-4
+            
+            # Compute limit price with correct direction
+            # BUY: cheaper than bid (bid * (1 - edge))
+            # SELL: more expensive than ask (ask * (1 + edge))
             if side == "buy":
-                # Place bid below current bid
-                limit_price = bid * (1.0 - self.config.maker_offset_bps * 1e-4)
+                # Reference price is bid for buying
+                reference_price = bid
+                # Apply edge: buy cheaper
+                limit_price = reference_price * (1.0 - edge)
+                # Apply additional maker offset (move further away from book)
+                limit_price *= (1.0 - self.config.maker_offset_bps * 1e-4)
             else:  # sell
-                # Place ask above current ask
-                limit_price = ask * (1.0 + self.config.maker_offset_bps * 1e-4)
+                # Reference price is ask for selling
+                reference_price = ask
+                # Apply edge: sell higher
+                limit_price = reference_price * (1.0 + edge)
+                # Apply additional maker offset (move further away from book)
+                limit_price *= (1.0 + self.config.maker_offset_bps * 1e-4)
             
             # Quantize price
             limit_price = self.quantize_price(limit_price)
@@ -267,6 +380,19 @@ class CCXTExecutor:
             # - Most exchanges: {"postOnly": True}
             # - Binance: {"timeInForce": "GTX"} (Good-Til-Crossing)
             params = {"postOnly": True}
+            
+            # Log order placement details
+            print(
+                f"Placing limit maker order: side={side} qty={qty_quantized:.8f} "
+                f"bid={bid:.2f} ask={ask:.2f} "
+                f"spread_bps={components['spread_bps']:.2f} "
+                f"fee_bps={components['fee_component_bps']:.2f} "
+                f"spread_comp_bps={components['spread_component_bps']:.2f} "
+                f"slip_bps={components['slippage_component_bps']:.2f} "
+                f"profit_bps={components['profit_component_bps']:.2f} "
+                f"edge_total_bps={edge_bps_total:.2f} "
+                f"limit_price={limit_price:.2f}"
+            )
             
             try:
                 order = self.exchange.create_order(
