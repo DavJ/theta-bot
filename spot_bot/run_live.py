@@ -1217,10 +1217,22 @@ def main() -> None:
                 executor = CCXTExecutor(exec_cfg)
                 if abs(result.delta_btc) > 0:
                     side = "buy" if result.delta_btc > 0 else "sell"
-                    execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
+                    
+                    # Cancel stale orders before placing new ones (for limit_maker mode)
+                    if args.order_type == "limit_maker":
+                        executor.cancel_stale_orders()
+                        execution_result = executor.place_limit_maker_order(side, abs(result.delta_btc), result.close)
+                    else:
+                        execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
+                    
                     if execution_result.get("status") == "filled":
                         qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
                         _apply_live_fill_to_balances(balances, side, qty, result.close, fee_rate)
+                    elif execution_result.get("status") == "open":
+                        # Limit maker order placed but not filled yet
+                        # Do not update balances until order fills
+                        print(f"Limit maker order placed: {execution_result.get('order_id')}")
+                    
                     current_btc = balances["btc"]
                     equity_usdt = balances["usdt"] + current_btc * result.close
 
