@@ -79,10 +79,12 @@ def apply_fill(
     For BUY (positive delta):
         usdt -= notional + fee + slippage
         base += filled_base
+        avg_entry_price updated via weighted average
 
     For SELL (negative delta):
         usdt += notional - fee - slippage
         base -= filled_base
+        avg_entry_price unchanged (or reset to None if position closed)
 
     Equity and exposure are recomputed from the updated balances.
     """
@@ -92,18 +94,48 @@ def apply_fill(
 
     usdt = portfolio.usdt
     base = portfolio.base
+    avg_entry_price = portfolio.avg_entry_price
+    realized_pnl = portfolio.realized_pnl_quote
 
     notional = abs(execution.filled_base) * execution.avg_price
     total_cost = execution.fee_paid + execution.slippage_paid
 
     if execution.filled_base > 0:
-        # BUY: spend USDT, gain base
+        # BUY: spend USDT, gain base, update avg_entry_price
         usdt -= notional + total_cost
+        
+        # Update avg_entry_price using weighted average
+        if base <= 0.0 or avg_entry_price is None:
+            # No existing position (or short, or missing avg_entry_price)
+            # Set avg_entry_price to this buy price
+            avg_entry_price = execution.avg_price
+        else:
+            # Existing long position - compute weighted average
+            total_base = base + execution.filled_base
+            # Guard against division by zero (shouldn't happen but be defensive)
+            if total_base > 1e-12:
+                avg_entry_price = (base * avg_entry_price + execution.filled_base * execution.avg_price) / total_base
+            else:
+                # Fallback: use current price if total is too small
+                avg_entry_price = execution.avg_price
+        
         base += execution.filled_base
     else:
         # SELL: gain USDT, lose base
+        # Compute realized P&L if we have an avg_entry_price
+        if avg_entry_price is not None and base > 0.0:
+            # Realized P&L = (sell_price - avg_entry) * qty_sold - costs
+            qty_sold = abs(execution.filled_base)
+            pnl = (execution.avg_price - avg_entry_price) * qty_sold - total_cost
+            realized_pnl += pnl
+        
         usdt += notional - total_cost
         base += execution.filled_base  # filled_base is negative for SELL
+        
+        # If position is fully closed, reset avg_entry_price
+        if base <= 0.0:
+            avg_entry_price = None
+            base = 0.0  # Ensure it's exactly zero
 
     # Recompute equity and exposure
     equity = compute_equity(usdt, base, execution.avg_price)
@@ -114,6 +146,8 @@ def apply_fill(
         base=base,
         equity=equity,
         exposure=exposure,
+        avg_entry_price=avg_entry_price,
+        realized_pnl_quote=realized_pnl,
     )
 
 
@@ -134,7 +168,7 @@ def apply_live_fill_to_balances(
     4. Updates balances dict with new values
     
     Args:
-        balances: Dict with 'usdt' and 'btc' keys (will be mutated)
+        balances: Dict with 'usdt', 'btc', and optionally 'avg_entry_price', 'realized_pnl' keys (will be mutated)
         side: 'buy' or 'sell'
         qty: Quantity filled (always positive)
         price: Fill price
@@ -167,6 +201,9 @@ def apply_live_fill_to_balances(
     # Build current portfolio state from balances
     current_usdt = float(balances.get("usdt", 0.0))
     current_btc = float(balances.get("btc", 0.0))
+    current_avg_entry = balances.get("avg_entry_price")
+    current_realized_pnl = float(balances.get("realized_pnl", 0.0))
+    
     equity = compute_equity(current_usdt, current_btc, price)
     exposure = compute_exposure(current_btc, price, equity)
     
@@ -175,6 +212,8 @@ def apply_live_fill_to_balances(
         base=current_btc,
         equity=equity,
         exposure=exposure,
+        avg_entry_price=current_avg_entry,
+        realized_pnl_quote=current_realized_pnl,
     )
     
     # Apply fill using core logic
@@ -183,6 +222,8 @@ def apply_live_fill_to_balances(
     # Update balances dict in place
     balances["usdt"] = updated.usdt
     balances["btc"] = updated.base
+    balances["avg_entry_price"] = updated.avg_entry_price
+    balances["realized_pnl"] = updated.realized_pnl_quote
     
     return fee
 

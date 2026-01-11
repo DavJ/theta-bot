@@ -1218,10 +1218,18 @@ def main() -> None:
                 if abs(result.delta_btc) > 0:
                     side = "buy" if result.delta_btc > 0 else "sell"
                     
+                    # Get avg_entry_price for SELL guard
+                    avg_entry_price = balances.get("avg_entry_price")
+                    
                     # Cancel stale orders before placing new ones (for limit_maker mode)
                     if args.order_type == "limit_maker":
                         executor.cancel_stale_orders()
-                        execution_result = executor.place_limit_maker_order(side, abs(result.delta_btc), result.close)
+                        execution_result = executor.place_limit_maker_order(
+                            side, 
+                            abs(result.delta_btc), 
+                            result.close,
+                            portfolio_avg_entry_price=avg_entry_price,
+                        )
                     else:
                         execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
                     

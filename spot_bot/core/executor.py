@@ -72,13 +72,14 @@ class LiveExecutor(Executor):
         """
         self.ccxt_executor = ccxt_executor
 
-    def execute(self, plan: TradePlan, price: float) -> ExecutionResult:
+    def execute(self, plan: TradePlan, price: float, portfolio: Optional[PortfolioState] = None) -> ExecutionResult:
         """
         Execute trade plan on real exchange.
 
         Args:
             plan: Trade plan to execute
             price: Current market price
+            portfolio: Optional portfolio state for no-loss guard
 
         Returns:
             ExecutionResult with real fill details
@@ -102,13 +103,21 @@ class LiveExecutor(Executor):
         # Determine side
         side = "buy" if plan.delta_base > 0 else "sell"
         qty = abs(plan.delta_base)
+        
+        # Get avg_entry_price for SELL guard
+        avg_entry_price = portfolio.avg_entry_price if portfolio else None
 
         # Execute via CCXT
         try:
             # Cancel stale orders if using limit_maker
             if self.ccxt_executor.config.order_type == "limit_maker":
                 self.ccxt_executor.cancel_stale_orders()
-                ccxt_result = self.ccxt_executor.place_limit_maker_order(side, qty, price)
+                ccxt_result = self.ccxt_executor.place_limit_maker_order(
+                    side, 
+                    qty, 
+                    price,
+                    portfolio_avg_entry_price=avg_entry_price,
+                )
             else:
                 ccxt_result = self.ccxt_executor.place_market_order(side, qty, price)
         except Exception as exc:
