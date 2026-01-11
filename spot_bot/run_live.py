@@ -861,6 +861,35 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Fee rate for taker orders (default: same as --fee-rate)",
     )
+    parser.add_argument(
+        "--min-profit-bps",
+        dest="min_profit_bps",
+        type=float,
+        default=5.0,
+        help="Minimum profit requirement in basis points for limit maker orders (default: 5.0)",
+    )
+    parser.add_argument(
+        "--edge-softmax-alpha",
+        dest="edge_softmax_alpha",
+        type=float,
+        default=20.0,
+        help="Smoothness parameter for edge threshold calculation (default: 20.0)",
+    )
+    parser.add_argument(
+        "--edge-floor-bps",
+        dest="edge_floor_bps",
+        type=float,
+        default=0.0,
+        help="Minimum edge threshold in basis points (default: 0.0)",
+    )
+    parser.add_argument(
+        "--fee-roundtrip-mode",
+        dest="fee_roundtrip_mode",
+        type=str,
+        choices=["maker_maker", "maker_taker"],
+        default="maker_maker",
+        help="Fee calculation mode: maker_maker (2*maker) or maker_taker (maker+taker) (default: maker_maker)",
+    )
     return parser
 
 
@@ -1179,14 +1208,31 @@ def main() -> None:
                     max_spread_bps=args.max_spread_bps,
                     maker_fee_rate=maker_fee,
                     taker_fee_rate=taker_fee,
+                    slippage_bps=args.slippage_bps,
+                    min_profit_bps=args.min_profit_bps,
+                    edge_softmax_alpha=args.edge_softmax_alpha,
+                    edge_floor_bps=args.edge_floor_bps,
+                    fee_roundtrip_mode=args.fee_roundtrip_mode,
                 )
                 executor = CCXTExecutor(exec_cfg)
                 if abs(result.delta_btc) > 0:
                     side = "buy" if result.delta_btc > 0 else "sell"
-                    execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
+                    
+                    # Cancel stale orders before placing new ones (for limit_maker mode)
+                    if args.order_type == "limit_maker":
+                        executor.cancel_stale_orders()
+                        execution_result = executor.place_limit_maker_order(side, abs(result.delta_btc), result.close)
+                    else:
+                        execution_result = executor.place_market_order(side, abs(result.delta_btc), result.close)
+                    
                     if execution_result.get("status") == "filled":
                         qty = float(execution_result.get("filled_qty") or execution_result.get("qty") or 0.0)
                         _apply_live_fill_to_balances(balances, side, qty, result.close, fee_rate)
+                    elif execution_result.get("status") == "open":
+                        # Limit maker order placed but not filled yet
+                        # Do not update balances until order fills
+                        print(f"Limit maker order placed: {execution_result.get('order_id')}")
+                    
                     current_btc = balances["btc"]
                     equity_usdt = balances["usdt"] + current_btc * result.close
 
