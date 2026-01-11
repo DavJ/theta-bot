@@ -5,7 +5,7 @@ Single source of truth for hysteresis threshold computation and application.
 """
 from __future__ import annotations
 import math
-from typing import Tuple
+from typing import Tuple, Union, Dict
 # spot_bot/core/hysteresis.py
 
 
@@ -48,6 +48,95 @@ def soft_min(a: float, b: float, alpha: float) -> float:
     """
     return 0.5 * (a + b) - 0.5 * (a - b) * math.tanh(alpha * (a - b))
 
+def compute_return_threshold(
+    fee_rate: float,
+    spread_bps: float,
+    slippage_bps: float,
+    edge_bps: float,
+    min_profit_bps: float,
+    rv_current: float,
+    rv_ref: float,
+    k_vol: float,
+    vol_hyst_mode: str,
+) -> float:
+    """
+    Compute return threshold for limit pricing and sell guard.
+    
+    This is the minimum return required to justify a trade, accounting for:
+    - Round-trip costs (fees + spread + slippage)
+    - Required edge
+    - Minimum profit buffer
+    - Volatility adjustment
+    
+    Args:
+        fee_rate: Exchange fee rate (e.g., 0.001 for 0.1%)
+        spread_bps: Spread in basis points
+        slippage_bps: Slippage in basis points
+        edge_bps: Required edge in basis points
+        min_profit_bps: Minimum profit buffer in basis points
+        rv_current: Current realized volatility
+        rv_ref: Reference realized volatility
+        k_vol: Volatility multiplier
+        vol_hyst_mode: Volatility mode ("increase"|"decrease"|"none")
+    
+    Returns:
+        Return threshold as a fraction (e.g., 0.01 for 1%)
+    
+    Formula:
+        cost_r = 2*fee_rate + (spread_bps + slippage_bps)*1e-4
+        edge_r = edge_bps*1e-4
+        minp_r = min_profit_bps*1e-4
+        
+        rv_norm = rv_current / max(rv_ref, 1e-12)
+        
+        if vol_hyst_mode == "none": vol_mult = 1.0
+        if "increase": vol_mult = 1.0 + k_vol*(rv_norm - 1.0)
+        if "decrease": vol_mult = 1.0 + k_vol*(1.0/max(rv_norm,1e-6) - 1.0)
+        
+        vol_mult = clamp(vol_mult, 0.25, 4.0)
+        
+        return_threshold = (cost_r + edge_r + minp_r) * vol_mult
+    """
+    # Ensure valid inputs
+    rv = max(float(rv_current) if rv_current else 0.0, 1e-12)
+    rv_ref_safe = max(float(rv_ref) if rv_ref else 0.0, 1e-12)
+    
+    # Compute normalized volatility
+    rv_norm = rv / rv_ref_safe
+    
+    # Convert costs to return units (round-trip)
+    cost_r = 2.0 * float(fee_rate) + (float(spread_bps) + float(slippage_bps)) * 1e-4
+    
+    # Add edge and min profit
+    edge_r = float(edge_bps) * 1e-4
+    minp_r = float(min_profit_bps) * 1e-4
+    
+    # Compute volatility multiplier based on mode
+    mode = str(vol_hyst_mode).strip().lower()
+    if mode == "increase":
+        # Higher volatility -> higher threshold (more conservative)
+        vol_mult = 1.0 + float(k_vol) * (rv_norm - 1.0)
+    elif mode == "decrease":
+        # Higher volatility -> lower threshold (less conservative)
+        vol_mult = 1.0 + float(k_vol) * (1.0 / max(rv_norm, 1e-6) - 1.0)
+    elif mode == "none":
+        # No volatility adjustment
+        vol_mult = 1.0
+    else:
+        raise ValueError(
+            f"Invalid vol_hyst_mode: {vol_hyst_mode!r}. "
+            f"Must be one of: 'increase', 'decrease', 'none'"
+        )
+    
+    # Clamp vol_mult to avoid explosions
+    vol_mult = max(0.25, min(4.0, vol_mult))
+    
+    # Compute final return threshold
+    return_threshold = (cost_r + edge_r + minp_r) * vol_mult
+    
+    return float(return_threshold)
+
+
 def compute_hysteresis_threshold(
     *,
     rv_current: float,
@@ -63,7 +152,8 @@ def compute_hysteresis_threshold(
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
-) -> float:
+    return_diagnostics: bool = False,
+) -> Union[float, Tuple[float, Dict[str, Union[float, bool]]]]:
     """
     Stable hysteresis threshold based on costs + volatility + edge with smooth bounds.
     
@@ -86,9 +176,20 @@ def compute_hysteresis_threshold(
         alpha_floor: Smoothness parameter for minimum bound (default 6.0)
         alpha_cap: Smoothness parameter for maximum bound (default 6.0)
         vol_hyst_mode: Volatility hysteresis mode ("increase"|"decrease"|"none")
+        return_diagnostics: If True, return (delta_e_min, diagnostics_dict) instead of just delta_e_min
     
     Returns:
-        delta_e_min: Minimum exposure change threshold in [0, 1]
+        If return_diagnostics=False: delta_e_min (float)
+        If return_diagnostics=True: (delta_e_min, diagnostics_dict) tuple
+        
+        diagnostics_dict contains:
+            - hyst_raw: Raw hysteresis value before floor/cap
+            - hyst_after_floor: After applying floor via soft_max
+            - hyst_final: Final value after cap (same as delta_e_min)
+            - floor_binding: True if floor constraint is active
+            - cap_binding: True if cap constraint is active
+            - rv_norm: Normalized volatility ratio
+            - vol_mult: Volatility multiplier applied
     
     Formula:
         rv = max(rv_current, 1e-12)
@@ -143,13 +244,30 @@ def compute_hysteresis_threshold(
     
     # Map return threshold to exposure threshold via hyst_k scaling
     # Apply volatility multiplier to the combined cost+edge
-    raw = float(hyst_k) * (cost_r + edge_r) * vol_mult
+    hyst_raw = float(hyst_k) * (cost_r + edge_r) * vol_mult
     
     # Apply smooth floor and cap for stability (avoid binary transitions)
-    x = soft_max(raw, float(hyst_floor), float(alpha_floor))      # enforce floor smoothly
-    x = soft_min(x, float(max_delta_e_min), float(alpha_cap))     # enforce cap smoothly
+    hyst_after_floor = soft_max(hyst_raw, float(hyst_floor), float(alpha_floor))      # enforce floor smoothly
+    hyst_final = soft_min(hyst_after_floor, float(max_delta_e_min), float(alpha_cap))     # enforce cap smoothly
     
-    return float(x)
+    # Compute binding flags (use small epsilon for numerical tolerance)
+    eps = 1e-9
+    floor_binding = (hyst_raw < float(hyst_floor) - eps)
+    cap_binding = (hyst_after_floor > float(max_delta_e_min) + eps)
+    
+    if return_diagnostics:
+        diagnostics = {
+            "hyst_raw": float(hyst_raw),
+            "hyst_after_floor": float(hyst_after_floor),
+            "hyst_final": float(hyst_final),
+            "floor_binding": bool(floor_binding),
+            "cap_binding": bool(cap_binding),
+            "rv_norm": float(rv_norm),
+            "vol_mult": float(vol_mult),
+        }
+        return float(hyst_final), diagnostics
+    
+    return float(hyst_final)
 
 
 def apply_hysteresis(
@@ -208,6 +326,7 @@ def apply_hysteresis(
 __all__ = [
     "soft_max",
     "soft_min",
+    "compute_return_threshold",
     "compute_hysteresis_threshold",
     "apply_hysteresis",
 ]

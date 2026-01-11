@@ -14,7 +14,11 @@ import numpy as np
 import pandas as pd
 
 from spot_bot.core.cost_model import compute_cost_per_turnover
-from spot_bot.core.hysteresis import apply_hysteresis, compute_hysteresis_threshold
+from spot_bot.core.hysteresis import (
+    apply_hysteresis,
+    compute_hysteresis_threshold,
+    compute_return_threshold,
+)
 from spot_bot.core.portfolio import apply_fill, compute_equity, compute_exposure
 from spot_bot.core.trade_planner import plan_trade
 from spot_bot.core.types import (
@@ -57,6 +61,7 @@ class EngineParams:
     allow_short: bool = False
     debug: bool = False
     hyst_conf_k: float = 0.0  # Confidence-based hysteresis adjustment (0 = disabled)
+    min_profit_bps: float = 5.0  # Minimum profit buffer in basis points
 
 
 def run_step(
@@ -120,8 +125,8 @@ def run_step(
         spread_bps=params.spread_bps,
     )
 
-    # Step 3: Compute hysteresis threshold
-    delta_e_min = compute_hysteresis_threshold(
+    # Step 3: Compute hysteresis threshold with diagnostics
+    result = compute_hysteresis_threshold(
         rv_current=rv_current,
         rv_ref=rv_ref,
         fee_rate=params.fee_rate,
@@ -134,6 +139,21 @@ def run_step(
         max_delta_e_min=params.max_delta_e_min,
         alpha_floor=params.alpha_floor,
         alpha_cap=params.alpha_cap,
+        vol_hyst_mode=params.vol_hyst_mode,
+        return_diagnostics=True,
+    )
+    delta_e_min, hyst_diagnostics = result
+    
+    # Step 3.1: Compute return threshold for limit pricing and sell guard
+    return_threshold = compute_return_threshold(
+        fee_rate=params.fee_rate,
+        spread_bps=params.spread_bps,
+        slippage_bps=params.slippage_bps,
+        edge_bps=params.edge_bps,
+        min_profit_bps=params.min_profit_bps,
+        rv_current=rv_current,
+        rv_ref=rv_ref,
+        k_vol=params.k_vol,
         vol_hyst_mode=params.vol_hyst_mode,
     )
     
@@ -177,7 +197,10 @@ def run_step(
         print(
             f"DBG hyst: edge_bps={params.edge_bps} k_vol={params.k_vol} "
             f"rv_cur={rv_current:.6g} rv_ref={rv_ref:.6g} "
-            f"delta_e_min={delta_e_min:.6g} "
+            f"delta_e_min={delta_e_min:.6g} return_thr={return_threshold:.6g} "
+            f"hyst_raw={hyst_diagnostics.get('hyst_raw', 0):.6g} "
+            f"floor_bind={hyst_diagnostics.get('floor_binding', False)} "
+            f"cap_bind={hyst_diagnostics.get('cap_binding', False)} "
             f"cur={portfolio.exposure:.3f} tgt_raw={target_exposure_raw:.3f} "
             f"tgt_final={target_exposure_final:.3f} supp={suppressed}"
         )
@@ -193,6 +216,7 @@ def run_step(
         min_usdt_reserve=params.min_usdt_reserve,
         max_notional_per_trade=params.max_notional_per_trade,
         allow_short=params.allow_short,
+        return_threshold=return_threshold,
     )
     
     # Compute clamped value for diagnostics (always, regardless of allow_short)
@@ -224,6 +248,8 @@ def run_step(
                 "suppressed": True,
                 "clamped_long_only": clamped_long_only,
             },
+            limit_price=None,
+            order_type="limit",
         )
 
     # Build strategy output for logging
@@ -244,6 +270,8 @@ def run_step(
         "target_exposure_final": target_exposure_final,
         "hysteresis_suppressed": suppressed,
         "clamped_long_only": clamped_long_only,
+        "return_threshold": return_threshold,
+        **hyst_diagnostics,  # Include hyst_raw, floor_binding, cap_binding, etc.
     }
 
     return plan, strategy_output, diagnostics
@@ -253,6 +281,7 @@ def simulate_execution(
     plan: TradePlan,
     price: float,
     params: EngineParams,
+    bar: Optional[MarketBar] = None,
 ) -> ExecutionResult:
     """
     Simulate execution of a trade plan.
@@ -261,13 +290,19 @@ def simulate_execution(
 
     Args:
         plan: Trade plan from run_step
-        price: Execution price (typically bar.close)
+        price: Execution price (typically bar.close, used as fallback)
         params: Engine parameters (for slippage and fees)
+        bar: Optional OHLC bar for limit fill simulation
 
     Returns:
         ExecutionResult with simulated fill details.
 
-    Slippage model:
+    Limit order simulation (when plan.order_type="limit" and plan.limit_price is set):
+        BUY: fills only if bar.low <= limit_price, at limit_price
+        SELL: fills only if bar.high >= limit_price, at limit_price
+        If bar not provided or limit not touched, returns SKIPPED
+
+    Market order simulation (plan.order_type="market" or no limit_price):
         exec_price = price * (1 + slippage_sign * slippage_bps / 10000)
         where slippage_sign = +1 for BUY, -1 for SELL
 
@@ -284,18 +319,64 @@ def simulate_execution(
             raw=None,
         )
 
-    # Compute execution price with slippage
-    slippage_sign = 1.0 if plan.delta_base > 0 else -1.0
-    slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
-    exec_price = price * slippage_mult
+    # Determine if this is a limit order
+    is_limit_order = (
+        plan.order_type == "limit"
+        and plan.limit_price is not None
+        and bar is not None
+    )
+
+    exec_price = price
+    slippage_paid = 0.0
+
+    if is_limit_order:
+        # Limit order simulation using OHLC
+        limit_price = plan.limit_price
+        
+        if plan.delta_base > 0:
+            # BUY: fill only if bar.low <= limit_price
+            if bar.low <= limit_price:
+                exec_price = limit_price
+                # No slippage for limit fills (we get our price)
+                slippage_paid = 0.0
+            else:
+                # Limit not touched, order not filled
+                return ExecutionResult(
+                    filled_base=0.0,
+                    avg_price=price,
+                    fee_paid=0.0,
+                    slippage_paid=0.0,
+                    status="SKIPPED",
+                    raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_low": bar.low},
+                )
+        else:
+            # SELL: fill only if bar.high >= limit_price
+            if bar.high >= limit_price:
+                exec_price = limit_price
+                # No slippage for limit fills (we get our price)
+                slippage_paid = 0.0
+            else:
+                # Limit not touched, order not filled
+                return ExecutionResult(
+                    filled_base=0.0,
+                    avg_price=price,
+                    fee_paid=0.0,
+                    slippage_paid=0.0,
+                    status="SKIPPED",
+                    raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_high": bar.high},
+                )
+    else:
+        # Market order simulation with slippage
+        slippage_sign = 1.0 if plan.delta_base > 0 else -1.0
+        slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
+        exec_price = price * slippage_mult
+        # Slippage cost (difference from mid price)
+        slippage_paid = abs(exec_price - price) * abs(plan.delta_base)
 
     # Compute notional and fee
     filled_base = plan.delta_base
     notional = abs(filled_base) * exec_price
     fee_paid = notional * params.fee_rate
-
-    # Slippage cost (difference from mid price)
-    slippage_paid = abs(exec_price - price) * abs(filled_base)
 
     return ExecutionResult(
         filled_base=filled_base,
@@ -303,7 +384,7 @@ def simulate_execution(
         fee_paid=fee_paid,
         slippage_paid=slippage_paid,
         status="filled",
-        raw={"plan": plan, "price": price},
+        raw={"plan": plan, "price": price, "is_limit": is_limit_order},
     )
 
 
@@ -344,7 +425,7 @@ def run_step_simulated(
     )
 
     # Simulate execution
-    execution = simulate_execution(plan, bar.close, params)
+    execution = simulate_execution(plan, bar.close, params, bar=bar)
 
     # Apply fill to portfolio
     updated_portfolio = apply_fill(portfolio, execution)

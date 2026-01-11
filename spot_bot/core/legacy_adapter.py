@@ -250,6 +250,7 @@ def compute_step_with_core_full(
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
+    min_profit_bps: float = 5.0,
 ) -> StepResultFromCore:
     """
     Compute trading step using core engine and return full StepResult.
@@ -390,6 +391,7 @@ def plan_from_live_inputs(
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
+    min_profit_bps: float = 5.0,
 ) -> StepResultFromCore:
     """
     Primary entry point for run_live.py to plan trades using core engine.
@@ -425,6 +427,7 @@ def plan_from_live_inputs(
         alpha_floor=alpha_floor,
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
+        min_profit_bps=min_profit_bps,
     )
 
 
