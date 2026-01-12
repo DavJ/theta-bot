@@ -274,7 +274,8 @@ def run_backtest(
     features[TIMESTAMP_COL] = pd.to_datetime(features.index, utc=True)
     
     # Add OHLC data to features for proper alignment
-    # Using .values ensures row-by-row alignment with features
+    # compute_features() returns same number of rows as input, so .values alignment is safe
+    # These columns will be filtered along with features by valid_mask below
     features["open"] = pd.to_numeric(df_norm["open"], errors="coerce").values
     features["high"] = pd.to_numeric(df_norm["high"], errors="coerce").values
     features["low"] = pd.to_numeric(df_norm["low"], errors="coerce").values

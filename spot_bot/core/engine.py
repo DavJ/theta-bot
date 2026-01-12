@@ -332,7 +332,7 @@ def simulate_execution(
     if is_limit_order:
         # Limit order simulation using OHLC
         # Defensive check: ensure OHLC data is valid for limit simulation
-        if bar.low is None or bar.high is None or not np.isfinite(bar.low) or not np.isfinite(bar.high):
+        if not np.isfinite(bar.low) or not np.isfinite(bar.high):
             raise ValueError(
                 f"Limit simulation requires valid OHLC data. "
                 f"Got bar.low={bar.low}, bar.high={bar.high}. "
