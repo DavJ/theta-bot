@@ -272,6 +272,13 @@ def run_backtest(
     features = compute_features(df_norm, feat_cfg)
     features["close"] = pd.to_numeric(df_norm["close"], errors="coerce").values
     features[TIMESTAMP_COL] = pd.to_datetime(features.index, utc=True)
+    
+    # Add OHLC data to features for proper alignment
+    # Using .values ensures row-by-row alignment with features
+    features["open"] = pd.to_numeric(df_norm["open"], errors="coerce").values
+    features["high"] = pd.to_numeric(df_norm["high"], errors="coerce").values
+    features["low"] = pd.to_numeric(df_norm["low"], errors="coerce").values
+    features["volume"] = pd.to_numeric(df_norm["volume"], errors="coerce").values
 
     # Filter valid rows
     valid_mask = (
@@ -355,14 +362,10 @@ def run_backtest(
     # Run backtest using core engine
     timestamps = pd.to_datetime(features[TIMESTAMP_COL], utc=True)
     closes = pd.to_numeric(features["close"], errors="coerce").astype(float).values
-    
-    # Extract OHLC data from input DataFrame for proper limit simulation
-    # We need to align df_norm rows with features rows (features may have fewer rows after validation)
-    df_norm_indexed = df_norm.set_index(TIMESTAMP_COL) if TIMESTAMP_COL in df_norm.columns else df_norm
-    opens = df_norm_indexed.reindex(features.index)["open"].astype(float).values
-    highs = df_norm_indexed.reindex(features.index)["high"].astype(float).values
-    lows = df_norm_indexed.reindex(features.index)["low"].astype(float).values
-    volumes = df_norm_indexed.reindex(features.index)["volume"].astype(float).values
+    opens = pd.to_numeric(features["open"], errors="coerce").astype(float).values
+    highs = pd.to_numeric(features["high"], errors="coerce").astype(float).values
+    lows = pd.to_numeric(features["low"], errors="coerce").astype(float).values
+    volumes = pd.to_numeric(features["volume"], errors="coerce").astype(float).values
 
     equity_rows: List[Dict[str, Any]] = []
     trade_rows: List[Dict[str, Any]] = []
