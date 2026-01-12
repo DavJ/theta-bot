@@ -331,6 +331,14 @@ def simulate_execution(
 
     if is_limit_order:
         # Limit order simulation using OHLC
+        # Defensive check: ensure OHLC data is valid for limit simulation
+        if not np.isfinite(bar.low) or not np.isfinite(bar.high):
+            raise ValueError(
+                f"Limit simulation requires valid OHLC data. "
+                f"Got bar.low={bar.low}, bar.high={bar.high}. "
+                f"Ensure input data includes 'open', 'high', 'low', 'close' columns with valid float values."
+            )
+        
         limit_price = plan.limit_price
         
         if plan.delta_base > 0:
