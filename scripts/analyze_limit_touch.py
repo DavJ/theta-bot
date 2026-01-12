@@ -123,7 +123,7 @@ def analyze_limit_touches(
     results = []
     
     for thr_bps in thresholds_bps:
-        # Convert basis points to fraction (e.g., 10 bps = 0.001)
+        # Convert basis points to fraction (e.g., 10 bps = 0.1% = 0.001 = 10 * 1e-4)
         threshold_frac = thr_bps * 1e-4
         
         # Calculate LIMIT levels based on previous close
