@@ -191,7 +191,14 @@ def run_backtest(
     )
     features = compute_features(df_norm, feat_cfg)
     features["close"] = pd.to_numeric(df_norm["close"], errors="coerce").values
-    features[TIMESTAMP_COL] = pd.to_datetime(features.index, utc=True)
+    # IMPORTANT:
+    # `compute_features()` may return a DataFrame with a RangeIndex (0..N-1).
+    # If we convert that index to datetime, we get 1970-01-01 + nanoseconds.
+    # Keep the real bar timestamps from normalized OHLCV when possible.
+    if TIMESTAMP_COL in df_norm.columns and len(df_norm) == len(features):
+        features[TIMESTAMP_COL] = df_norm[TIMESTAMP_COL].to_numpy()
+    else:
+        features[TIMESTAMP_COL] = pd.to_datetime(features.index, utc=True)
 
     valid_mask = (
         features["C"].notna()

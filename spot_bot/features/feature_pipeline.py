@@ -39,10 +39,23 @@ class FeatureConfig:
 
 
 def _resolve_timestamp(ohlcv_df: pd.DataFrame) -> pd.Series:
+    """
+    Resolve timestamps from either a 'timestamp' column or the DataFrame index.
+
+    Supports both ISO timestamps and Unix epoch in milliseconds.
+    """
     if "timestamp" in ohlcv_df.columns:
-        ts = pd.to_datetime(ohlcv_df["timestamp"], utc=True, errors="coerce")
+        s = ohlcv_df["timestamp"]
+        if pd.api.types.is_numeric_dtype(s):
+            ts = pd.to_datetime(s, unit="ms", utc=True, errors="coerce")
+        else:
+            ts = pd.to_datetime(s, utc=True, errors="coerce")
     else:
-        ts = pd.to_datetime(ohlcv_df.index, utc=True, errors="coerce")
+        idx = ohlcv_df.index
+        if pd.api.types.is_numeric_dtype(idx):
+            ts = pd.to_datetime(idx, unit="ms", utc=True, errors="coerce")
+        else:
+            ts = pd.to_datetime(idx, utc=True, errors="coerce")
     return ts
 
 

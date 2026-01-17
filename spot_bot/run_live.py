@@ -995,7 +995,11 @@ def main() -> None:
                 print("CSV input must contain a 'timestamp' column.", file=sys.stderr)
                 sys.exit(1)
             try:
-                df_bt["timestamp"] = pd.to_datetime(df_bt["timestamp"], utc=True)
+                ts = df_bt["timestamp"]
+                if pd.api.types.is_numeric_dtype(ts):
+                    df_bt["timestamp"] = pd.to_datetime(ts, unit="ms", utc=True)
+                else:
+                    df_bt["timestamp"] = pd.to_datetime(ts, utc=True, errors="coerce")
             except (ValueError, TypeError) as exc:
                 print(f"Failed to parse timestamp column: {exc}", file=sys.stderr)
                 sys.exit(1)
