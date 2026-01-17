@@ -362,15 +362,26 @@ def run_backtest(
     # Run backtest using core engine
     timestamps = pd.to_datetime(features[TIMESTAMP_COL], utc=True)
     closes = pd.to_numeric(features["close"], errors="coerce").astype(float).values
+    opens = pd.to_numeric(features["open"], errors="coerce").astype(float).values
+    highs = pd.to_numeric(features["high"], errors="coerce").astype(float).values
+    lows = pd.to_numeric(features["low"], errors="coerce").astype(float).values
+    volumes = pd.to_numeric(features["volume"], errors="coerce").astype(float).values
 
     equity_rows: List[Dict[str, Any]] = []
     trade_rows: List[Dict[str, Any]] = []
     peak_equity = portfolio.equity
     exposures_time: List[float] = []
+    
+    # Diagnostic counters for limit order behavior
+    planned_actions_count = 0
+    limit_fill_attempts = 0
+    limit_fills = 0
 
-    for i, (ts, price, target_exp, rv_current, rv_ref) in enumerate(
-        zip(timestamps, closes, intent_series, rv_series, rv_ref_series)
+    for i, (ts, open_p, high_p, low_p, close_p, vol, target_exp, rv_current, rv_ref) in enumerate(
+        zip(timestamps, opens, highs, lows, closes, volumes, intent_series, rv_series, rv_ref_series)
     ):
+        # Use close as the primary price for all calculations
+        price = close_p
         if not np.isfinite(price) or price <= 0.0:
             continue
 
@@ -386,14 +397,15 @@ def run_backtest(
             exposure=exposure,
         )
 
-        # Create market bar
+        # Create market bar with actual OHLC data for proper limit simulation
+        # Convert to float and handle NaN values (fallback to close if OHLC missing)
         bar = MarketBar(
             ts=int(ts.value // 1_000_000),
-            open=price,
-            high=price,
-            low=price,
+            open=float(open_p) if np.isfinite(open_p) else price,
+            high=float(high_p) if np.isfinite(high_p) else price,
+            low=float(low_p) if np.isfinite(low_p) else price,
             close=price,
-            volume=0.0,
+            volume=float(vol) if np.isfinite(vol) else 0.0,
         )
 
         # Create minimal features_df for strategy adapter
@@ -415,6 +427,14 @@ def run_backtest(
         except Exception as e:
             raise RuntimeError(f"Backtest failed at i={i}, ts={ts}, price={price}: {e}") from e
 
+        # Track diagnostics
+        if plan.action != "HOLD":
+            planned_actions_count += 1
+        if plan.order_type == "limit" and plan.action != "HOLD":
+            limit_fill_attempts += 1
+            if execution.status == "filled":
+                limit_fills += 1
+        
         # Record trade if executed
         action = plan.action
         if execution.status == "filled" and abs(execution.filled_base) > 0:
@@ -510,11 +530,15 @@ def run_backtest(
         "fees_paid_total": fees_paid_total,
         "slippage_paid_total": slippage_paid_total,
         "net_pnl": net_pnl,
+        "planned_actions_count": float(planned_actions_count),
+        "limit_fill_attempts": float(limit_fill_attempts),
+        "limit_fills": float(limit_fills),
     }
 
     if log:
         print(
-            f"processed bars: {len(equity_df)}, trades: {len(trades_df)}, final equity: {summary['final_equity']:.2f}"
+            f"processed bars: {len(equity_df)}, trades: {len(trades_df)}, final equity: {summary['final_equity']:.2f}, "
+            f"planned actions: {planned_actions_count}, limit attempts: {limit_fill_attempts}, limit fills: {limit_fills}"
         )
 
     return equity_df, trades_df, summary
