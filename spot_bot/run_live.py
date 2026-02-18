@@ -34,6 +34,7 @@ from spot_bot.portfolio.sizer import compute_target_position
 from spot_bot.regime.regime_engine import RegimeEngine
 from spot_bot.strategies.base import Intent
 from spot_bot.strategies.kalman import KalmanStrategy
+from spot_bot.strategies.lstm_kalman import LSTMKalmanStrategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
 
@@ -822,7 +823,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rv-reduce", dest="rv_reduce", type=float, default=None)
     parser.add_argument("--rv-guard", dest="rv_guard", type=float, default=None)
     parser.add_argument(
-        "--strategy", type=str, choices=["none", "meanrev", "kalman", "kalman_mr_dual"], default="meanrev"
+        "--strategy", type=str, choices=["none", "meanrev", "kalman", "kalman_mr_dual", "lstm_kalman"], default="meanrev"
     )
     # Execution type flags
     parser.add_argument(
@@ -968,6 +969,8 @@ def main() -> None:
             strategy = KalmanStrategy()
         elif args.strategy == "kalman_mr_dual":
             strategy = MeanRevDualKalmanStrategy()
+        elif args.strategy == "lstm_kalman":
+            strategy = LSTMKalmanStrategy()
         elif args.strategy == "none":
             class NullStrategy:
                 def generate_intent(self, features_df):
