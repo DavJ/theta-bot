@@ -1,0 +1,247 @@
+% DERIVATION_P2_complex_chronofactor_spectrum.tex
+% LaTeX-ready section for inclusion in papers or appendices.
+% Requires: amsmath, amssymb (standard)
+
+\section{Symbolic Derivation: Complex Chronofactor $\tau = t + i\psi$\\
+         Spectral Consequences and Links to $S_\Theta$ and $\Sigma_\Theta$}
+
+\subsection{Setup and Assumptions}
+
+\paragraph{Chronofactor.}
+Let the \emph{chronofactor} be
+\begin{equation}
+  \tau = t + i\psi, \qquad t, \psi \in \mathbb{R},
+\end{equation}
+where $t$ is physical (real) time and $\psi$ is the imaginary displacement.
+
+\paragraph{Matrix field.}
+Let $\Theta(\tau)$ be an $n\times n$ complex matrix field, holomorphic in a strip $|\psi|<\psi_{\max}$.
+Define the \emph{overlap matrix}
+\begin{equation}
+  O(\tau) = \Theta^\dagger(\tau)\,\Theta(\tau),
+\end{equation}
+which is positive semidefinite on the real-time slice $\tau = t$.
+
+\paragraph{UBT invariants.}
+\begin{align}
+  S_\Theta  &:= k_B \log\det(\Theta^\dagger\Theta), \\
+  \Sigma_\Theta &:= k_B \arg\det\Theta = k_B\,\mathrm{Im}\log\det\Theta.
+\end{align}
+
+\paragraph{Generator decomposition.}
+Let $G = A + iB$ with $A = \tfrac{1}{2}(G+G^\dagger)$ (Hermitian part) and
+$B = \tfrac{1}{2i}(G-G^\dagger)$ (anti-Hermitian part, $B$ Hermitian).
+
+% -----------------------------------------------------------------------
+\subsection{Linear Complex-$\tau$ Flow}
+
+\begin{equation}
+  \partial_\tau \Theta(\tau) = G\,\Theta(\tau), \qquad \Theta(0) = \Theta_0.
+\end{equation}
+
+\begin{proposition}[Exact solution]\label{prop:exact}
+  The unique holomorphic solution is
+  \begin{equation}
+    \Theta(\tau) = e^{\tau G}\,\Theta_0.
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+  Differentiate $e^{\tau G}\Theta_0$ with respect to $\tau$; uniqueness from
+  Picard--Lindel\"of on the linear system.
+\end{proof}
+
+\paragraph{Spectral decomposition.}
+Assume $G$ diagonalizable: $G = V\,\mathrm{diag}(\mu_1,\ldots,\mu_n)\,V^{-1}$
+with $\mu_k = \alpha_k + i\omega_k \in \mathbb{C}$.  Then
+\begin{equation}
+  e^{\tau G} = V\,\mathrm{diag}(e^{\tau\mu_1},\ldots,e^{\tau\mu_n})\,V^{-1}.
+\end{equation}
+
+% -----------------------------------------------------------------------
+\subsection{What Changes When $\tau$ is Complex}
+
+Setting $\tau = t + i\psi$, $\mu_k = \alpha_k + i\omega_k$:
+\begin{equation}\label{eq:mode-factor}
+  \boxed{e^{\tau\mu_k} = e^{t\alpha_k - \psi\omega_k}\cdot e^{i(t\omega_k + \psi\alpha_k)}.}
+\end{equation}
+\begin{itemize}
+  \item \textbf{Magnitude:} $|e^{\tau\mu_k}|=e^{t\alpha_k-\psi\omega_k}$.
+        Real time $t$ drives growth/decay; imaginary displacement $\psi$ modulates
+        amplitude through the imaginary eigenvalue part $\omega_k$.
+  \item \textbf{Phase:} $\arg e^{\tau\mu_k}=t\omega_k+\psi\alpha_k$.
+        Complex $\tau$ \emph{couples} the oscillation and growth/decay channels.
+\end{itemize}
+
+\paragraph{Commuting vs.\ non-commuting generators.}
+With $G=A+iB$:
+\begin{equation}
+  e^{\tau G} = e^{(tA-\psi B)+i(tB+\psi A)}.
+\end{equation}
+\textbf{Commuting case} ($[A,B]=0$):
+\begin{equation}
+  e^{\tau G} = e^{tA-\psi B}\cdot e^{i(tB+\psi A)}.
+\end{equation}
+\textbf{General case} (BCH first-order correction):
+\begin{equation}\label{eq:BCH}
+  e^{\tau G} = e^{(tA-\psi B)+i(tB+\psi A)}\cdot
+               \exp\!\Bigl(\tfrac{i}{2}|\tau|^2[A,B] + O\bigl([A,B]^2\bigr)\Bigr),
+               \quad |\tau|^2 = t^2+\psi^2.
+\end{equation}
+The correction grows with $|\tau|^2$ for non-commuting generators.
+
+% -----------------------------------------------------------------------
+\subsection{Consequences for $O(\tau)=\Theta^\dagger\Theta$}
+
+Differentiating $O=\Theta^\dagger\Theta$ with respect to $t$ (fixed $\psi$):
+\begin{equation}\label{eq:Odot}
+  \boxed{\partial_t O = 2\,\Theta^\dagger\,\mathrm{Herm}(G)\,\Theta = 2\,\Theta^\dagger A\,\Theta.}
+\end{equation}
+\begin{corollary}
+  If $G$ is anti-Hermitian ($A=0$), then $\partial_t O=0$: eigenvalues of $O$
+  are conserved; only the phase of $\Theta$ evolves.
+\end{corollary}
+
+When $\psi=\psi(t)$ is time-dependent, the effective generator is
+$\tilde G=(1+i\psi')G$ and
+\begin{equation}\label{eq:Odot-psi}
+  \frac{d}{dt}O\Big|_{\psi=\psi(t)} = 2\,\Theta^\dagger\bigl(A - \psi'(t)B\bigr)\Theta.
+\end{equation}
+Even for $A=0$, a non-zero $\psi'(t)$ induces eigenvalue drift via the
+anti-Hermitian part $B$, causing \emph{spectral broadening}.
+
+% -----------------------------------------------------------------------
+\subsection{Determinant Channel: $\log\det\Theta$ and $\log\det(\Theta^\dagger\Theta)$}
+
+\begin{proposition}[log det identity]\label{prop:logdet}
+  Under the linear flow $\Theta(\tau)=e^{\tau G}\Theta_0$:
+  \begin{equation}
+    \boxed{\log\det\Theta(\tau) = \tau\,\mathrm{Tr}\,G + \log\det\Theta_0.}
+  \end{equation}
+\end{proposition}
+\begin{proof}
+  $\det(e^{\tau G})=e^{\tau\,\mathrm{Tr}\,G}$ by Jacobi's formula. \qed
+\end{proof}
+
+With $\tau=t+i\psi$ and $\mathrm{Tr}\,G = \mathrm{Tr}\,A + i\,\mathrm{Tr}\,B$:
+\begin{align}
+  \mathrm{Re}\log\det\Theta &= t\,\mathrm{Tr}\,A - \psi\,\mathrm{Tr}\,B + \mathrm{Re}\log\det\Theta_0,
+  \label{eq:relogdet}\\
+  \mathrm{Im}\log\det\Theta &= t\,\mathrm{Tr}\,B + \psi\,\mathrm{Tr}\,A + \mathrm{Im}\log\det\Theta_0.
+  \label{eq:imlogdet}
+\end{align}
+
+\paragraph{The $2\times\mathrm{Re}$ relationship.}
+On any slice where $\Theta^\dagger$ is the conjugate transpose at the same $\tau$:
+\begin{equation}
+  \log\det(\Theta^\dagger\Theta) = \overline{\log\det\Theta} + \log\det\Theta
+                                 = 2\,\mathrm{Re}\log\det\Theta.
+\end{equation}
+
+% -----------------------------------------------------------------------
+\subsection{Phase Channel: $\arg\det\Theta$ as Holonomy}
+
+\begin{proposition}[Explicit $\Sigma_\Theta$]\label{prop:sigma}
+  \begin{equation}
+    \boxed{\Sigma_\Theta(\tau) = k_B\bigl(t\,\mathrm{Tr}\,B + \psi\,\mathrm{Tr}\,A
+                                  + \mathrm{Im}\log\det\Theta_0\bigr).}
+  \end{equation}
+\end{proposition}
+
+\begin{proposition}[Explicit $S_\Theta$]\label{prop:entropy}
+  \begin{equation}
+    \boxed{S_\Theta(\tau) = 2k_B\bigl(t\,\mathrm{Tr}\,A - \psi\,\mathrm{Tr}\,B
+                             + \mathrm{Re}\log\det\Theta_0\bigr).}
+  \end{equation}
+\end{proposition}
+
+When $\psi$ traces a closed loop (returning to its initial value) and no zero
+of $\det\Theta$ is enclosed, the net change in $\Sigma_\Theta$ vanishes.
+Encircling a zero contributes $2\pi k_B$ per winding (monodromy).
+
+% -----------------------------------------------------------------------
+\subsection{Non-Hermitian Case: Pseudospectrum}
+
+For non-Hermitian $G$, right and left eigenvectors differ:
+\begin{equation}
+  G v_k = \mu_k v_k, \quad w_k^\dagger G = \mu_k w_k^\dagger, \quad
+  w_j^\dagger v_k = \delta_{jk}.
+\end{equation}
+
+\begin{definition}[$\epsilon$-pseudospectrum]
+  \(\Lambda_\epsilon(G) = \{z\in\mathbb{C} : \|(G-zI)^{-1}\|\geq\epsilon^{-1}\}\).
+\end{definition}
+
+Even when all $\mathrm{Re}\,\mu_k < 0$, a non-normal $G$ can produce transient growth
+of $\|e^{\tau G}\|$ for finite $t$.  This appears as non-monotone eigenvalue
+trajectories in $O(\tau)$ --- a signature not predictable from eigenvalues alone.
+
+% -----------------------------------------------------------------------
+\subsection{Diagnostic Invariants (Discriminators D1--D3)}
+
+\paragraph{D1: Phase--Entropy Coupling.}
+\begin{equation}\label{eq:D1}
+  \boxed{C_{12}(t) = \frac{\partial_t\Sigma_\Theta}{\partial_t S_\Theta}.}
+\end{equation}
+Under real $\tau$: $C_{12}=\mathrm{Tr}\,B/(2\,\mathrm{Tr}\,A)$ (constant).\\
+Under complex $\tau$ with $\psi=\psi(t)$:
+\begin{equation}
+  C_{12}(t) = \frac{\mathrm{Tr}\,B + \psi'(t)\,\mathrm{Tr}\,A}
+                   {2\bigl(\mathrm{Tr}\,A - \psi'(t)\,\mathrm{Tr}\,B\bigr)},
+\end{equation}
+which is time-varying whenever $\psi'(t)\neq 0$.
+
+\paragraph{D2: Spectral Conservation Test.}
+\begin{equation}
+  \lambda_i(O(t)) = \mathrm{const} \iff \mathrm{Herm}(G_{\mathrm{eff}}) = 0.
+\end{equation}
+Under complex $\tau$ with $A=0$, the effective Hermitian part is $-\psi'B\neq 0$
+when $\psi'\neq 0$, producing observable eigenvalue drift.
+
+\paragraph{D3: Mode Pairing and Oscillatory $\Sigma_\Theta$.}
+\begin{equation}
+  \text{Oscillatory }\Sigma_\Theta(t)\text{ with monotone }S_\Theta(t)
+  \iff \mathrm{Tr}\,B \neq 0 \text{ and complex-conjugate eigenpairs.}
+\end{equation}
+The dominant frequency in $\Sigma_\Theta$ is $f_0 = \mathrm{Tr}\,B/(2\pi k_B)$.
+
+% -----------------------------------------------------------------------
+\subsection*{Appendix A: $2\times 2$ Worked Example}
+
+Let $G=\mathrm{diag}(a+ib,\,c+id)$, $\Theta_0=I_2$.  Then:
+\begin{align}
+  \Theta(\tau) &= \mathrm{diag}\!\bigl(e^{\tau(a+ib)},\,e^{\tau(c+id)}\bigr),\\
+  \log\det\Theta &= \tau\bigl((a+c)+i(b+d)\bigr),\\
+  S_\Theta &= 2k_B\bigl(t(a+c)-\psi(b+d)\bigr),\\
+  \Sigma_\Theta &= k_B\bigl(t(b+d)+\psi(a+c)\bigr),\\
+  O(\tau) &= \mathrm{diag}\!\bigl(e^{2(ta-\psi b)},\,e^{2(tc-\psi d)}\bigr).
+\end{align}
+Eigenvalue drift: $\partial_\psi\lambda_1 = -2b\lambda_1$, confirming that the
+imaginary eigenvalue part $b=\mathrm{Im}\,\mu_1$ modulates amplitude under $\psi$.
+
+% -----------------------------------------------------------------------
+\subsection*{Appendix B: Heat-Kernel / Tr\,log Representation}
+
+The identity $\log\det\Theta=\mathrm{Tr}\log\Theta$ holds on appropriate branches.
+For the linear flow:
+\begin{equation}
+  \mathrm{Tr}\log\Theta(\tau) = \tau\,\mathrm{Tr}\,G + \mathrm{Tr}\log\Theta_0.
+\end{equation}
+The heat-kernel representation
+$\mathrm{Tr}\log\Theta = -\int_0^\infty s^{-1}\mathrm{Tr}(e^{-s\Theta}-e^{-s})\,ds$
+acquires oscillatory integrands as $\psi$ varies, generating the same oscillations
+that appear in $\Sigma_\Theta$.
+
+% -----------------------------------------------------------------------
+\subsection*{Appendix C: Regularization Near $\det\Theta\to 0$}
+
+When $\mathrm{Re}(\tau\mu_k)\to-\infty$ for some $k$, $\log\det\Theta\to-\infty$.
+Standard regularizations:
+\begin{enumerate}
+  \item \textbf{Tikhonov:} $\log\det(\Theta+\varepsilon I)=\sum_k\log(\lambda_k+\varepsilon)$.
+  \item \textbf{Zeta-function:} $\log\det\Theta = -\zeta'_\Theta(0)$, analytic continuation
+        of $\zeta_\Theta(s)=\mathrm{Tr}(\Theta^{-s})$.
+  \item \textbf{Conditional:} Sum only over non-zero eigenvalues.
+\end{enumerate}
+Physically, $S_\Theta\to-\infty$ signals collapse onto a degenerate subspace.
+Near such a point the pseudospectrum expands, indicating high sensitivity.
