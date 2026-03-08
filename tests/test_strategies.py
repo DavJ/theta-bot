@@ -6,7 +6,7 @@ from spot_bot.strategies import KalmanRiskStrategy, MeanRevGatedStrategy, apply_
 
 
 def _synthetic_ohlcv(n=50):
-    idx = pd.date_range("2024-01-01", periods=n, freq="H")
+    idx = pd.date_range("2024-01-01", periods=n, freq="h")
     close = pd.Series(100 + 0.1 * pd.RangeIndex(n), index=idx)
     open_ = close * 0.999
     high = close * 1.001

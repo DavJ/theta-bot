@@ -36,7 +36,7 @@ def _load_ohlcv(csv_path: Optional[str], bars: int) -> pd.DataFrame:
         return df
 
     np.random.seed(42)
-    idx = pd.date_range("2024-01-01", periods=bars, freq="H")
+    idx = pd.date_range("2024-01-01", periods=bars, freq="h")
     base = 20000 + np.linspace(0, 500, bars)
     noise = np.sin(np.linspace(0, 6.28, bars)) * 50
     close = base + noise

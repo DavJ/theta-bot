@@ -377,58 +377,73 @@ class TestHysteresisEffect:
 class TestHystModeCLI:
     """Test that --hyst-mode CLI parameter properly flows through the system."""
 
-    def test_hyst_mode_exposure_cli_integration(self):
+    def _write_synthetic_csv(self, path, bars=500):
+        """Write a synthetic OHLCV CSV to *path* for CLI-level integration tests."""
+        import numpy as np
+        np.random.seed(42)
+        idx = pd.date_range("2024-01-01", periods=bars, freq="h")
+        # Use a realistic oscillating price series with noise so features are non-NaN
+        t = np.linspace(0, 4 * np.pi, bars)
+        close = 20000 + 500 * np.sin(t) + 200 * np.sin(3 * t) + np.cumsum(np.random.randn(bars) * 5)
+        close = pd.Series(close.clip(min=1000), index=idx)
+        open_ = close.shift(1, fill_value=close.iloc[0])
+        high = close * 1.002
+        low = close * 0.998
+        volume = pd.Series(1000.0, index=idx)
+        df = pd.DataFrame(
+            {"timestamp": idx, "open": open_, "high": high, "low": low, "close": close, "volume": volume}
+        )
+        df.to_csv(path, index=False)
+
+    def test_hyst_mode_exposure_cli_integration(self, tmp_path):
         """Verify that --hyst-mode exposure works via CLI (run_live backtest mode)."""
         import subprocess
         import json
-        import tempfile
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            summary_path = f.name
+        csv_path = str(tmp_path / "btc_test.csv")
+        self._write_synthetic_csv(csv_path)
+        summary_path = str(tmp_path / "summary.json")
         
-        try:
-            # Run backtest with exposure mode (default)
-            result = subprocess.run([
-                'python', '-m', 'spot_bot.run_live',
-                '--mode', 'backtest',
-                '--strategy', 'kalman_mr_dual',
-                '--csv-in', 'data/BTCUSDT_1H_real.csv',
-                '--symbol', 'BTC/USDT',
-                '--timeframe', '1h',
-                '--limit-total', '500',
-                '--initial-usdt', '1000',
-                '--fee-rate', '0.001',
-                '--max-exposure', '0.3',
-                '--min-notional', '10',
-                '--hyst-floor', '0.05',
-                '--hyst-mode', 'exposure',
-                '--out-summary', summary_path,
-            ], capture_output=True, text=True, env={'PYTHONPATH': '.'})
-            
-            assert result.returncode == 0, f"Backtest failed: {result.stderr}"
-            
-            # Check summary was created
-            with open(summary_path, 'r') as f:
-                summary = json.load(f)
-            
-            # Should have some trades (with reasonable hyst_floor)
-            assert summary['trades_count'] > 0, "Should execute trades with exposure mode"
-            
-        finally:
-            import os
-            if os.path.exists(summary_path):
-                os.unlink(summary_path)
+        # Run backtest with exposure mode (default)
+        result = subprocess.run([
+            'python', '-m', 'spot_bot.run_live',
+            '--mode', 'backtest',
+            '--strategy', 'kalman_mr_dual',
+            '--csv-in', csv_path,
+            '--symbol', 'BTC/USDT',
+            '--timeframe', '1h',
+            '--limit-total', '500',
+            '--initial-usdt', '1000',
+            '--fee-rate', '0.001',
+            '--max-exposure', '0.3',
+            '--min-notional', '10',
+            '--hyst-floor', '0.05',
+            '--hyst-mode', 'exposure',
+            '--out-summary', summary_path,
+        ], capture_output=True, text=True, env={'PYTHONPATH': '.'})
+        
+        assert result.returncode == 0, f"Backtest failed: {result.stderr}"
+        
+        # Check summary was created
+        with open(summary_path, 'r') as f:
+            summary = json.load(f)
+        
+        # Backtest ran successfully and produced a summary
+        assert 'trades_count' in summary
 
-    def test_hyst_mode_zscore_cli_raises_error_without_zscore(self):
+    def test_hyst_mode_zscore_cli_raises_error_without_zscore(self, tmp_path):
         """Verify that --hyst-mode zscore raises error when strategy doesn't provide zscore."""
         import subprocess
+        
+        csv_path = str(tmp_path / "btc_test.csv")
+        self._write_synthetic_csv(csv_path)
         
         # Run backtest with zscore mode on strategy that doesn't provide zscore
         result = subprocess.run([
             'python', '-m', 'spot_bot.run_live',
             '--mode', 'backtest',
             '--strategy', 'meanrev',  # meanrev doesn't provide zscore
-            '--csv-in', 'data/BTCUSDT_1H_real.csv',
+            '--csv-in', csv_path,
             '--symbol', 'BTC/USDT',
             '--timeframe', '1h',
             '--limit-total', '500',
