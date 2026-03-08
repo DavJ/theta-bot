@@ -1,3 +1,25 @@
+"""
+feature_pipeline.py
+--------------------
+Feature extraction pipeline for the Spot Bot trading engine.
+
+Converts raw OHLCV data into structured regime features for strategy use:
+
+- **Realized Volatility (RV)**: Rolling sqrt(Σ log_return²) over rv_window bars.
+- **Log-Phase φ**: Cyclic phase mapped from RV via log₁₀; φ ∈ [0, 1).
+- **Scale-Phase ψ**: Relative volatility on log scale vs. rolling median; ψ ∈ [0, 1).
+- **Phase Concentration C**: |E[e^{i2πφ}]| measuring coherence of φ values.
+- **Internal Concentration C_int**: Toroidal coherence on (φ, ψ) space.
+- **Ensemble Score S**: Combined signal used by the regime engine.
+
+Usage::
+
+    from spot_bot.features import FeatureConfig, compute_features
+
+    cfg = FeatureConfig(base=1.1, rv_window=24, conc_window=24, psi_mode="scale_phase")
+    features = compute_features(df, cfg)
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

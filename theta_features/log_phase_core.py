@@ -1,3 +1,25 @@
+"""
+log_phase_core.py
+------------------
+Core log-phase feature extraction for regime detection.
+
+Implements the phase representation of realized volatility based on
+Complex Consciousness Theory (CCT):
+
+- **log_phase(rv, base)**: Maps RV to cyclic phase φ = {log_base(RV)} ∈ [0, 1),
+  where {x} denotes the fractional part of x.
+- **phase_embedding(phi)**: Converts φ to (cos_φ, sin_φ) unit-circle coordinates.
+- **rolling_phase_concentration(phi, window)**: Computes |E[e^{i2πφ}]| over a window.
+- **rolling_internal_concentration(phi, psi, window)**: Toroidal coherence on (φ, ψ).
+
+Mathematical reference:
+    φ_t = {log_{base}(RV_t)}
+    C_t = | (1/W) · Σ_{k=t-W+1}^{t} e^{i·2π·φ_k} |
+        = sqrt(mean(cos_φ)² + mean(sin_φ)²)
+
+where {x} = x - floor(x) is the fractional part operation.
+"""
+
 from __future__ import annotations
 
 import math
