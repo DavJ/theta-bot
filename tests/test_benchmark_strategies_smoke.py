@@ -6,7 +6,7 @@ import pandas as pd
 
 
 def _write_synthetic_ohlcv(path: Path, bars: int = 50) -> None:
-    idx = pd.date_range("2024-01-01", periods=bars, freq="H")
+    idx = pd.date_range("2024-01-01", periods=bars, freq="h")
     close = 100 + pd.Series(range(bars), index=idx) * 0.1 + pd.Series([0.5] * bars, index=idx)
     open_ = close.shift(1, fill_value=close.iloc[0])
     high = pd.concat([open_, close], axis=1).max(axis=1) * 1.001

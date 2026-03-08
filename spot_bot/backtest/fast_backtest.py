@@ -270,7 +270,12 @@ def run_backtest(
         psi_window=psi_window,
     )
     features = compute_features(df_norm, feat_cfg)
-    features["close"] = pd.to_numeric(df_norm["close"], errors="coerce").values
+    # Preserve all OHLCV columns from the normalised input so that the
+    # backtest loop can build accurate MarketBar objects (open/high/low/volume
+    # are required for realistic limit-order fill simulation).
+    for _col in ("open", "high", "low", "close", "volume"):
+        if _col in df_norm.columns:
+            features[_col] = pd.to_numeric(df_norm[_col], errors="coerce").values
     # IMPORTANT:
     # `compute_features()` may return a DataFrame with a RangeIndex (0..N-1).
     # If we convert that index to datetime, we get 1970-01-01 + nanoseconds.

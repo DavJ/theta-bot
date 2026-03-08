@@ -4,7 +4,7 @@ from spot_bot.strategies.kalman import KalmanStrategy
 
 
 def _df_from_prices(prices):
-    idx = pd.date_range("2024-01-01", periods=len(prices), freq="H")
+    idx = pd.date_range("2024-01-01", periods=len(prices), freq="h")
     return pd.DataFrame({"close": prices}, index=idx)
 
 
