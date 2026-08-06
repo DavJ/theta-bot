@@ -62,6 +62,8 @@ class EngineParams:
     debug: bool = False
     hyst_conf_k: float = 0.0  # Confidence-based hysteresis adjustment (0 = disabled)
     min_profit_bps: float = 5.0  # Minimum profit buffer in basis points
+    fill_margin_bps: float = 1.0  # Require breakout beyond limit for conservative fills
+    limit_timeout_bars: int = 1  # Convert untouched limit to market after timeout (<=1 = same bar)
 
 
 def run_step(
@@ -209,7 +211,8 @@ def run_step(
     # Step 5: Plan trade
     plan = plan_trade(
         portfolio=portfolio,
-        price=bar.close,
+        price=bar.open,
+        anchor_price=bar.open,
         target_exposure=target_exposure_final,
         min_notional=params.min_notional,
         step_size=params.step_size,
@@ -237,7 +240,7 @@ def run_step(
             target_base=plan.target_base,
             delta_base=0.0,
             notional=0.0,
-            exec_price_hint=bar.close,
+            exec_price_hint=bar.open,
             reason="hysteresis_suppressed",
             diagnostics={
                 **plan.diagnostics,
@@ -298,8 +301,8 @@ def simulate_execution(
         ExecutionResult with simulated fill details.
 
     Limit order simulation (when plan.order_type="limit" and plan.limit_price is set):
-        BUY: fills only if bar.low <= limit_price, at limit_price
-        SELL: fills only if bar.high >= limit_price, at limit_price
+        BUY: fills only if bar.low <= limit_price * (1 - fill_margin)
+        SELL: fills only if bar.high >= limit_price * (1 + fill_margin)
         If bar not provided or limit not touched, returns SKIPPED
 
     Market order simulation (plan.order_type="market" or no limit_price):
@@ -341,38 +344,53 @@ def simulate_execution(
         
         limit_price = plan.limit_price
         
+        fill_margin = max(0.0, float(params.fill_margin_bps)) / 10_000.0
         if plan.delta_base > 0:
-            # BUY: fill only if bar.low <= limit_price
-            if bar.low <= limit_price:
+            # BUY: require a conservative break below the limit.
+            if bar.low <= limit_price * (1.0 - fill_margin):
                 exec_price = limit_price
                 # No slippage for limit fills (we get our price)
                 slippage_paid = 0.0
             else:
-                # Limit not touched, order not filled
-                return ExecutionResult(
-                    filled_base=0.0,
-                    avg_price=price,
-                    fee_paid=0.0,
-                    slippage_paid=0.0,
-                    status="SKIPPED",
-                    raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_low": bar.low},
-                )
+                if int(params.limit_timeout_bars) <= 1:
+                    # Convert expired limit to market fallback.
+                    slippage_sign = 1.0
+                    slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
+                    exec_price = price * slippage_mult
+                    slippage_paid = abs(exec_price - price) * abs(plan.delta_base)
+                else:
+                    # Limit not touched, order not filled.
+                    return ExecutionResult(
+                        filled_base=0.0,
+                        avg_price=price,
+                        fee_paid=0.0,
+                        slippage_paid=0.0,
+                        status="SKIPPED",
+                        raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_low": bar.low},
+                    )
         else:
-            # SELL: fill only if bar.high >= limit_price
-            if bar.high >= limit_price:
+            # SELL: require a conservative break above the limit.
+            if bar.high >= limit_price * (1.0 + fill_margin):
                 exec_price = limit_price
                 # No slippage for limit fills (we get our price)
                 slippage_paid = 0.0
             else:
-                # Limit not touched, order not filled
-                return ExecutionResult(
-                    filled_base=0.0,
-                    avg_price=price,
-                    fee_paid=0.0,
-                    slippage_paid=0.0,
-                    status="SKIPPED",
-                    raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_high": bar.high},
-                )
+                if int(params.limit_timeout_bars) <= 1:
+                    # Convert expired limit to market fallback.
+                    slippage_sign = -1.0
+                    slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
+                    exec_price = price * slippage_mult
+                    slippage_paid = abs(exec_price - price) * abs(plan.delta_base)
+                else:
+                    # Limit not touched, order not filled
+                    return ExecutionResult(
+                        filled_base=0.0,
+                        avg_price=price,
+                        fee_paid=0.0,
+                        slippage_paid=0.0,
+                        status="SKIPPED",
+                        raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_high": bar.high},
+                    )
     else:
         # Market order simulation with slippage
         slippage_sign = 1.0 if plan.delta_base > 0 else -1.0
@@ -433,10 +451,20 @@ def run_step_simulated(
     )
 
     # Simulate execution
-    execution = simulate_execution(plan, bar.close, params, bar=bar)
+    execution = simulate_execution(plan, bar.open, params, bar=bar)
 
     # Apply fill to portfolio
     updated_portfolio = apply_fill(portfolio, execution)
+    marked_equity = compute_equity(updated_portfolio.usdt, updated_portfolio.base, bar.close)
+    marked_exposure = compute_exposure(updated_portfolio.base, bar.close, marked_equity)
+    updated_portfolio = PortfolioState(
+        usdt=updated_portfolio.usdt,
+        base=updated_portfolio.base,
+        equity=marked_equity,
+        exposure=marked_exposure,
+        avg_entry_price=updated_portfolio.avg_entry_price,
+        realized_pnl_quote=updated_portfolio.realized_pnl_quote,
+    )
 
     # Merge diagnostics
     diagnostics["strategy_output"] = strategy_output

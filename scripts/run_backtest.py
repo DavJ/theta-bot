@@ -37,6 +37,8 @@ def main() -> None:
     p.add_argument("--fee_rate", type=float, default=0.001)
     p.add_argument("--slippage_bps", type=float, default=2.0)
     p.add_argument("--spread_bps", type=float, default=0.0)
+    p.add_argument("--fill_margin_bps", type=float, default=1.0)
+    p.add_argument("--limit_timeout_bars", type=int, default=1)
 
     p.add_argument("--hyst_k", type=float, default=5.0)
     p.add_argument("--hyst_floor", type=float, default=0.02)
@@ -121,6 +123,8 @@ def main() -> None:
         hyst_conf_k=args.hyst_conf_k,
         snr_s0=args.snr_s0,
         snr_enabled=args.snr_enabled,
+        fill_margin_bps=args.fill_margin_bps,
+        limit_timeout_bars=args.limit_timeout_bars,
     )
 
     if args.out_equity:
@@ -136,4 +140,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

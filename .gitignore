@@ -92,3 +92,6 @@ data/metadata/
 !regression/**
 test_data/
 test_output/
+
+# Stray files from broken CLI invocations
+/--*

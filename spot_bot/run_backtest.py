@@ -59,6 +59,7 @@ def main() -> None:
     parser.add_argument("--output", type=str, default="backtest_equity.png", help="Optional output plot path.")
     parser.add_argument("--bars", type=int, default=240, help="Synthetic bar count if CSV not provided.")
     parser.add_argument("--slippage-bps", type=float, default=0.5, help="Simple slippage penalty in basis points.")
+    parser.add_argument("--fee-rate", "--fee_rate", dest="fee_rate", type=float, default=0.0005, help="Trading fee rate.")
     parser.add_argument("--strategy", type=str, choices=["meanrev", "kalman"], default="meanrev")
     parser.add_argument("--kalman-mode", type=str, choices=["meanrev", "trend"], default="meanrev")
     parser.add_argument("--kalman-q-level", type=float, default=1e-4)
@@ -90,6 +91,7 @@ def main() -> None:
         ohlcv_df=ohlcv,
         strategy=strategy,
         logger=logger,
+        fee_rate=args.fee_rate,
         slippage_bps=args.slippage_bps,
         feature_config=feat_cfg,
     )

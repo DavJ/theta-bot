@@ -26,6 +26,7 @@ from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.regime.regime_engine import RegimeEngine
 from spot_bot.strategies.base import Intent
 from spot_bot.strategies.kalman import KalmanStrategy
+from spot_bot.strategies.lstm_kalman import LSTMKalmanStrategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
 
@@ -93,6 +94,9 @@ def _compute_risk_series(features: pd.DataFrame, regime_engine: RegimeEngine) ->
         guard = (1.0 - (rv_vals / regime_engine.rv_guard)).clip(lower=0.0, upper=1.0)
         risk_budget = (risk_budget * guard).clip(lower=0.0, upper=1.0)
 
+    # Causality: signals used on bar i must come from data up to close[i-1].
+    risk_state = risk_state.shift(1).fillna("OFF")
+    risk_budget = risk_budget.shift(1).fillna(0.0)
     return risk_state, risk_budget
 
 
@@ -138,6 +142,8 @@ def _compute_intents_with_regime(
     # Turn off when risk state is OFF
     target_exposure = target_exposure.where(risk_state == "ON", 0.0)
 
+    # Causality: intent applied during bar i is decided on close[i-1].
+    target_exposure = target_exposure.shift(1).fillna(0.0)
     return target_exposure
 
 
@@ -147,10 +153,11 @@ def _meanrev_series_from_strategy(close: pd.Series, strategy: MeanReversionStrat
     ema = prices.ewm(span=strategy.ema_span, adjust=False).mean()
     rolling_std = prices.rolling(strategy.std_lookback).std(ddof=0)
 
-    safe_std = float(np.std(prices.values)) if len(prices) > 1 else 1e-8
-    if safe_std <= 0.0:
+    fallback_std = prices.expanding(min_periods=2).std(ddof=0)
+    safe_std = float(fallback_std.dropna().iloc[0]) if fallback_std.notna().any() else 1e-8
+    if safe_std <= 0.0 or not np.isfinite(safe_std):
         safe_std = 1e-8
-    fallback_std = prices.expanding().std(ddof=0).fillna(safe_std).replace(0.0, safe_std)
+    fallback_std = fallback_std.fillna(safe_std).replace(0.0, safe_std)
     effective_std = rolling_std.where((rolling_std.notna()) & (rolling_std > 0.0), fallback_std)
 
     zscore = (prices - ema) / effective_std.replace(0.0, safe_std)
@@ -247,6 +254,8 @@ def run_backtest(
     hyst_conf_k: float = 0.0,
     snr_s0: float = 0.02,
     snr_enabled: bool = False,
+    fill_margin_bps: float = 1.0,
+    limit_timeout_bars: int = 1,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -312,6 +321,8 @@ def run_backtest(
         strategy_obj = KalmanStrategy()
     elif strategy_name == "meanrev":
         strategy_obj = MeanReversionStrategy()
+    elif strategy_name == "lstm_kalman":
+        strategy_obj = LSTMKalmanStrategy()
     else:
         strategy_obj = NullStrategy()
 
@@ -354,6 +365,8 @@ def run_backtest(
         allow_short=False,
         debug=False,  # Keep debug False - do not enable
         hyst_conf_k=hyst_conf_k,
+        fill_margin_bps=fill_margin_bps,
+        limit_timeout_bars=limit_timeout_bars,
     )
 
     # Initialize portfolio
@@ -452,6 +465,7 @@ def run_backtest(
                     "fee": execution.fee_paid,
                     "slippage": execution.slippage_paid,
                     "notional": abs(execution.filled_base) * execution.avg_price,
+                    "bar_close": price,
                     "target_exposure_raw": diagnostics.get("target_exposure_raw", target_exp),
                     "target_exposure_final": diagnostics.get("target_exposure_final", target_exp),
                     "delta_e": diagnostics.get("delta_e", 0.0),
