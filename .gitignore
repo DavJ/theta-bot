@@ -58,7 +58,7 @@ compose/.env*
 *.png
 prices/
 out/
-reports/
+reports/*
 !reports/.gitkeep
 !reports/*.csv
 demo_output/
