@@ -36,6 +36,7 @@ def plan_trade(
     price: float,
     target_exposure: float,
     min_notional: float,
+    anchor_price: Optional[float] = None,
     step_size: Optional[float] = None,
     min_usdt_reserve: float = 0.0,
     max_notional_per_trade: Optional[float] = None,
@@ -47,7 +48,8 @@ def plan_trade(
 
     Args:
         portfolio: Current portfolio state
-        price: Current market price
+        price: Current market price (used for sizing/notional math)
+        anchor_price: Price anchor for limit quoting
         target_exposure: Desired exposure fraction (post-hysteresis)
         min_notional: Minimum trade notional to execute
         step_size: Exchange quantity step size for rounding
@@ -248,13 +250,16 @@ def plan_trade(
     
     # Compute limit price based on return_threshold
     limit_price = None
+    limit_anchor = float(anchor_price) if anchor_price is not None else float(price)
+    if not math.isfinite(limit_anchor) or limit_anchor <= 0.0:
+        limit_anchor = float(price)
     if return_threshold is not None and action != "HOLD":
         if action == "BUY":
-            # BUY lower: limit_price = price * (1 - return_threshold)
-            limit_price = price * (1.0 - return_threshold)
+            # BUY lower: limit_price = anchor * (1 - return_threshold)
+            limit_price = limit_anchor * (1.0 - return_threshold)
         elif action == "SELL":
-            # SELL higher: limit_price = price * (1 + return_threshold)
-            limit_price = price * (1.0 + return_threshold)
+            # SELL higher: limit_price = anchor * (1 + return_threshold)
+            limit_price = limit_anchor * (1.0 + return_threshold)
             # Also enforce sell guard minimum
             if min_sell_price is not None:
                 limit_price = max(limit_price, min_sell_price)

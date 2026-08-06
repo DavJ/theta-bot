@@ -39,4 +39,27 @@ class BacktestRunner:
 
     def run(self) -> Any:
         """Execute a full backtest loop across historical data."""
-        raise NotImplementedError("Backtest orchestration is not implemented yet.")
+        market_data = self.data_provider.fetch()
+        features = self.feature_pipeline.transform(market_data)
+
+        regime_output = self.regime_engine.evaluate(features) if hasattr(self.regime_engine, "evaluate") else None
+        strategy_input = regime_output if regime_output is not None else features
+
+        if hasattr(self.strategy, "generate_series"):
+            intent = self.strategy.generate_series(strategy_input)
+        elif hasattr(self.strategy, "generate_intent"):
+            intent = self.strategy.generate_intent(strategy_input)
+        else:
+            intent = strategy_input
+
+        if callable(self.sizer):
+            sized_intent = self.sizer(intent)
+        elif hasattr(self.sizer, "size"):
+            sized_intent = self.sizer.size(intent)
+        else:
+            sized_intent = intent
+
+        execution = self.execution_engine.execute(sized_intent)
+        if hasattr(self.position_manager, "update"):
+            self.position_manager.update(execution)
+        return execution
