@@ -304,6 +304,22 @@ class TestPortfolio:
         assert abs(updated.usdt - 746.25) < 1e-10
         assert abs(updated.base - 0.005) < 1e-10
 
+    def test_apply_fill_uses_mark_price_when_provided(self):
+        """Backtest portfolio marks should use bar close, not execution price."""
+        portfolio = PortfolioState(usdt=1000.0, base=0.0, equity=1000.0, exposure=0.0)
+        execution = ExecutionResult(
+            filled_base=0.01,
+            avg_price=50000.0,
+            fee_paid=0.0,
+            slippage_paid=0.0,
+            status="filled",
+        )
+
+        updated = apply_fill(portfolio, execution, mark_price=51000.0)
+
+        assert updated.equity == pytest.approx(1010.0)
+        assert updated.exposure == pytest.approx(510.0 / 1010.0)
+
     def test_apply_fill_skipped(self):
         """Test that SKIPPED execution doesn't change portfolio."""
         portfolio = PortfolioState(usdt=1000.0, base=0.01, equity=1500.0, exposure=0.333)
@@ -526,6 +542,31 @@ class TestEngine:
         assert plan.action == "BUY"
         assert plan.target_exposure == 0.5
         assert strategy_output.target_exposure == 0.5
+
+    def test_run_step_uses_bar_open_for_trade_planning(self):
+        """Trade planning should size from the current bar open."""
+
+        class FixedStrategy:
+            def generate_intent(self, features_df):
+                return StrategyOutput(target_exposure=0.5)
+
+        portfolio = PortfolioState(usdt=1000.0, base=0.0, equity=1000.0, exposure=0.0)
+        bar = MarketBar(ts=1000, open=40000.0, high=51000.0, low=39000.0, close=50000.0, volume=10.0)
+        strategy = FixedStrategy()
+        params = EngineParams(fee_rate=0.0, slippage_bps=0.0, hyst_floor=0.0, min_notional=10.0)
+
+        plan, _, _ = run_step(
+            bar=bar,
+            features_df=pd.DataFrame({"close": [bar.close]}),
+            portfolio=portfolio,
+            strategy=strategy,
+            params=params,
+            rv_current=0.03,
+            rv_ref=0.03,
+        )
+
+        assert plan.exec_price_hint == pytest.approx(bar.open)
+        assert plan.target_base == pytest.approx(0.0125)
 
     def test_run_step_simulated_full_cycle(self):
         """Test full simulated step including portfolio update."""

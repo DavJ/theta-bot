@@ -65,6 +65,7 @@ def target_base_from_exposure(
 def apply_fill(
     portfolio: PortfolioState,
     execution: ExecutionResult,
+    mark_price: float | None = None,
 ) -> PortfolioState:
     """
     Apply execution result to portfolio state.
@@ -86,7 +87,8 @@ def apply_fill(
         base -= filled_base
         avg_entry_price unchanged (or reset to None if position closed)
 
-    Equity and exposure are recomputed from the updated balances.
+    Equity and exposure are recomputed from the updated balances using mark_price
+    when provided, otherwise the execution price.
     """
     if execution.status == "SKIPPED" or execution.filled_base == 0.0:
         # No change to portfolio
@@ -138,8 +140,9 @@ def apply_fill(
             base = 0.0  # Ensure it's exactly zero
 
     # Recompute equity and exposure
-    equity = compute_equity(usdt, base, execution.avg_price)
-    exposure = compute_exposure(base, execution.avg_price, equity)
+    valuation_price = execution.avg_price if mark_price is None else float(mark_price)
+    equity = compute_equity(usdt, base, valuation_price)
+    exposure = compute_exposure(base, valuation_price, equity)
 
     return PortfolioState(
         usdt=usdt,
@@ -217,7 +220,7 @@ def apply_live_fill_to_balances(
     )
     
     # Apply fill using core logic
-    updated = apply_fill(portfolio, execution)
+    updated = apply_fill(portfolio, execution, mark_price=price)
     
     # Update balances dict in place
     balances["usdt"] = updated.usdt

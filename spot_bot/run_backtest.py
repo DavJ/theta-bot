@@ -17,6 +17,7 @@ from spot_bot.backtest.backtest_spot import run_strategy_backtests
 from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.persist import SQLiteLogger
 from spot_bot.strategies.kalman import KalmanStrategy
+from spot_bot.strategies.lstm_kalman import LSTMKalmanStrategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 
 PRICE_NOISE_STD = 0.0005
@@ -59,7 +60,8 @@ def main() -> None:
     parser.add_argument("--output", type=str, default="backtest_equity.png", help="Optional output plot path.")
     parser.add_argument("--bars", type=int, default=240, help="Synthetic bar count if CSV not provided.")
     parser.add_argument("--slippage-bps", type=float, default=0.5, help="Simple slippage penalty in basis points.")
-    parser.add_argument("--strategy", type=str, choices=["meanrev", "kalman"], default="meanrev")
+    parser.add_argument("--fee-rate", type=float, default=0.0005, help="Transaction fee rate applied per fill.")
+    parser.add_argument("--strategy", type=str, choices=["meanrev", "kalman", "lstm_kalman"], default="meanrev")
     parser.add_argument("--kalman-mode", type=str, choices=["meanrev", "trend"], default="meanrev")
     parser.add_argument("--kalman-q-level", type=float, default=1e-4)
     parser.add_argument("--kalman-q-trend", type=float, default=1e-6)
@@ -83,6 +85,13 @@ def main() -> None:
             k=args.kalman_k,
             min_bars=args.kalman_min_bars,
         )
+    elif args.strategy == "lstm_kalman":
+        strategy = LSTMKalmanStrategy(
+            q_level=args.kalman_q_level,
+            q_trend=args.kalman_q_trend,
+            r=args.kalman_r,
+            min_bars=args.kalman_min_bars,
+        )
     else:
         strategy = MeanReversionStrategy()
 
@@ -90,6 +99,7 @@ def main() -> None:
         ohlcv_df=ohlcv,
         strategy=strategy,
         logger=logger,
+        fee_rate=args.fee_rate,
         slippage_bps=args.slippage_bps,
         feature_config=feat_cfg,
     )

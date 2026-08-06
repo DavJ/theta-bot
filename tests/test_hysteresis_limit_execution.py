@@ -170,9 +170,9 @@ class TestReturnThreshold:
 class TestLimitFillSimulation:
     """Test OHLC-based limit fill simulation."""
     
-    def test_buy_fills_when_low_touches_limit(self):
-        """BUY limit order should fill if bar.low <= limit_price."""
-        params = EngineParams(fee_rate=0.001, slippage_bps=0.0)
+    def test_buy_fills_when_low_breaks_limit_with_margin(self):
+        """BUY limit order should fill only after breaking through the margin."""
+        params = EngineParams(fee_rate=0.001, slippage_bps=0.0, fill_margin_bps=1.0)
         
         plan = TradePlan(
             action="BUY",
@@ -190,7 +190,7 @@ class TestLimitFillSimulation:
             ts=1000000,
             open=50000.0,
             high=50100.0,
-            low=49800.0,  # Low touches limit
+            low=49800.0,  # Low breaks through the 1 bp margin
             close=50000.0,
             volume=1000.0,
         )
@@ -202,9 +202,9 @@ class TestLimitFillSimulation:
         assert result.avg_price == 49900.0, "Should fill at limit price"
         assert result.slippage_paid == 0.0, "Limit fill has no slippage"
     
-    def test_buy_skipped_when_low_above_limit(self):
-        """BUY limit order should be skipped if bar.low > limit_price."""
-        params = EngineParams(fee_rate=0.001, slippage_bps=0.0)
+    def test_buy_skipped_when_low_only_touches_limit(self):
+        """BUY limit order should be skipped if price only touches the limit."""
+        params = EngineParams(fee_rate=0.001, slippage_bps=0.0, fill_margin_bps=1.0, limit_timeout_bars=2)
         
         plan = TradePlan(
             action="BUY",
@@ -222,7 +222,7 @@ class TestLimitFillSimulation:
             ts=1000000,
             open=50000.0,
             high=50100.0,
-            low=49950.0,  # Low is above limit
+            low=49900.0,  # Exact touch is not enough with a 1 bp fill margin
             close=50000.0,
             volume=1000.0,
         )
@@ -232,9 +232,9 @@ class TestLimitFillSimulation:
         assert result.status == "SKIPPED", "Order should be skipped"
         assert result.filled_base == 0.0, "Should not fill"
     
-    def test_sell_fills_when_high_touches_limit(self):
-        """SELL limit order should fill if bar.high >= limit_price."""
-        params = EngineParams(fee_rate=0.001, slippage_bps=0.0)
+    def test_sell_fills_when_high_breaks_limit_with_margin(self):
+        """SELL limit order should fill only after breaking through the margin."""
+        params = EngineParams(fee_rate=0.001, slippage_bps=0.0, fill_margin_bps=1.0)
         
         plan = TradePlan(
             action="SELL",
@@ -251,7 +251,7 @@ class TestLimitFillSimulation:
         bar = MarketBar(
             ts=1000000,
             open=50000.0,
-            high=50150.0,  # High touches limit
+            high=50150.0,  # High breaks through the 1 bp margin
             low=49900.0,
             close=50000.0,
             volume=1000.0,
@@ -264,9 +264,9 @@ class TestLimitFillSimulation:
         assert result.avg_price == 50100.0, "Should fill at limit price"
         assert result.slippage_paid == 0.0, "Limit fill has no slippage"
     
-    def test_sell_skipped_when_high_below_limit(self):
-        """SELL limit order should be skipped if bar.high < limit_price."""
-        params = EngineParams(fee_rate=0.001, slippage_bps=0.0)
+    def test_sell_skipped_when_high_only_touches_limit(self):
+        """SELL limit order should be skipped if price only touches the limit."""
+        params = EngineParams(fee_rate=0.001, slippage_bps=0.0, fill_margin_bps=1.0, limit_timeout_bars=2)
         
         plan = TradePlan(
             action="SELL",
@@ -283,7 +283,7 @@ class TestLimitFillSimulation:
         bar = MarketBar(
             ts=1000000,
             open=50000.0,
-            high=50050.0,  # High is below limit
+            high=50100.0,  # Exact touch is not enough with a 1 bp fill margin
             low=49900.0,
             close=50000.0,
             volume=1000.0,
@@ -293,6 +293,38 @@ class TestLimitFillSimulation:
         
         assert result.status == "SKIPPED", "Order should be skipped"
         assert result.filled_base == 0.0, "Should not fill"
+
+    def test_limit_timeout_falls_back_to_market_with_slippage(self):
+        """Expired limit orders should convert to market fills with slippage."""
+        params = EngineParams(fee_rate=0.001, slippage_bps=5.0, fill_margin_bps=1.0, limit_timeout_bars=1)
+
+        plan = TradePlan(
+            action="BUY",
+            target_exposure=0.5,
+            target_base=0.01,
+            delta_base=0.01,
+            notional=500.0,
+            exec_price_hint=50000.0,
+            reason="test",
+            limit_price=49900.0,
+            order_type="limit",
+        )
+
+        bar = MarketBar(
+            ts=1000000,
+            open=50000.0,
+            high=50080.0,
+            low=49920.0,
+            close=50020.0,
+            volume=1000.0,
+        )
+
+        result = simulate_execution(plan, 50000.0, params, bar=bar, bars_waited=1)
+
+        assert result.status == "filled"
+        assert result.avg_price == pytest.approx(50025.0)
+        assert result.slippage_paid > 0.0
+        assert result.raw["execution_type"] == "market"
 
 
 class TestSellGuard:

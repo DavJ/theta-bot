@@ -62,6 +62,8 @@ class EngineParams:
     debug: bool = False
     hyst_conf_k: float = 0.0  # Confidence-based hysteresis adjustment (0 = disabled)
     min_profit_bps: float = 5.0  # Minimum profit buffer in basis points
+    fill_margin_bps: float = 1.0
+    limit_timeout_bars: int = 1
 
 
 def run_step(
@@ -209,7 +211,8 @@ def run_step(
     # Step 5: Plan trade
     plan = plan_trade(
         portfolio=portfolio,
-        price=bar.close,
+        price=bar.open,
+        anchor_price=bar.open,
         target_exposure=target_exposure_final,
         min_notional=params.min_notional,
         step_size=params.step_size,
@@ -237,7 +240,7 @@ def run_step(
             target_base=plan.target_base,
             delta_base=0.0,
             notional=0.0,
-            exec_price_hint=bar.close,
+            exec_price_hint=bar.open,
             reason="hysteresis_suppressed",
             diagnostics={
                 **plan.diagnostics,
@@ -282,6 +285,7 @@ def simulate_execution(
     price: float,
     params: EngineParams,
     bar: Optional[MarketBar] = None,
+    bars_waited: int = 1,
 ) -> ExecutionResult:
     """
     Simulate execution of a trade plan.
@@ -298,9 +302,10 @@ def simulate_execution(
         ExecutionResult with simulated fill details.
 
     Limit order simulation (when plan.order_type="limit" and plan.limit_price is set):
-        BUY: fills only if bar.low <= limit_price, at limit_price
-        SELL: fills only if bar.high >= limit_price, at limit_price
-        If bar not provided or limit not touched, returns SKIPPED
+        BUY: fills only if bar.low <= limit_price * (1 - margin), at limit_price
+        SELL: fills only if bar.high >= limit_price * (1 + margin), at limit_price
+        If bar not provided or limit not touched, returns SKIPPED unless the
+        limit timeout expires, in which case a market fallback is simulated.
 
     Market order simulation (plan.order_type="market" or no limit_price):
         exec_price = price * (1 + slippage_sign * slippage_bps / 10000)
@@ -340,39 +345,51 @@ def simulate_execution(
             )
         
         limit_price = plan.limit_price
-        
+        margin = max(float(params.fill_margin_bps), 0.0) / 10_000.0
+        timeout_bars = max(int(params.limit_timeout_bars), 0)
+
         if plan.delta_base > 0:
-            # BUY: fill only if bar.low <= limit_price
-            if bar.low <= limit_price:
+            # BUY: fill only if bar.low <= limit_price * (1 - margin)
+            if bar.low <= limit_price * (1.0 - margin):
                 exec_price = limit_price
                 # No slippage for limit fills (we get our price)
                 slippage_paid = 0.0
             else:
-                # Limit not touched, order not filled
-                return ExecutionResult(
-                    filled_base=0.0,
-                    avg_price=price,
-                    fee_paid=0.0,
-                    slippage_paid=0.0,
-                    status="SKIPPED",
-                    raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_low": bar.low},
-                )
+                if timeout_bars > 0 and bars_waited >= timeout_bars:
+                    slippage_sign = 1.0
+                    slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
+                    exec_price = price * slippage_mult
+                    slippage_paid = abs(exec_price - price) * abs(plan.delta_base)
+                else:
+                    return ExecutionResult(
+                        filled_base=0.0,
+                        avg_price=price,
+                        fee_paid=0.0,
+                        slippage_paid=0.0,
+                        status="SKIPPED",
+                        raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_low": bar.low},
+                    )
         else:
-            # SELL: fill only if bar.high >= limit_price
-            if bar.high >= limit_price:
+            # SELL: fill only if bar.high >= limit_price * (1 + margin)
+            if bar.high >= limit_price * (1.0 + margin):
                 exec_price = limit_price
                 # No slippage for limit fills (we get our price)
                 slippage_paid = 0.0
             else:
-                # Limit not touched, order not filled
-                return ExecutionResult(
-                    filled_base=0.0,
-                    avg_price=price,
-                    fee_paid=0.0,
-                    slippage_paid=0.0,
-                    status="SKIPPED",
-                    raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_high": bar.high},
-                )
+                if timeout_bars > 0 and bars_waited >= timeout_bars:
+                    slippage_sign = -1.0
+                    slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
+                    exec_price = price * slippage_mult
+                    slippage_paid = abs(exec_price - price) * abs(plan.delta_base)
+                else:
+                    return ExecutionResult(
+                        filled_base=0.0,
+                        avg_price=price,
+                        fee_paid=0.0,
+                        slippage_paid=0.0,
+                        status="SKIPPED",
+                        raw={"reason": "limit_not_touched", "limit_price": limit_price, "bar_high": bar.high},
+                    )
     else:
         # Market order simulation with slippage
         slippage_sign = 1.0 if plan.delta_base > 0 else -1.0
@@ -392,7 +409,13 @@ def simulate_execution(
         fee_paid=fee_paid,
         slippage_paid=slippage_paid,
         status="filled",
-        raw={"plan": plan, "price": price, "is_limit": is_limit_order},
+        raw={
+            "plan": plan,
+            "price": price,
+            "is_limit": is_limit_order,
+            "execution_type": "limit" if is_limit_order and slippage_paid == 0.0 else "market",
+            "bars_waited": bars_waited,
+        },
     )
 
 
@@ -433,10 +456,10 @@ def run_step_simulated(
     )
 
     # Simulate execution
-    execution = simulate_execution(plan, bar.close, params, bar=bar)
+    execution = simulate_execution(plan, bar.open, params, bar=bar, bars_waited=1)
 
     # Apply fill to portfolio
-    updated_portfolio = apply_fill(portfolio, execution)
+    updated_portfolio = apply_fill(portfolio, execution, mark_price=bar.close)
 
     # Merge diagnostics
     diagnostics["strategy_output"] = strategy_output

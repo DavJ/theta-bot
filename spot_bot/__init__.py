@@ -16,7 +16,6 @@ from .strategies.kalman import KalmanStrategy
 from .position_manager import PositionManager
 from .sizer import PositionSizer
 from .execution_engine import ExecutionEngine
-from .backtest_runner import BacktestRunner
 from .live_runner import LiveRunner
 
 __all__ = [
@@ -32,6 +31,5 @@ __all__ = [
     "PositionManager",
     "PositionSizer",
     "ExecutionEngine",
-    "BacktestRunner",
     "LiveRunner",
 ]

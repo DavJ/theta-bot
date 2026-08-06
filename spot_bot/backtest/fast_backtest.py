@@ -26,6 +26,7 @@ from spot_bot.features import FeatureConfig, compute_features
 from spot_bot.regime.regime_engine import RegimeEngine
 from spot_bot.strategies.base import Intent
 from spot_bot.strategies.kalman import KalmanStrategy
+from spot_bot.strategies.lstm_kalman import LSTMKalmanStrategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
 
@@ -70,8 +71,8 @@ def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
-def _compute_risk_series(features: pd.DataFrame, regime_engine: RegimeEngine) -> Tuple[pd.Series, pd.Series]:
-    """Compute risk state and budget series from features."""
+def _compute_risk_series_raw(features: pd.DataFrame, regime_engine: RegimeEngine) -> Tuple[pd.Series, pd.Series]:
+    """Compute risk state and budget series from same-bar features."""
     s_vals = pd.to_numeric(features["S"], errors="coerce")
     rv_vals = pd.to_numeric(features.get("rv"), errors="coerce")
 
@@ -94,6 +95,12 @@ def _compute_risk_series(features: pd.DataFrame, regime_engine: RegimeEngine) ->
         risk_budget = (risk_budget * guard).clip(lower=0.0, upper=1.0)
 
     return risk_state, risk_budget
+
+
+def _compute_risk_series(features: pd.DataFrame, regime_engine: RegimeEngine) -> Tuple[pd.Series, pd.Series]:
+    """Compute risk state and budget series aligned to the next execution bar."""
+    risk_state, risk_budget = _compute_risk_series_raw(features, regime_engine)
+    return risk_state.shift(1).fillna("OFF"), risk_budget.shift(1).fillna(0.0)
 
 
 def _compute_intents_with_regime(
@@ -121,6 +128,10 @@ def _compute_intents_with_regime(
         raw_intent = raw_intent.reindex(features.index).fillna(0.0)
         # Do NOT apply risk_budget again here - it's already applied inside generate_series
         target_exposure = raw_intent.clip(lower=0.0, upper=float(max_exposure))
+    elif isinstance(strategy, LSTMKalmanStrategy):
+        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget)
+        raw_intent = raw_intent.reindex(features.index).fillna(0.0)
+        target_exposure = raw_intent.clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, MeanReversionStrategy):
         # Use mean reversion series logic from strategy
         raw_intent = _meanrev_series_from_strategy(close, strategy)
@@ -137,8 +148,7 @@ def _compute_intents_with_regime(
         target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
     # Turn off when risk state is OFF
     target_exposure = target_exposure.where(risk_state == "ON", 0.0)
-
-    return target_exposure
+    return target_exposure.shift(1).fillna(0.0)
 
 
 def _meanrev_series_from_strategy(close: pd.Series, strategy: MeanReversionStrategy) -> pd.Series:
@@ -247,6 +257,7 @@ def run_backtest(
     hyst_conf_k: float = 0.0,
     snr_s0: float = 0.02,
     snr_enabled: bool = False,
+    intent_override: pd.Series | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -298,6 +309,7 @@ def run_backtest(
 
     # Compute risk regime series
     regime_engine = RegimeEngine({})
+    risk_state_raw, risk_budget_raw = _compute_risk_series_raw(features, regime_engine)
     risk_state, risk_budget = _compute_risk_series(features, regime_engine)
 
     # Instantiate strategy
@@ -310,15 +322,20 @@ def run_backtest(
         )
     elif strategy_name == "kalman":
         strategy_obj = KalmanStrategy()
+    elif strategy_name == "lstm_kalman":
+        strategy_obj = LSTMKalmanStrategy()
     elif strategy_name == "meanrev":
         strategy_obj = MeanReversionStrategy()
     else:
         strategy_obj = NullStrategy()
 
     # Compute intent series with regime gating
-    intent_series = _compute_intents_with_regime(
-        features, strategy_obj, risk_state, risk_budget, max_exposure
-    )
+    if intent_override is None:
+        intent_series = _compute_intents_with_regime(
+            features, strategy_obj, risk_state_raw, risk_budget_raw, max_exposure
+        )
+    else:
+        intent_series = pd.to_numeric(intent_override.reindex(features.index), errors="coerce").fillna(0.0)
 
     # Compute rv_ref series using centralized helper with configurable window
     # Default to 30 days in bars if not specified
@@ -385,16 +402,15 @@ def run_backtest(
     for i, (ts, open_p, high_p, low_p, close_p, vol, target_exp, rv_current, rv_ref) in enumerate(
         zip(timestamps, opens, highs, lows, closes, volumes, intent_series, rv_series, rv_ref_series)
     ):
-        # Use close as the primary price for all calculations
-        price = close_p
-        if not np.isfinite(price) or price <= 0.0:
+        # Use bar open for planning/execution and bar close for mark-to-market.
+        price_open = open_p
+        price_close = close_p
+        if not np.isfinite(price_open) or price_open <= 0.0 or not np.isfinite(price_close) or price_close <= 0.0:
             continue
 
-        # Recompute portfolio state at current bar's price for consistent exposure
-        # This ensures exposure/equity are computed at the current price, not the
-        # previous fill price, which is critical for correct hysteresis behavior.
-        equity = compute_equity(portfolio.usdt, portfolio.base, price)
-        exposure = compute_exposure(portfolio.base, price, equity)
+        # Recompute portfolio state at current bar's open for consistent sizing.
+        equity = compute_equity(portfolio.usdt, portfolio.base, price_open)
+        exposure = compute_exposure(portfolio.base, price_open, equity)
         portfolio = PortfolioState(
             usdt=portfolio.usdt,
             base=portfolio.base,
@@ -406,16 +422,16 @@ def run_backtest(
         # Convert to float and handle NaN values (fallback to close if OHLC missing)
         bar = MarketBar(
             ts=int(ts.value // 1_000_000),
-            open=float(open_p) if np.isfinite(open_p) else price,
-            high=float(high_p) if np.isfinite(high_p) else price,
-            low=float(low_p) if np.isfinite(low_p) else price,
-            close=price,
+            open=float(open_p) if np.isfinite(open_p) else price_open,
+            high=float(high_p) if np.isfinite(high_p) else price_open,
+            low=float(low_p) if np.isfinite(low_p) else price_open,
+            close=float(close_p) if np.isfinite(close_p) else price_open,
             volume=float(vol) if np.isfinite(vol) else 0.0,
         )
 
         # Create minimal features_df for strategy adapter
         # Strategy adapter will return pre-computed target_exp
-        features_window = pd.DataFrame({"close": [price]})
+        features_window = pd.DataFrame({"close": [price_open]})
         adapter = StrategyAdapter(pd.Series([target_exp]))
 
         # Run single step with core engine
@@ -430,7 +446,7 @@ def run_backtest(
                 rv_ref=float(rv_ref),
             )
         except Exception as e:
-            raise RuntimeError(f"Backtest failed at i={i}, ts={ts}, price={price}: {e}") from e
+            raise RuntimeError(f"Backtest failed at i={i}, ts={ts}, open={price_open}: {e}") from e
 
         # Track diagnostics
         if plan.action != "HOLD":
@@ -448,10 +464,13 @@ def run_backtest(
                     "timestamp": ts,
                     "side": "buy" if execution.filled_base > 0 else "sell",
                     "price": execution.avg_price,
+                    "bar_open": float(bar.open),
+                    "bar_close": float(bar.close),
                     "qty": abs(execution.filled_base),
                     "fee": execution.fee_paid,
                     "slippage": execution.slippage_paid,
                     "notional": abs(execution.filled_base) * execution.avg_price,
+                    "execution_type": (execution.raw or {}).get("execution_type", "unknown"),
                     "target_exposure_raw": diagnostics.get("target_exposure_raw", target_exp),
                     "target_exposure_final": diagnostics.get("target_exposure_final", target_exp),
                     "delta_e": diagnostics.get("delta_e", 0.0),
@@ -469,7 +488,7 @@ def run_backtest(
         equity_rows.append(
             {
                 "timestamp": ts,
-                "close": price,
+                "close": price_close,
                 "position_btc": portfolio.base,
                 "equity": portfolio.equity,
                 "drawdown": drawdown,

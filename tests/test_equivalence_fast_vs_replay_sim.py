@@ -13,7 +13,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from spot_bot.backtest.fast_backtest import StrategyAdapter, run_backtest
+from spot_bot.backtest.fast_backtest import (
+    StrategyAdapter,
+    _compute_intents_with_regime,
+    _compute_risk_series_raw,
+    _normalize_df,
+    run_backtest,
+)
 from spot_bot.core import (
     EngineParams,
     MarketBar,
@@ -70,17 +76,7 @@ def run_replay_sim(
     Returns:
         Tuple of (equity_df, trades_df, summary_dict)
     """
-    from spot_bot.backtest.fast_backtest import (
-        _compute_intents_with_regime,
-        _compute_risk_series,
-    )
-
-    # Normalize timestamps
-    df = df.copy()
-    if "timestamp" not in df.columns:
-        df["timestamp"] = df.index
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-    df = df.sort_values("timestamp").reset_index(drop=True)
+    df = _normalize_df(df.copy())
 
     # Compute features ONCE (same as fast_backtest)
     feat_cfg = FeatureConfig(
@@ -91,8 +87,9 @@ def run_replay_sim(
         psi_window=params["psi_window"],
     )
     features = compute_features(df, feat_cfg)
-    features["close"] = pd.to_numeric(df["close"], errors="coerce").values
-    features["timestamp"] = pd.to_datetime(features.index, utc=True)
+    for col in ("open", "high", "low", "close", "volume"):
+        features[col] = pd.to_numeric(df[col], errors="coerce").values
+    features["timestamp"] = df["timestamp"].to_numpy()
 
     # Filter valid rows
     valid_mask = (
@@ -111,7 +108,7 @@ def run_replay_sim(
 
     # Compute risk series (same as fast_backtest)
     regime_engine = RegimeEngine({})
-    risk_state, risk_budget = _compute_risk_series(features, regime_engine)
+    risk_state, risk_budget = _compute_risk_series_raw(features, regime_engine)
 
     # Compute intent series (same as fast_backtest)
     strategy = MeanReversionStrategy()
@@ -139,29 +136,33 @@ def run_replay_sim(
     trade_rows: List[Dict[str, Any]] = []
 
     timestamps = pd.to_datetime(features["timestamp"], utc=True)
+    opens = pd.to_numeric(features["open"], errors="coerce").astype(float).values
+    highs = pd.to_numeric(features["high"], errors="coerce").astype(float).values
+    lows = pd.to_numeric(features["low"], errors="coerce").astype(float).values
     closes = pd.to_numeric(features["close"], errors="coerce").astype(float).values
+    volumes = pd.to_numeric(features["volume"], errors="coerce").astype(float).values
 
-    for i, (ts, price, target_exp, rv_current, rv_ref) in enumerate(
-        zip(timestamps, closes, intent_series, rv_series, rv_ref_series)
+    for i, (ts, open_p, high_p, low_p, close_p, vol, target_exp, rv_current, rv_ref) in enumerate(
+        zip(timestamps, opens, highs, lows, closes, volumes, intent_series, rv_series, rv_ref_series)
     ):
-        if not np.isfinite(price) or price <= 0.0:
+        if not np.isfinite(open_p) or open_p <= 0.0 or not np.isfinite(close_p) or close_p <= 0.0:
             continue
 
         # Get portfolio state
-        portfolio = account.get_portfolio_state(price)
+        portfolio = account.get_portfolio_state(open_p)
 
         # Create market bar
         bar = MarketBar(
             ts=int(ts.value // 1_000_000),
-            open=price,
-            high=price,
-            low=price,
-            close=price,
-            volume=0.0,
+            open=float(open_p),
+            high=float(high_p),
+            low=float(low_p),
+            close=float(close_p),
+            volume=float(vol),
         )
 
         # Create minimal features window with precomputed intent
-        features_window = pd.DataFrame({"close": [price]})
+        features_window = pd.DataFrame({"close": [open_p]})
         adapter = StrategyAdapter(pd.Series([target_exp]))
 
         # Run step
@@ -198,7 +199,7 @@ def run_replay_sim(
         equity_rows.append(
             {
                 "timestamp": ts,
-                "close": price,
+                "close": close_p,
                 "position_btc": portfolio_new.base,
                 "equity": portfolio_new.equity,
                 "target_exposure": plan.target_exposure,
