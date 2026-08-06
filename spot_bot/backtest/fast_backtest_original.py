@@ -56,7 +56,11 @@ def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     if TIMESTAMP_COL not in df.columns:
         df = df.copy()
         df[TIMESTAMP_COL] = df.index
-    df[TIMESTAMP_COL] = pd.to_datetime(df[TIMESTAMP_COL], utc=True)
+    ts_col = df[TIMESTAMP_COL]
+    if pd.api.types.is_numeric_dtype(ts_col):
+        df[TIMESTAMP_COL] = pd.to_datetime(ts_col, unit="ms", utc=True, errors="coerce")
+    else:
+        df[TIMESTAMP_COL] = pd.to_datetime(ts_col, utc=True, errors="coerce")
     df = df.sort_values(TIMESTAMP_COL)
     return df.reset_index(drop=True)
 

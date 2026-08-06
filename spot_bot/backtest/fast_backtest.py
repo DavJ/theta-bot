@@ -66,7 +66,11 @@ def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     if TIMESTAMP_COL not in df.columns:
         df = df.copy()
         df[TIMESTAMP_COL] = df.index
-    df[TIMESTAMP_COL] = pd.to_datetime(df[TIMESTAMP_COL], utc=True)
+    ts_col = df[TIMESTAMP_COL]
+    if pd.api.types.is_numeric_dtype(ts_col):
+        df[TIMESTAMP_COL] = pd.to_datetime(ts_col, unit="ms", utc=True, errors="coerce")
+    else:
+        df[TIMESTAMP_COL] = pd.to_datetime(ts_col, utc=True, errors="coerce")
     df = df.sort_values(TIMESTAMP_COL)
     return df.reset_index(drop=True)
 
@@ -115,7 +119,7 @@ def _compute_intents_with_regime(
     """
     close = pd.to_numeric(features["close"], errors="coerce")
 
-    # Generate raw intent from strategy
+    # Generate raw intent from strategy (computed on close[i]).
     if isinstance(strategy, MeanRevDualKalmanStrategy):
         # Dual Kalman generates series with confidence built-in
         # We pass apply_budget=True so confidence is applied internally as:
@@ -124,26 +128,23 @@ def _compute_intents_with_regime(
         raw_intent = strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=True)
         raw_intent = raw_intent.reindex(features.index).fillna(0.0)
         # Do NOT apply risk_budget again here - it's already applied inside generate_series
-        target_exposure = raw_intent.clip(lower=0.0, upper=float(max_exposure))
+        raw_intent = raw_intent.clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, MeanReversionStrategy):
         # Use mean reversion series logic from strategy
         raw_intent = _meanrev_series_from_strategy(close, strategy)
-        # Apply risk budget and max exposure
-        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, KalmanStrategy):
         # Use Kalman series logic
         raw_intent = _kalman_series_from_strategy(close, strategy)
-        # Apply risk budget and max exposure
-        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
+    elif isinstance(strategy, LSTMKalmanStrategy):
+        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget)
+        raw_intent = raw_intent.reindex(features.index).fillna(0.0)
     else:
         raw_intent = pd.Series(0.0, index=features.index, dtype=float)
-        # Apply risk budget and max exposure
-        target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
-    # Turn off when risk state is OFF
-    target_exposure = target_exposure.where(risk_state == "ON", 0.0)
 
-    # Causality: intent applied during bar i is decided on close[i-1].
-    target_exposure = target_exposure.shift(1).fillna(0.0)
+    # Causality: intent used during bar i must come from close[i-1].
+    raw_intent = raw_intent.reindex(features.index).fillna(0.0).shift(1).fillna(0.0)
+    target_exposure = (raw_intent * risk_budget).clip(lower=0.0, upper=float(max_exposure))
+    target_exposure = target_exposure.where(risk_state == "ON", 0.0)
     return target_exposure
 
 

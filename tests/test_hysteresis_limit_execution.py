@@ -172,7 +172,7 @@ class TestLimitFillSimulation:
     
     def test_buy_fills_when_low_touches_limit(self):
         """BUY limit order should fill if bar.low <= limit_price."""
-        params = EngineParams(fee_rate=0.001, slippage_bps=0.0)
+        params = EngineParams(fee_rate=0.001, slippage_bps=0.0, limit_timeout_bars=2)
         
         plan = TradePlan(
             action="BUY",
@@ -204,7 +204,7 @@ class TestLimitFillSimulation:
     
     def test_buy_skipped_when_low_above_limit(self):
         """BUY limit order should be skipped if bar.low > limit_price."""
-        params = EngineParams(fee_rate=0.001, slippage_bps=0.0)
+        params = EngineParams(fee_rate=0.001, slippage_bps=0.0, limit_timeout_bars=2)
         
         plan = TradePlan(
             action="BUY",
@@ -266,7 +266,7 @@ class TestLimitFillSimulation:
     
     def test_sell_skipped_when_high_below_limit(self):
         """SELL limit order should be skipped if bar.high < limit_price."""
-        params = EngineParams(fee_rate=0.001, slippage_bps=0.0)
+        params = EngineParams(fee_rate=0.001, slippage_bps=0.0, limit_timeout_bars=2)
         
         plan = TradePlan(
             action="SELL",

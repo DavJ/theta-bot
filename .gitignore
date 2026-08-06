@@ -58,7 +58,10 @@ compose/.env*
 *.png
 prices/
 out/
-reports/
+reports/*
+!reports/backtest_before_after_real_1h.csv
+!reports/equity_after_*_real_1h.csv
+!reports/trades_after_*_real_1h.csv
 demo_output/
 test_output/
 !test_output/eval_summary.md

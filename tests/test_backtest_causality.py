@@ -66,7 +66,7 @@ def test_t1_random_signal_is_not_profitable():
 def test_t2_strategy_and_inverse_cannot_both_win():
     df = _load_real_data()
 
-    _, _, base_summary = _run(df, "kalman", fee_rate=0.0, slippage_bps=5.0, spread_bps=2.0)
+    _, _, base_summary = _run(df, "kalman_mr_dual", fee_rate=0.0, slippage_bps=5.0, spread_bps=2.0)
 
     original = fb._compute_intents_with_regime
 
@@ -75,7 +75,7 @@ def test_t2_strategy_and_inverse_cannot_both_win():
         return (1.0 - base).clip(lower=0.0, upper=1.0)
 
     with patch.object(fb, "_compute_intents_with_regime", side_effect=_inverse_intents):
-        _, _, inverse_summary = _run(df, "kalman", fee_rate=0.0, slippage_bps=5.0, spread_bps=2.0)
+        _, _, inverse_summary = _run(df, "kalman_mr_dual", fee_rate=0.0, slippage_bps=5.0, spread_bps=2.0)
 
     assert not (
         float(base_summary["total_return"]) > 0.05

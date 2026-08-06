@@ -91,8 +91,9 @@ def run_replay_sim(
         psi_window=params["psi_window"],
     )
     features = compute_features(df, feat_cfg)
-    features["close"] = pd.to_numeric(df["close"], errors="coerce").values
-    features["timestamp"] = pd.to_datetime(features.index, utc=True)
+    for col in ("open", "high", "low", "close", "volume"):
+        features[col] = pd.to_numeric(df[col], errors="coerce").values
+    features["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
 
     # Filter valid rows
     valid_mask = (
@@ -129,6 +130,8 @@ def run_replay_sim(
         min_notional=params["min_notional"],
         step_size=params.get("step_size"),
         allow_short=False,
+        fill_margin_bps=1.0,
+        limit_timeout_bars=1,
     )
 
     # Initialize account
@@ -139,29 +142,33 @@ def run_replay_sim(
     trade_rows: List[Dict[str, Any]] = []
 
     timestamps = pd.to_datetime(features["timestamp"], utc=True)
+    opens = pd.to_numeric(features["open"], errors="coerce").astype(float).values
+    highs = pd.to_numeric(features["high"], errors="coerce").astype(float).values
+    lows = pd.to_numeric(features["low"], errors="coerce").astype(float).values
     closes = pd.to_numeric(features["close"], errors="coerce").astype(float).values
+    volumes = pd.to_numeric(features["volume"], errors="coerce").astype(float).values
 
-    for i, (ts, price, target_exp, rv_current, rv_ref) in enumerate(
-        zip(timestamps, closes, intent_series, rv_series, rv_ref_series)
+    for i, (ts, open_p, high_p, low_p, close_p, vol, target_exp, rv_current, rv_ref) in enumerate(
+        zip(timestamps, opens, highs, lows, closes, volumes, intent_series, rv_series, rv_ref_series)
     ):
-        if not np.isfinite(price) or price <= 0.0:
+        if not np.isfinite(close_p) or close_p <= 0.0:
             continue
 
         # Get portfolio state
-        portfolio = account.get_portfolio_state(price)
+        portfolio = account.get_portfolio_state(close_p)
 
         # Create market bar
         bar = MarketBar(
             ts=int(ts.value // 1_000_000),
-            open=price,
-            high=price,
-            low=price,
-            close=price,
-            volume=0.0,
+            open=float(open_p) if np.isfinite(open_p) else float(close_p),
+            high=float(high_p) if np.isfinite(high_p) else float(close_p),
+            low=float(low_p) if np.isfinite(low_p) else float(close_p),
+            close=float(close_p),
+            volume=float(vol) if np.isfinite(vol) else 0.0,
         )
 
         # Create minimal features window with precomputed intent
-        features_window = pd.DataFrame({"close": [price]})
+        features_window = pd.DataFrame({"close": [close_p]})
         adapter = StrategyAdapter(pd.Series([target_exp]))
 
         # Run step
@@ -198,7 +205,7 @@ def run_replay_sim(
         equity_rows.append(
             {
                 "timestamp": ts,
-                "close": price,
+                "close": close_p,
                 "position_btc": portfolio_new.base,
                 "equity": portfolio_new.equity,
                 "target_exposure": plan.target_exposure,
