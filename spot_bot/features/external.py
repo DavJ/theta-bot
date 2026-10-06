@@ -66,12 +66,19 @@ def asof_signal(observations: pd.DataFrame, decisions: pd.DatetimeIndex,
     if (not observations.event_time.is_unique
             or (observations.available_at < observations.event_time).any()):
         raise ValueError("Unique valid observation times required")
+    # Pandas 3 can infer microseconds for one side and nanoseconds for the
+    # other. merge_asof requires identical units as well as timezones. Keep
+    # nanosecond precision rather than rounding actual settlement jitter.
+    observations = observations.copy()
+    for column in ("event_time", "available_at"):
+        observations[column] = observations[column].dt.tz_convert("UTC").astype("datetime64[ns, UTC]")
+    merge_decisions = decisions.tz_convert("UTC").astype("datetime64[ns, UTC]")
     # Several dated observations can become available in the same batch (for
     # example, modeled release times crossing a federal holiday). At that
     # instant the newest observation is known; retain its precomputed features.
     observations = observations.sort_values(["available_at", "event_time"]).drop_duplicates(
         "available_at", keep="last")
-    joined = pd.merge_asof(pd.DataFrame({"decision_at": decisions}),
+    joined = pd.merge_asof(pd.DataFrame({"decision_at": merge_decisions}),
                           observations,
                           left_on="decision_at", right_on="available_at",
                           direction="backward", tolerance=max_age)

@@ -43,6 +43,20 @@ def test_batch_availability_uses_latest_known_observation_without_early_release(
     assert joined.value.iloc[5:].eq(11).all()
 
 
+@pytest.mark.parametrize("decision_unit,source_unit", [("us", "ns"), ("ns", "us")])
+def test_asof_join_normalizes_timestamp_units_without_rounding_release_jitter(decision_unit, source_unit):
+    dates = pd.date_range("2024-01-01", periods=6, tz="UTC")
+    decisions = dates.astype(f"datetime64[{decision_unit}, UTC]")
+    observations = pd.DataFrame({"event_time": [dates[0]],
+        "available_at": [dates[2] + pd.Timedelta("1ms")], "value": [123.]})
+    for column in ("event_time", "available_at"):
+        observations[column] = observations[column].astype(f"datetime64[{source_unit}, UTC]")
+    joined = asof_signal(observations, decisions, pd.Timedelta("4D"))
+    assert joined.value.iloc[:3].isna().all()
+    assert joined.value.iloc[3:].eq(123).all()
+    assert joined.available_at.iloc[3] == dates[2] + pd.Timedelta("1ms")
+
+
 @pytest.mark.parametrize("column", ["event_time", "available_at"])
 def test_mixed_subsecond_provider_timestamps_preserve_timezone(column):
     frame = signals(10)
