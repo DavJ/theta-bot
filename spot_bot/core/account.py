@@ -43,6 +43,8 @@ class SimAccountProvider(AccountProvider):
         """
         self._usdt = float(initial_usdt)
         self._base = float(initial_base)
+        self._avg_entry_price = None
+        self._realized_pnl_quote = 0.0
 
     def get_portfolio_state(self, price: float) -> PortfolioState:
         """Get current simulated portfolio state."""
@@ -53,6 +55,8 @@ class SimAccountProvider(AccountProvider):
             base=self._base,
             equity=equity,
             exposure=exposure,
+            avg_entry_price=self._avg_entry_price,
+            realized_pnl_quote=self._realized_pnl_quote,
         )
 
     def update_balances(self, usdt: float, base: float) -> None:
@@ -65,6 +69,12 @@ class SimAccountProvider(AccountProvider):
         """
         self._usdt = float(usdt)
         self._base = float(base)
+
+    def update_portfolio(self, portfolio: PortfolioState) -> None:
+        """Persist balances and accounting state after a simulated fill."""
+        self.update_balances(portfolio.usdt, portfolio.base)
+        self._avg_entry_price = portfolio.avg_entry_price
+        self._realized_pnl_quote = portfolio.realized_pnl_quote
 
 
 class LiveAccountProvider(AccountProvider):

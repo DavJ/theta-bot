@@ -155,9 +155,11 @@ def compute_features(ohlcv_df: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame
     else:
         df_feat["C_int"] = np.nan
 
-    rank_c = df_feat["C"].rank(pct=True, method="average")
-    rank_c_int = df_feat["C_int"].rank(pct=True, method="average")
-    if df_feat["C_int"].notna().any():
+    # A full-sample rank changes past risk decisions when future bars arrive.
+    # Rank each observation only against its expanding historical prefix.
+    rank_c = df_feat["C"].expanding(min_periods=1).rank(pct=True, method="average")
+    rank_c_int = df_feat["C_int"].expanding(min_periods=1).rank(pct=True, method="average")
+    if psi_mode_value != "none" and cfg.psi_window and int(cfg.psi_window) > 0:
         df_feat["S"] = ((rank_c + rank_c_int) / 2.0).where(df_feat["C_int"].notna())
     else:
         df_feat["S"] = rank_c

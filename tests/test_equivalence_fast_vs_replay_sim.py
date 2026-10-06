@@ -109,6 +109,8 @@ def run_replay_sim(
     # Compute rv_ref series (same as fast_backtest)
     rv_series = features["rv"].fillna(0.0)
     rv_ref_series = compute_rv_ref_series(rv_series, window=500)
+    rv_series = rv_series.shift(1).fillna(0.0)
+    rv_ref_series = rv_ref_series.shift(1).fillna(1.0)
 
     # Compute risk series (same as fast_backtest)
     regime_engine = RegimeEngine({})
@@ -155,7 +157,7 @@ def run_replay_sim(
             continue
 
         # Get portfolio state
-        portfolio = account.get_portfolio_state(close_p)
+        portfolio = account.get_portfolio_state(open_p)
 
         # Create market bar
         bar = MarketBar(
@@ -186,7 +188,7 @@ def run_replay_sim(
             continue
 
         # Update account
-        account.update_balances(portfolio_new.usdt, portfolio_new.base)
+        account.update_portfolio(portfolio_new)
 
         # Record trade if executed
         if execution.status == "filled" and abs(execution.filled_base) > 0:

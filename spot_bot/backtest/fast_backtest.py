@@ -8,7 +8,7 @@ ensuring consistency with live/paper/replay modes.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -63,14 +63,18 @@ def _timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
 
 
 def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
     if TIMESTAMP_COL not in df.columns:
-        df = df.copy()
         df[TIMESTAMP_COL] = df.index
     ts_col = df[TIMESTAMP_COL]
     if pd.api.types.is_numeric_dtype(ts_col):
         df[TIMESTAMP_COL] = pd.to_datetime(ts_col, unit="ms", utc=True, errors="coerce")
     else:
         df[TIMESTAMP_COL] = pd.to_datetime(ts_col, utc=True, errors="coerce")
+    if df[TIMESTAMP_COL].isna().any():
+        raise ValueError("Input contains invalid timestamps.")
+    if df[TIMESTAMP_COL].duplicated().any():
+        raise ValueError("Input contains duplicate timestamps.")
     df = df.sort_values(TIMESTAMP_COL)
     return df.reset_index(drop=True)
 
@@ -121,14 +125,11 @@ def _compute_intents_with_regime(
 
     # Generate raw intent from strategy (computed on close[i]).
     if isinstance(strategy, MeanRevDualKalmanStrategy):
-        # Dual Kalman generates series with confidence built-in
-        # We pass apply_budget=True so confidence is applied internally as:
-        #   budget_eff = risk_budget * (confidence^conf_power)
-        # This means the strategy already applies both risk_budget AND confidence scaling
-        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget, apply_budget=True)
+        # Retain confidence scaling, but apply the already-lagged regime budget
+        # once, below. Passing it here both doubled and misaligned that budget.
+        unit_budget = pd.Series(1.0, index=features.index)
+        raw_intent = strategy.generate_series(features, risk_budgets=unit_budget, apply_budget=True)
         raw_intent = raw_intent.reindex(features.index).fillna(0.0)
-        # Do NOT apply risk_budget again here - it's already applied inside generate_series
-        raw_intent = raw_intent.clip(lower=0.0, upper=float(max_exposure))
     elif isinstance(strategy, MeanReversionStrategy):
         # Use mean reversion series logic from strategy
         raw_intent = _meanrev_series_from_strategy(close, strategy)
@@ -136,7 +137,7 @@ def _compute_intents_with_regime(
         # Use Kalman series logic
         raw_intent = _kalman_series_from_strategy(close, strategy)
     elif isinstance(strategy, LSTMKalmanStrategy):
-        raw_intent = strategy.generate_series(features, risk_budgets=risk_budget)
+        raw_intent = strategy.generate_series(features, risk_budgets=pd.Series(1.0, index=features.index))
         raw_intent = raw_intent.reindex(features.index).fillna(0.0)
     else:
         raw_intent = pd.Series(0.0, index=features.index, dtype=float)
@@ -257,6 +258,7 @@ def run_backtest(
     snr_enabled: bool = False,
     fill_margin_bps: float = 1.0,
     limit_timeout_bars: int = 1,
+    evaluation_start: str | pd.Timestamp | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -324,8 +326,10 @@ def run_backtest(
         strategy_obj = MeanReversionStrategy()
     elif strategy_name == "lstm_kalman":
         strategy_obj = LSTMKalmanStrategy()
-    else:
+    elif strategy_name == "none":
         strategy_obj = NullStrategy()
+    else:
+        raise ValueError(f"Unsupported strategy: {strategy_name}")
 
     # Compute intent series with regime gating
     intent_series = _compute_intents_with_regime(
@@ -346,6 +350,10 @@ def run_backtest(
     
     rv_series = features["rv"].fillna(0.0)
     rv_ref_series = compute_rv_ref_series(rv_series, window=rv_ref_window)
+    # Volatility controls sizing/limit prices and must obey the same decision
+    # clock as the signal: only information known before this bar opened.
+    rv_series = rv_series.shift(1).fillna(0.0)
+    rv_ref_series = rv_ref_series.shift(1).fillna(1.0)
 
     # Initialize engine params
     engine_params = EngineParams(
@@ -395,23 +403,25 @@ def run_backtest(
     planned_actions_count = 0
     limit_fill_attempts = 0
     limit_fills = 0
+    evaluation_ts = pd.to_datetime(evaluation_start, utc=True) if evaluation_start is not None else None
 
     for i, (ts, open_p, high_p, low_p, close_p, vol, target_exp, rv_current, rv_ref) in enumerate(
         zip(timestamps, opens, highs, lows, closes, volumes, intent_series, rv_series, rv_ref_series)
     ):
-        # Use close as the primary price for all calculations
+        if evaluation_ts is not None and ts < evaluation_ts:
+            continue
+        # Close is only used for post-execution marking/reporting.
         price = close_p
         if not np.isfinite(price) or price <= 0.0:
             continue
 
-        # Recompute portfolio state at current bar's price for consistent exposure
-        # This ensures exposure/equity are computed at the current price, not the
-        # previous fill price, which is critical for correct hysteresis behavior.
-        equity = compute_equity(portfolio.usdt, portfolio.base, price)
-        exposure = compute_exposure(portfolio.base, price, equity)
-        portfolio = PortfolioState(
-            usdt=portfolio.usdt,
-            base=portfolio.base,
+        # Value the account at the open, which is known when we plan. Never
+        # use this bar's future close for quantities/hysteresis. Preserve cost
+        # basis and realized P&L when marking the existing position.
+        equity = compute_equity(portfolio.usdt, portfolio.base, open_p)
+        exposure = compute_exposure(portfolio.base, open_p, equity)
+        portfolio = replace(
+            portfolio,
             equity=equity,
             exposure=exposure,
         )
@@ -429,7 +439,7 @@ def run_backtest(
 
         # Create minimal features_df for strategy adapter
         # Strategy adapter will return pre-computed target_exp
-        features_window = pd.DataFrame({"close": [price]})
+        features_window = features.iloc[max(0, i - 1):i]
         adapter = StrategyAdapter(pd.Series([target_exp]))
 
         # Run single step with core engine
@@ -451,7 +461,7 @@ def run_backtest(
             planned_actions_count += 1
         if plan.order_type == "limit" and plan.action != "HOLD":
             limit_fill_attempts += 1
-            if execution.status == "filled":
+            if execution.status == "filled" and (execution.raw or {}).get("is_limit", False):
                 limit_fills += 1
         
         # Record trade if executed
@@ -465,6 +475,7 @@ def run_backtest(
                     "qty": abs(execution.filled_base),
                     "fee": execution.fee_paid,
                     "slippage": execution.slippage_paid,
+                    "execution_type": (execution.raw or {}).get("execution_type", "unknown"),
                     "notional": abs(execution.filled_base) * execution.avg_price,
                     "bar_close": price,
                     "target_exposure_raw": diagnostics.get("target_exposure_raw", target_exp),
@@ -486,6 +497,9 @@ def run_backtest(
                 "timestamp": ts,
                 "close": price,
                 "position_btc": portfolio.base,
+                "usdt": portfolio.usdt,
+                "avg_entry_price": portfolio.avg_entry_price,
+                "realized_pnl_quote": portfolio.realized_pnl_quote,
                 "equity": portfolio.equity,
                 "drawdown": drawdown,
                 "target_exposure": target_exp,
@@ -503,19 +517,21 @@ def run_backtest(
     # Build output DataFrames
     equity_df = pd.DataFrame(equity_rows)
     trades_df = pd.DataFrame(trade_rows)
+    if equity_df.empty:
+        raise ValueError("No bars available in the evaluation period.")
 
     # Compute summary metrics
     equity_series = equity_df.set_index("timestamp")["equity"] if not equity_df.empty else pd.Series(dtype=float)
-    returns = equity_series.pct_change().dropna()
+    returns = equity_series.div(equity_series.shift(1).fillna(initial_usdt)).sub(1.0)
     delta = _timeframe_to_timedelta(timeframe)
     period_sec = delta.total_seconds()
     periods_per_year = (365 * 24 * 3600) / period_sec if period_sec > 0 else 0.0
     vol = float(returns.std(ddof=0) * math.sqrt(periods_per_year)) if not returns.empty and periods_per_year > 0 else 0.0
-    sharpe = float(returns.mean() * math.sqrt(periods_per_year) / vol) if vol > 0 else 0.0
+    sharpe = float(returns.mean() * periods_per_year / vol) if vol > 0 else 0.0
     total_return = float(equity_series.iloc[-1] / initial_usdt - 1.0) if not equity_series.empty else 0.0
     duration_years = (
-        (equity_df["timestamp"].iloc[-1] - equity_df["timestamp"].iloc[0]).total_seconds() / (365 * 24 * 3600)
-        if len(equity_df) > 1
+        ((equity_df["timestamp"].iloc[-1] - equity_df["timestamp"].iloc[0]) + delta).total_seconds() / (365 * 24 * 3600)
+        if len(equity_df) > 0
         else 0.0
     )
     duration_threshold = 1e-6

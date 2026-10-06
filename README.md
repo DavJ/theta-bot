@@ -4,9 +4,43 @@ A predictive trading engine grounded in Complex Consciousness Theory (CCT) and U
 
 ## Status
 
-✅ **Implementation Complete** - Model fully implemented and mathematically validated  
-🔬 **Testing Infrastructure Ready** - Tools for real market data testing now available  
-⏳ **Awaiting Real Data Validation** - Model tested on synthetic data only, real market data testing needed before production
+**Offline execution and evaluation implemented; a profitable production strategy is not established.**
+
+The 2026-10-06 audit fixes full-dataset percentile leakage, same-bar sizing/volatility leakage,
+retroactive timeout fills, duplicated slippage charges, duplicated regime budgets, lost cost basis,
+and Sharpe annualization. The regression suite and chronological screening run in CI.
+
+On checksum-verified BTCUSDT 1h archives for April–September 2026, the candidate selected on
+development data (`kalman_mr_dual`) returns **+0.82% net on the July–September holdout**.
+Development return is **−0.74%**, one of three holdout subperiods is negative, and a 30% initial
+allocation buy-and-hold returns **+8.88%** on the same holdout. The current paper screen fails.
+These results use 1000 USDT, a 30% maximum target exposure, 0.1% fees per fill, 5 bps slippage,
+and 2 bps spread. Open positions are marked to market, not forcibly liquidated.
+
+See [the reproducible evaluation](docs/evaluation/THETABOT_2026-10-06.md).
+The synthetic research results below are not evidence of production profitability.
+
+## Reproduce the current evaluation
+
+```bash
+pip install -r requirements.txt
+python -m pytest -q tests
+
+# Existing real dataset; runs fully offline
+python -m spot_bot.evaluate --out bench_out/evaluation
+
+# Complete public archive months; SHA-256 checked, no credentials
+python -m scripts.download_binance_archive --start-month 2026-04 --end-month 2026-09 \
+  --out data/raw/BTCUSDT_1h_2026_04_09.csv
+python -m spot_bot.evaluate --csv data/raw/BTCUSDT_1h_2026_04_09.csv \
+  --data-source binance_archive --out bench_out/evaluation_recent
+```
+
+The evaluator selects one existing strategy on the first 60% of observations, freezes that
+choice, and tests it on the remaining 40% with historical feature warmup and fresh cash.
+It writes `summary.json`, `report.md`, and holdout equity/trades CSVs. Add
+`--require-paper-pass` to return a failing exit status when any screening check fails.
+Passing the historical screen does not enable live execution.
 
 ## Quick Start (Spot Bot 2.0)
 

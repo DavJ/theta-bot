@@ -7,7 +7,8 @@ All runtimes (live/paper/replay/backtest/fast_backtest) must call these function
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, replace
 from typing import Any, Dict, Optional, Protocol, Tuple
 
 import numpy as np
@@ -63,7 +64,7 @@ class EngineParams:
     hyst_conf_k: float = 0.0  # Confidence-based hysteresis adjustment (0 = disabled)
     min_profit_bps: float = 5.0  # Minimum profit buffer in basis points
     fill_margin_bps: float = 1.0  # Require breakout beyond limit for conservative fills
-    limit_timeout_bars: int = 1  # Convert untouched limit to market after timeout (<=1 = same bar)
+    limit_timeout_bars: int = 1  # <=1: market fallback at close; >1: skip (no pending-order persistence)
 
 
 def run_step(
@@ -104,6 +105,15 @@ def run_step(
     5. Call trade_planner to get TradePlan (with rounding, guards)
     6. Return plan (no execution here)
     """
+    # Planning occurs at bar.open. Mark existing balances at that known price
+    # regardless of the caller's previous valuation, preserving the cost basis.
+    equity_at_open = compute_equity(portfolio.usdt, portfolio.base, bar.open)
+    portfolio = replace(
+        portfolio,
+        equity=equity_at_open,
+        exposure=compute_exposure(portfolio.base, bar.open, equity_at_open),
+    )
+
     # Step 1: Strategy generates intent
     intent = strategy.generate_intent(features_df)
 
@@ -285,6 +295,7 @@ def simulate_execution(
     price: float,
     params: EngineParams,
     bar: Optional[MarketBar] = None,
+    portfolio: Optional[PortfolioState] = None,
 ) -> ExecutionResult:
     """
     Simulate execution of a trade plan.
@@ -303,10 +314,11 @@ def simulate_execution(
     Limit order simulation (when plan.order_type="limit" and plan.limit_price is set):
         BUY: fills only if bar.low <= limit_price * (1 - fill_margin)
         SELL: fills only if bar.high >= limit_price * (1 + fill_margin)
-        If bar not provided or limit not touched, returns SKIPPED
+        Untouched limits fall back at bar.close when limit_timeout_bars <= 1,
+        otherwise they are skipped. Orders are not persisted across bars.
 
     Market order simulation (plan.order_type="market" or no limit_price):
-        exec_price = price * (1 + slippage_sign * slippage_bps / 10000)
+        exec_price = price * (1 + side_sign * (slippage_bps + spread_bps/2) / 10000)
         where slippage_sign = +1 for BUY, -1 for SELL
 
     Fee model:
@@ -331,6 +343,8 @@ def simulate_execution(
 
     exec_price = price
     slippage_paid = 0.0
+    execution_type = "market"
+    market_cost_bps = float(params.slippage_bps) + float(params.spread_bps) / 2.0
 
     if is_limit_order:
         # Limit order simulation using OHLC
@@ -349,15 +363,18 @@ def simulate_execution(
             # BUY: require a conservative break below the limit.
             if bar.low <= limit_price * (1.0 - fill_margin):
                 exec_price = limit_price
+                execution_type = "limit"
                 # No slippage for limit fills (we get our price)
                 slippage_paid = 0.0
             else:
                 if int(params.limit_timeout_bars) <= 1:
-                    # Convert expired limit to market fallback.
+                    # Expiry is known only at bar close. Filling retrospectively
+                    # at its open would use the future OHLC to choose execution.
+                    execution_type = "market_timeout"
                     slippage_sign = 1.0
-                    slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
-                    exec_price = price * slippage_mult
-                    slippage_paid = abs(exec_price - price) * abs(plan.delta_base)
+                    slippage_mult = 1.0 + slippage_sign * (market_cost_bps / 10_000.0)
+                    exec_price = bar.close * slippage_mult
+                    slippage_paid = abs(exec_price - bar.close) * abs(plan.delta_base)
                 else:
                     # Limit not touched, order not filled.
                     return ExecutionResult(
@@ -372,15 +389,16 @@ def simulate_execution(
             # SELL: require a conservative break above the limit.
             if bar.high >= limit_price * (1.0 + fill_margin):
                 exec_price = limit_price
+                execution_type = "limit"
                 # No slippage for limit fills (we get our price)
                 slippage_paid = 0.0
             else:
                 if int(params.limit_timeout_bars) <= 1:
-                    # Convert expired limit to market fallback.
+                    execution_type = "market_timeout"
                     slippage_sign = -1.0
-                    slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
-                    exec_price = price * slippage_mult
-                    slippage_paid = abs(exec_price - price) * abs(plan.delta_base)
+                    slippage_mult = 1.0 + slippage_sign * (market_cost_bps / 10_000.0)
+                    exec_price = bar.close * slippage_mult
+                    slippage_paid = abs(exec_price - bar.close) * abs(plan.delta_base)
                 else:
                     # Limit not touched, order not filled
                     return ExecutionResult(
@@ -394,7 +412,7 @@ def simulate_execution(
     else:
         # Market order simulation with slippage
         slippage_sign = 1.0 if plan.delta_base > 0 else -1.0
-        slippage_mult = 1.0 + slippage_sign * (params.slippage_bps / 10_000.0)
+        slippage_mult = 1.0 + slippage_sign * (market_cost_bps / 10_000.0)
         exec_price = price * slippage_mult
         # Slippage cost (difference from mid price)
         slippage_paid = abs(exec_price - price) * abs(plan.delta_base)
@@ -404,14 +422,42 @@ def simulate_execution(
     notional = abs(filled_base) * exec_price
     fee_paid = notional * params.fee_rate
 
-    return ExecutionResult(
+    execution = ExecutionResult(
         filled_base=filled_base,
         avg_price=exec_price,
         fee_paid=fee_paid,
         slippage_paid=slippage_paid,
         status="filled",
-        raw={"plan": plan, "price": price, "is_limit": is_limit_order},
+        raw={"plan": plan, "price": price, "is_limit": execution_type == "limit", "execution_type": execution_type},
     )
+    return _cap_spot_execution(execution, portfolio, params) if portfolio is not None else execution
+
+
+def _cap_spot_execution(execution: ExecutionResult, portfolio: PortfolioState, params: EngineParams) -> ExecutionResult:
+    """Fit a simulated spot fill to actual cash/holdings, including fees."""
+    if execution.status != "filled" or params.allow_short:
+        return execution
+    requested_qty = abs(execution.filled_base)
+    if execution.filled_base > 0:
+        available = max(0.0, portfolio.usdt - params.min_usdt_reserve)
+        affordable_qty = available / (execution.avg_price * (1.0 + params.fee_rate))
+    else:
+        affordable_qty = max(0.0, portfolio.base)
+    qty = min(requested_qty, affordable_qty)
+    if params.step_size is not None and params.step_size > 0 and qty < requested_qty:
+        qty = math.floor(qty / params.step_size) * params.step_size
+    if qty * execution.avg_price < params.min_notional or qty <= 0:
+        return ExecutionResult(0.0, execution.avg_price, 0.0, 0.0, "SKIPPED", {"reason": "insufficient_balance"})
+    if qty < requested_qty:
+        scale = qty / requested_qty
+        return replace(
+            execution,
+            filled_base=math.copysign(qty, execution.filled_base),
+            fee_paid=execution.fee_paid * scale,
+            slippage_paid=execution.slippage_paid * scale,
+            raw={**(execution.raw or {}), "balance_capped": True},
+        )
+    return execution
 
 
 def run_step_simulated(
@@ -451,7 +497,7 @@ def run_step_simulated(
     )
 
     # Simulate execution
-    execution = simulate_execution(plan, bar.open, params, bar=bar)
+    execution = simulate_execution(plan, bar.open, params, bar=bar, portfolio=portfolio)
 
     # Apply fill to portfolio
     updated_portfolio = apply_fill(portfolio, execution)

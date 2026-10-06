@@ -55,7 +55,8 @@ def test_backtest_smoke_kalman_dual():
 
 def test_backtest_without_pyarrow(monkeypatch):
     monkeypatch.setitem(sys.modules, "pyarrow", None)
-    df = _synthetic_ohlcv(300)
+    # Allow all causal feature windows to warm up before testing parquet fallback.
+    df = _synthetic_ohlcv(500)
     equity_df, trades_df, summary = run_backtest(
         df=df,
         timeframe="1m",

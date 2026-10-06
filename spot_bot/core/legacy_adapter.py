@@ -183,6 +183,8 @@ def compute_step_with_core(
         base=current_btc,
         equity=equity,
         exposure=exposure,
+        avg_entry_price=balances.get("avg_entry_price"),
+        realized_pnl_quote=balances.get("realized_pnl_quote", 0.0),
     )
 
     # Wrap strategy with regime adapter
@@ -294,6 +296,8 @@ def compute_step_with_core_full(
         base=current_btc,
         equity=equity,
         exposure=exposure,
+        avg_entry_price=balances.get("avg_entry_price"),
+        realized_pnl_quote=balances.get("realized_pnl_quote", 0.0),
     )
     
     # Get regime decision (for backward compat logging)

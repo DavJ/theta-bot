@@ -382,7 +382,15 @@ def compute_step(
             min_usdt_reserve=min_usdt_reserve,
             min_profit_bps=min_profit_bps,
         )
-        core_execution = simulate_execution(result.plan, result.close, params)
+        portfolio = PortfolioState(
+            usdt=current_usdt,
+            base=current_btc,
+            equity=equity_usdt,
+            exposure=result.plan.target_exposure if result.plan else 0.0,
+            avg_entry_price=balances.get("avg_entry_price"),
+            realized_pnl_quote=balances.get("realized_pnl_quote", 0.0),
+        )
+        core_execution = simulate_execution(result.plan, result.close, params, portfolio=portfolio)
         
         # Build execution_result dict for backward compatibility
         if core_execution.status == "filled":
@@ -399,16 +407,12 @@ def compute_step(
             }
             
             # Apply fill to get updated balances
-            portfolio = PortfolioState(
-                usdt=current_usdt,
-                base=current_btc,
-                equity=equity_usdt,
-                exposure=result.plan.target_exposure if result.plan else 0.0,
-            )
             updated = apply_fill(portfolio, core_execution)
             current_btc = updated.base
             current_usdt = updated.usdt
             equity_usdt = updated.equity
+            balances["avg_entry_price"] = updated.avg_entry_price
+            balances["realized_pnl_quote"] = updated.realized_pnl_quote
             
             # Update broker state if provided (for state persistence)
             if broker:
