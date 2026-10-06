@@ -15,6 +15,14 @@ returns only **+1.11% and −0.88%**, and fails the economic screen. No live ord
 See [the complete portfolio and execution evidence](docs/evaluation/THETABOT_EXECUTION_PORTFOLIO_2026-10-06.md)
 and the [fixed protocol](docs/evaluation/EXECUTION_PORTFOLIO_RESEARCH_PLAN.md).
 
+An additional position-size sensitivity holds that exploratory model fixed and
+replays 30/50/75/100% aggregate caps, using spot cash only. At the 100% target cap,
+the historical net returns are +41.64% in 2025 and +19.07% in January–September 2026;
+the continuous 2022–September 2026 account has a −31.34% maximum drawdown.
+Higher exposure increases both profit and loss; it does not establish a new alpha
+advantage or change the live/default configuration. See the
+[complete sizing and adverse-period evidence](docs/evaluation/THETABOT_EXPOSURE_2026-10-06.md).
+
 This round also corrects round-trip slippage, cost-per-turnover units, actual hysteresis
 bounds and a one-candle delay in completed-day signals. Use `--execution-policy market`
 in paper/replay/backtest to compare execution at the known decision price. Live exchange
