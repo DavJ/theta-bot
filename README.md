@@ -6,7 +6,21 @@ A predictive trading engine grounded in Complex Consciousness Theory (CCT) and U
 
 **Offline execution and evaluation implemented; a profitable production strategy is not established.**
 
-The latest fixed experiment adds a shared-cash spot portfolio on BTC, ETH and BNB,
+The user-defined research drawdown budget is now **20%**. A fixed seven-variant
+comparison adds trailing covariance volatility sizing and a peak-preserving
+cushion budget to the existing BTC/ETH/BNB momentum allocation. The development
+selection is the 50% aggregate target cap: **+19.59% net in 2025**, **+10.18% in
+January–September 2026**, and +103.91% over one continuous 2022–September 2026
+account. Its close-only drawdown is −16.98%; the conservative daily high/low
+portfolio drawdown bound is **−18.54%**, or −19.24% with doubled fees/slippage.
+All periods were previously known, so passing this historical screen does not
+establish a new confirmed alpha. A fixed artificial 40% simultaneous open gap
+raises its drawdown bound to −27.30%; the 20% budget is not a guaranteed loss cap.
+No risk settings or live/default sizing are enabled by this experiment. See the
+[complete risk-budget results](docs/evaluation/THETABOT_RISK_BUDGET_2026-10-06.md)
+and [the fixed 20% protocol](docs/evaluation/RISK_BUDGET_RESEARCH_PLAN.md).
+
+The earlier fixed experiment adds a shared-cash spot portfolio on BTC, ETH and BNB,
 weekly rebalancing, daily risk exits, actual market fills and a 30% aggregate target cap.
 The 30-day momentum/inverse-volatility candidate returns **+11.45% in 2025** and
 **+6.16% in January–September 2026**, after fees, slippage and spread. It is an exploratory
@@ -72,7 +86,13 @@ For portfolio research, download the three symbols' daily archives with
 are `spot_bot.portfolio.trend.TrendPortfolio` and
 `spot_bot.backtest.portfolio.run_portfolio_backtest`. They use completed-day targets,
 shared cash, core fee accounting and sell-before-buy execution; they do not connect
-to an exchange.
+to an exchange. Optional `risk=PortfolioRisk(...)` supplies completed-return
+covariance and/or an account cushion controller through `spot_bot.portfolio.risk`.
+Risk reductions run at known daily opens; account peaks are never reset after
+losses. Run `python -m scripts.research_risk_budget --help` to reproduce the fixed
+20% experiment. The replay reports close-only drawdown, sampled open/close
+drawdown and a conservative intraday bound separately; daily highs/lows only
+affect the next day's sizing.
 
 ## Reproduce the current evaluation
 

@@ -10,12 +10,13 @@ from spot_bot.core.portfolio import apply_fill
 from spot_bot.core.trade_planner import plan_trade
 from spot_bot.core.types import PortfolioState
 from spot_bot.portfolio.trend import TrendPortfolio
+from spot_bot.portfolio.risk import PortfolioRisk
 
 
 def run_portfolio_backtest(markets: dict[str, pd.DataFrame], policy: TrendPortfolio, *,
                            start=None, end=None, initial_usdt=1000.0,
                            fee_rate=0.001, slippage_bps=5.0, spread_bps=2.0,
-                           min_notional=10.0):
+                           min_notional=10.0, risk: PortfolioRisk | None = None):
     if not markets or initial_usdt <= 0 or min_notional < 0:
         raise ValueError("Positive capital and nonempty markets required")
     if (not np.isfinite([initial_usdt, min_notional, fee_rate, slippage_bps, spread_bps]).all()
@@ -39,8 +40,12 @@ def run_portfolio_backtest(markets: dict[str, pd.DataFrame], policy: TrendPortfo
             raise ValueError("Invalid market OHLCV")
     closes = pd.DataFrame({s: f.close for s, f in markets.items()})
     opens = pd.DataFrame({s: f.open for s, f in markets.items()})
+    highs = pd.DataFrame({s: f.high for s, f in markets.items()})
+    lows = pd.DataFrame({s: f.low for s, f in markets.items()})
     # All targets for day t use only closes up to day t-1.
     targets = policy.weights(closes).shift(1).fillna(0.0)
+    covariances = risk.covariances(closes) if risk is not None and risk.volatility_target is not None else None
+    positions = {ts: i for i, ts in enumerate(first)}
     start = pd.to_datetime(start, utc=True) if start is not None else first[0]
     end = pd.to_datetime(end, utc=True) if end is not None else first[-1] + pd.Timedelta("1D")
     dates = first[(first >= start) & (first < end)]
@@ -53,10 +58,16 @@ def run_portfolio_backtest(markets: dict[str, pd.DataFrame], policy: TrendPortfo
     holdings = {s: PortfolioState(cash, 0.0, cash, 0.0) for s in markets}
     equity_rows, trade_rows = [], []
     peak = initial_usdt
+    observed_peak = risk_peak = float(initial_usdt)
     single_cap = policy.max_exposure if policy.approach == "btc_breakout" else policy.asset_cap
     for ts in dates:
         prices = opens.loc[ts]
         nav = cash + sum(holdings[s].base * prices[s] for s in markets)
+        observed_peak = max(observed_peak, nav)
+        risk_peak = max(risk_peak, nav)
+        open_drawdown = nav / observed_peak - 1
+        open_drawdown_bound = nav / risk_peak - 1
+        decision_peak = risk_peak
         current = pd.Series({s: holdings[s].base * prices[s] / nav for s in markets})
         desired = targets.loc[ts]
         rebalance = ts.dayofweek == policy.rebalance_weekday
@@ -67,11 +78,19 @@ def run_portfolio_backtest(markets: dict[str, pd.DataFrame], policy: TrendPortfo
         if final.sum() > policy.max_exposure:
             final *= policy.max_exposure / final.sum()
         cap_reduction = (current > single_cap + 1e-12) | (current.sum() > policy.max_exposure + 1e-12)
+        risk_info = {"risk_scale": 1.0, "risk_floor": 0.0,
+                     "risk_budget_exposure": 1.0, "estimated_annual_volatility": None}
+        risk_reduction = current * 0 > 0
+        if risk is not None:
+            pos = positions[ts]
+            covariance = covariances[pos - 1] if covariances is not None and pos > 0 else None
+            final, risk_info = risk.constrain(final, covariance, nav, risk_peak)
+            risk_reduction = (final < current - 1e-12) & (risk_info["risk_scale"] < 1)
         # Quantities are fixed using one known NAV, before execution. Sell first
         # so proceeds are available to other assets through the shared account.
         order = sorted(markets, key=lambda s: final[s] - current[s])
         for symbol in order:
-            if (not inactive[symbol] and not cap_reduction[symbol]
+            if (not inactive[symbol] and not cap_reduction[symbol] and not risk_reduction[symbol]
                     and abs(final[symbol] - current[symbol]) < policy.rebalance_band):
                 continue
             state = replace(holdings[symbol], usdt=cash, equity=nav, exposure=float(current[symbol]))
@@ -88,17 +107,35 @@ def run_portfolio_backtest(markets: dict[str, pd.DataFrame], policy: TrendPortfo
                                    "qty": abs(fill.filled_base), "price": fill.avg_price,
                                    "notional": abs(fill.filled_base) * fill.avg_price,
                                    "fee": fill.fee_paid, "slippage": fill.slippage_paid,
-                                   "execution_type": "market", "decision_nav": nav})
+                                   "execution_type": "market", "decision_nav": nav,
+                                   "risk_reduction": bool(risk_reduction[symbol])})
+        post_fill_nav = cash + sum(holdings[s].base * prices[s] for s in markets)
+        observed_peak = max(observed_peak, post_fill_nav)
+        post_fill_drawdown = post_fill_nav / observed_peak - 1
+        high_bound = cash + sum(holdings[s].base * highs.loc[ts, s] for s in markets)
+        low_bound = cash + sum(holdings[s].base * lows.loc[ts, s] for s in markets)
+        risk_peak = max(risk_peak, high_bound)
+        drawdown_bound = min(open_drawdown_bound, post_fill_nav / decision_peak - 1,
+                             low_bound / risk_peak - 1)
         asset_values = {s: holdings[s].base * closes.loc[ts, s] for s in markets}
         equity = cash + sum(asset_values.values())
         peak = max(peak, equity)
+        observed_peak = max(observed_peak, equity)
         equity_rows.append({"timestamp": ts, "equity": equity, "usdt": cash,
                             "drawdown": equity / peak - 1, "exposure": sum(asset_values.values()) / equity,
+                            "observed_drawdown": min(open_drawdown, post_fill_drawdown,
+                                                     equity / observed_peak - 1),
+                            "intraday_drawdown_bound": drawdown_bound,
+                            "decision_nav": nav, "decision_peak_bound": decision_peak,
+                            "post_fill_nav": post_fill_nav, "intraday_high_bound": high_bound,
+                            "intraday_low_bound": low_bound, "target_exposure": float(final.sum()),
+                            **risk_info,
                             **{f"base_{s}": holdings[s].base for s in markets},
                             **{f"exposure_{s}": value / equity for s, value in asset_values.items()}})
     equity = pd.DataFrame(equity_rows)
     trades = pd.DataFrame(trade_rows, columns=["timestamp", "symbol", "side", "qty", "price",
-                                              "notional", "fee", "slippage", "execution_type", "decision_nav"])
+                                              "notional", "fee", "slippage", "execution_type", "decision_nav",
+                                              "risk_reduction"])
     returns = equity.equity.pct_change(fill_method=None)
     returns.iloc[0] = equity.equity.iloc[0] / initial_usdt - 1
     vol = float(returns.std(ddof=0))
@@ -108,6 +145,9 @@ def run_portfolio_backtest(markets: dict[str, pd.DataFrame], policy: TrendPortfo
                "net_pnl": net, "fees_paid_total": fees, "slippage_paid_total": impact,
                "gross_pnl_cost_addback": net + fees + impact,
                "maxDD": float(equity.drawdown.min()), "trades_count": len(trades),
+               "max_observed_drawdown": float(equity.observed_drawdown.min()),
+               "max_intraday_drawdown_bound": float(equity.intraday_drawdown_bound.min()),
+               "risk_reduction_trades": int(trades.risk_reduction.sum()),
                "turnover": float(trades.notional.sum()) / initial_usdt,
                "mean_exposure": float(equity.exposure.mean()), "max_close_exposure": float(equity.exposure.max()),
                "sharpe": float(returns.mean() / vol * np.sqrt(365)) if vol > 0 else 0.0}
