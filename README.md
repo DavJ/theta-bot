@@ -6,6 +6,18 @@ A predictive trading engine grounded in Complex Consciousness Theory (CCT) and U
 
 **Offline execution and evaluation implemented; a profitable production strategy is not established.**
 
+The fixed long/short experiment tests seven new signed allocations plus matched
+spot/futures long-only controls. It uses actual USD-M trade bars, hourly mark
+prices and settled funding, with conservative hourly funding/settlement bounds.
+All 81 account paths include fees, slippage and ordinary/doubled-cost replays.
+**This round did not improve the development-frozen spot control.** M30 long/short
+returned +47.58% on a continuous January 2025–September 2026 account, but its
+full 2022–September 2026 drawdown bound was −31.36%, exceeding the 20% budget.
+Every new allocation failed that budget on the full history; long-only futures
+returned +91.15% versus spot's +103.91%. The new ledger and allocations are
+offline research only. See [all long/short and funding results](docs/evaluation/THETABOT_LONG_SHORT_2026-10-06.md)
+and [the fixed signed-allocation protocol](docs/evaluation/LONG_SHORT_RESEARCH_PLAN.md).
+
 The fixed external-signal experiment adds five-day Ridge/boosting forecasts,
 forex/equities/oil/rates, Alternative.me Fear & Greed and settled funding/taker
 flow. Each available external feature has past-only 0–2 /3–9 /10–20 calendar-day
