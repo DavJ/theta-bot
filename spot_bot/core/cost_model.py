@@ -21,13 +21,15 @@ def compute_cost_per_turnover(
     Returns:
         Total cost as a fraction of turnover.
 
-    Formula:
-        cost = fee_rate + 2 * (slippage_bps / 10000) + (spread_bps / 10000)
-
-    The slippage term is doubled because it affects both entry and exit.
-    The spread is paid once on average when crossing the bid-ask.
+    Turnover counts each buy and each sell separately. Each market fill pays
+    one fee, one slippage allowance and half the full bid/ask spread.
     """
-    return fee_rate + 2.0 * (slippage_bps / 10_000.0) + (spread_bps / 10_000.0)
+    return fee_rate + (slippage_bps + spread_bps / 2.0) / 10_000.0
 
 
-__all__ = ["compute_cost_per_turnover"]
+def compute_round_trip_cost(fee_rate: float, slippage_bps: float, spread_bps: float) -> float:
+    """First-order entry plus exit cost, in return units."""
+    return 2.0 * compute_cost_per_turnover(fee_rate, slippage_bps, spread_bps)
+
+
+__all__ = ["compute_cost_per_turnover", "compute_round_trip_cost"]

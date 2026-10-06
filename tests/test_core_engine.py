@@ -42,10 +42,8 @@ class TestCostModel:
 
         cost = compute_cost_per_turnover(fee_rate, slippage_bps, spread_bps)
 
-        # Expected: fee_rate + 2*(slippage_bps/10000) + (spread_bps/10000)
-        # = 0.001 + 2*(5/10000) + (2/10000)
-        # = 0.001 + 0.001 + 0.0002 = 0.0022
-        expected = 0.0022
+        # Per fill: fee + slippage + half the full spread.
+        expected = 0.0016
         assert abs(cost - expected) < 1e-10
 
     def test_cost_model_zero_slippage_spread(self):
@@ -56,8 +54,8 @@ class TestCostModel:
     def test_cost_model_high_slippage(self):
         """Test cost with high slippage."""
         cost = compute_cost_per_turnover(0.001, 50.0, 0.0)
-        # 0.001 + 2*50/10000 = 0.001 + 0.01 = 0.011
-        assert abs(cost - 0.011) < 1e-10
+        # 0.001 + 50/10000 = 0.006
+        assert abs(cost - 0.006) < 1e-10
 
 
 class TestHysteresis:

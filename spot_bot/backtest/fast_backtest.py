@@ -268,6 +268,7 @@ def run_backtest(
     dual_price_space: str = "dollars",
     allow_loss_exits: bool | None = None,
     enforce_exposure_cap: bool | None = None,
+    execution_policy: str = "limit_then_market",
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -324,7 +325,8 @@ def run_backtest(
     # Instantiate strategy
     strategy_obj: Any
     if strategy_name in MULTI_APPROACHES:
-        strategy_obj = MultiStrategy(strategy_name, max_exposure, fee_rate, slippage_bps, spread_bps)
+        strategy_obj = MultiStrategy(strategy_name, max_exposure, fee_rate, slippage_bps, spread_bps,
+                                     candle_interval=_timeframe_to_timedelta(timeframe))
     elif strategy_name == "kalman_mr_dual":
         strategy_obj = MeanRevDualKalmanStrategy(
             conf_power=conf_power,
@@ -388,6 +390,7 @@ def run_backtest(
         hyst_conf_k=hyst_conf_k,
         fill_margin_bps=fill_margin_bps,
         limit_timeout_bars=limit_timeout_bars,
+        execution_policy=execution_policy,
         allow_loss_exits=bool(getattr(strategy_obj, "allow_loss_exits", False)
                              if allow_loss_exits is None else allow_loss_exits),
         max_exposure=(max_exposure if (isinstance(strategy_obj, MultiStrategy)

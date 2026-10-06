@@ -6,6 +6,21 @@ A predictive trading engine grounded in Complex Consciousness Theory (CCT) and U
 
 **Offline execution and evaluation implemented; a profitable production strategy is not established.**
 
+The latest fixed experiment adds a shared-cash spot portfolio on BTC, ETH and BNB,
+weekly rebalancing, daily risk exits, actual market fills and a 30% aggregate target cap.
+The 30-day momentum/inverse-volatility candidate returns **+11.45% in 2025** and
+**+6.16% in January–September 2026**, after fees, slippage and spread. It is an exploratory
+candidate identified after comparison: the development-frozen four-horizon allocation
+returns only **+1.11% and −0.88%**, and fails the economic screen. No live orders were placed.
+See [the complete portfolio and execution evidence](docs/evaluation/THETABOT_EXECUTION_PORTFOLIO_2026-10-06.md)
+and the [fixed protocol](docs/evaluation/EXECUTION_PORTFOLIO_RESEARCH_PLAN.md).
+
+This round also corrects round-trip slippage, cost-per-turnover units, actual hysteresis
+bounds and a one-candle delay in completed-day signals. Use `--execution-policy market`
+in paper/replay/backtest to compare execution at the known decision price. Live exchange
+execution continues to use `--order-type`. Earlier reports below preserve the results
+of their earlier implementation; their execution metrics are superseded by the latest replay.
+
 The 2026-10-06 audit fixes full-dataset percentile leakage, same-bar sizing/volatility leakage,
 retroactive timeout fills, duplicated slippage charges, duplicated regime budgets, lost cost basis,
 and Sharpe annualization. The regression suite and chronological screening run in CI.
@@ -42,6 +57,14 @@ python -m spot_bot.run_live --mode backtest --strategy kalman_fusion \
   --fee-rate 0.001 --slippage-bps 5 --spread-bps 2 --max-exposure 0.3 \
   --out-summary bench_out/kalman_fusion_summary.json
 ```
+
+For portfolio research, download the three symbols' daily archives with
+`scripts.download_binance_archive --timeframe 1d` (at most 24 months per call), then run
+`python -m scripts.research_execution_portfolio --help`. The allocation and replay APIs
+are `spot_bot.portfolio.trend.TrendPortfolio` and
+`spot_bot.backtest.portfolio.run_portfolio_backtest`. They use completed-day targets,
+shared cash, core fee accounting and sell-before-buy execution; they do not connect
+to an exchange.
 
 ## Reproduce the current evaluation
 

@@ -40,7 +40,9 @@ def test_unfinished_daily_close_is_not_broadcast_backwards():
     day = changed.index[-1].normalize()
     changed.loc[day + pd.Timedelta(hours=12):, "close"] *= 2
     strategy = MultiStrategy("ema_trend")
-    pd.testing.assert_series_equal(strategy.generate_series(frame), strategy.generate_series(changed))
+    # The final 23:00 candle completes the day; its intent may use that close.
+    pd.testing.assert_series_equal(strategy.generate_series(frame).iloc[:-1],
+                                   strategy.generate_series(changed).iloc[:-1])
 
 
 def test_insufficient_fusion_history_stays_cash_and_parser_exposes_new_choices():

@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from spot_bot.strategies.base import Intent, Strategy
+from spot_bot.core.cost_model import compute_round_trip_cost
 from spot_bot.strategies.forecast_fusion import calibrate_and_fuse
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
 
@@ -34,14 +35,18 @@ class MultiStrategy(Strategy):
     allow_loss_exits = True
 
     def __init__(self, approach="kalman_fusion", max_exposure=0.3,
-                 fee_rate=0.001, slippage_bps=5.0, spread_bps=2.0):
+                 fee_rate=0.001, slippage_bps=5.0, spread_bps=2.0, candle_interval="1h"):
         if approach not in MULTI_APPROACHES:
             raise ValueError(f"Unsupported multi-strategy approach: {approach}")
         if not 0 < max_exposure <= 1 or min(fee_rate, slippage_bps, spread_bps) < 0:
             raise ValueError("Positive bounded exposure and nonnegative costs required")
         self.approach = approach
         self.max_exposure = float(max_exposure)
-        self.round_trip_cost = 2 * fee_rate + (2 * slippage_bps + spread_bps) / 10000
+        self.round_trip_cost = compute_round_trip_cost(fee_rate, slippage_bps, spread_bps)
+        self.candle_interval = pd.Timedelta(candle_interval)
+        if (self.candle_interval <= pd.Timedelta(0)
+                or pd.Timedelta("1D") % self.candle_interval != pd.Timedelta(0)):
+            raise ValueError("Candle interval must be positive and divide one day")
 
     def _daily_inputs(self, features):
         if "timestamp" in features:
@@ -132,7 +137,11 @@ class MultiStrategy(Strategy):
             target = _positions(forecast > hurdle, forecast < -hurdle) * self.max_exposure
             target = target.where(forecast.notna(), 0.0)
         diagnostics["desired_exposure"] = target.fillna(0.0).clip(0.0, self.max_exposure)
-        mapped = diagnostics.reindex(hourly.index, method="ffill")
+        # Input timestamps identify candle OPENS. generate_series/intent sees
+        # their closes, available one interval later. Mapping to open times
+        # would delay a just-completed daily signal by an additional candle.
+        available_at = hourly.index + self.candle_interval
+        mapped = diagnostics.reindex(available_at, method="ffill")
         mapped.index = features.index
         mapped["desired_exposure"] = mapped.desired_exposure.fillna(0.0)
         return mapped

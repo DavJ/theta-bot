@@ -320,6 +320,7 @@ def compute_step(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> StepResult:
     """
     Compute trading step using unified core engine.
@@ -354,6 +355,7 @@ def compute_step(
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
         min_profit_bps=min_profit_bps,
+        execution_policy=execution_policy,
     )
     
     # For paper mode, execute the trade
@@ -382,6 +384,7 @@ def compute_step(
             step_size=step_size,
             min_usdt_reserve=min_usdt_reserve,
             min_profit_bps=min_profit_bps,
+            execution_policy=execution_policy,
             allow_loss_exits=bool(getattr(strategy, "allow_loss_exits", False)),
         )
         portfolio = PortfolioState(
@@ -468,6 +471,7 @@ def run_replay(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
     if ohlcv_df is None or ohlcv_df.empty:
         raise ValueError("Replay requires non-empty OHLCV data.")
@@ -527,6 +531,7 @@ def run_replay(
                 alpha_cap=alpha_cap,
                 vol_hyst_mode=vol_hyst_mode,
                 min_profit_bps=min_profit_bps,
+                execution_policy=execution_policy,
             )
         except ValueError as exc:
             msg = str(exc)
@@ -726,6 +731,7 @@ def run_once_on_df(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> StepResult:
     return compute_step(
         ohlcv_df=ohlcv_df,
@@ -749,6 +755,7 @@ def run_once_on_df(
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
         min_profit_bps=min_profit_bps,
+        execution_policy=execution_policy,
     )
 
 
@@ -763,6 +770,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-exposure", dest="max_exposure", type=float, default=0.3)
     parser.add_argument("--fee-rate", dest="fee_rate", type=float, default=0.001)
     parser.add_argument("--slippage-bps", dest="slippage_bps", type=float, default=0.0)
+    parser.add_argument("--execution-policy", choices=["limit_then_market", "market"],
+                        default="limit_then_market", help="Planner/simulation order policy; live execution uses --order-type")
     parser.add_argument("--spread-bps", dest="spread_bps", type=float, default=0.0)
     parser.add_argument("--min-notional", dest="min_notional", type=float, default=10.0)
     parser.add_argument("--step-size", dest="step_size", type=float, default=None)
@@ -976,7 +985,8 @@ def main() -> None:
         regime_cfg = {k: v for k, v in regime_cfg.items() if v is not None}
         regime_engine = RegimeEngine(regime_cfg)
         if args.strategy in MULTI_APPROACHES:
-            strategy = MultiStrategy(args.strategy, max_exposure, fee_rate, args.slippage_bps, spread_bps)
+            strategy = MultiStrategy(args.strategy, max_exposure, fee_rate, args.slippage_bps, spread_bps,
+                                     candle_interval=timeframe)
         elif args.strategy == "kalman":
             strategy = KalmanStrategy()
         elif args.strategy == "kalman_mr_dual":
@@ -1046,6 +1056,7 @@ def main() -> None:
                 alpha_floor=args.alpha_floor,
                 alpha_cap=args.alpha_cap,
                 vol_hyst_mode=args.vol_hyst_mode,
+                execution_policy=args.execution_policy,
             )
             if args.out_equity:
                 try:
@@ -1114,6 +1125,7 @@ def main() -> None:
                 alpha_floor=args.alpha_floor,
                 alpha_cap=args.alpha_cap,
                 vol_hyst_mode=args.vol_hyst_mode,
+                execution_policy=args.execution_policy,
             )
             print(f"Replay finished: {len(equity_df)} steps, {len(trades_df)} trades, equity_out={args.replay_equity_out}")
             if logger:
@@ -1188,6 +1200,7 @@ def main() -> None:
                     alpha_floor=args.alpha_floor,
                     alpha_cap=args.alpha_cap,
                     vol_hyst_mode=args.vol_hyst_mode,
+                    execution_policy=args.execution_policy,
                 )
             except ValueError as exc:
                 print(str(exc))

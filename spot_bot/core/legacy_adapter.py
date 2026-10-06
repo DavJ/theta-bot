@@ -122,6 +122,7 @@ def compute_step_with_core(
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
+    execution_policy: str = "limit_then_market",
 ) -> TradePlan:
     """
     Compute trading step using unified core engine.
@@ -219,6 +220,7 @@ def compute_step_with_core(
         allow_short=False,
         allow_loss_exits=bool(getattr(strategy, "allow_loss_exits", False)),
         max_exposure=max_exposure if getattr(strategy, "owns_regime", False) else None,
+        execution_policy=execution_policy,
     )
 
     # Run core engine step
@@ -258,6 +260,7 @@ def compute_step_with_core_full(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> StepResultFromCore:
     """
     Compute trading step using core engine and return full StepResult.
@@ -323,6 +326,7 @@ def compute_step_with_core_full(
     # Create engine params
     params = EngineParams(
         fee_rate=fee_rate,
+        min_profit_bps=min_profit_bps,
         slippage_bps=slippage_bps,
         spread_bps=spread_bps,
         hyst_k=hyst_k,
@@ -340,6 +344,7 @@ def compute_step_with_core_full(
         allow_short=False,
         allow_loss_exits=bool(getattr(strategy, "allow_loss_exits", False)),
         max_exposure=max_exposure if getattr(strategy, "owns_regime", False) else None,
+        execution_policy=execution_policy,
     )
     
     # Run core engine step
@@ -403,6 +408,7 @@ def plan_from_live_inputs(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> StepResultFromCore:
     """
     Primary entry point for run_live.py to plan trades using core engine.
@@ -439,6 +445,7 @@ def plan_from_live_inputs(
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
         min_profit_bps=min_profit_bps,
+        execution_policy=execution_policy,
     )
 
 

@@ -67,6 +67,7 @@ class EngineParams:
     limit_timeout_bars: int = 1  # <=1: market fallback at close; >1: skip (no pending-order persistence)
     allow_loss_exits: bool = False  # Explicit risk exits may sell below cost basis
     max_exposure: Optional[float] = None  # Optional risk cap enforced at the known decision price
+    execution_policy: str = "limit_then_market"  # or "market" at the known decision price
 
 
 def run_step(
@@ -107,6 +108,8 @@ def run_step(
     5. Call trade_planner to get TradePlan (with rounding, guards)
     6. Return plan (no execution here)
     """
+    if params.execution_policy not in {"limit_then_market", "market"}:
+        raise ValueError("execution_policy must be limit_then_market or market")
     # Planning occurs at bar.open. Mark existing balances at that known price
     # regardless of the caller's previous valuation, preserving the cost basis.
     equity_at_open = compute_equity(portfolio.usdt, portfolio.base, bar.open)
@@ -245,6 +248,8 @@ def run_step(
         return_threshold=return_threshold,
         allow_loss_exits=params.allow_loss_exits or exposure_cap_triggered,
     )
+    if params.execution_policy == "market":
+        plan = replace(plan, order_type="market", limit_price=None)
     
     # Compute clamped value for diagnostics (always, regardless of allow_short)
     # This shows what the target would be after long-only clamping

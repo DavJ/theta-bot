@@ -133,9 +133,8 @@ class TestReturnThreshold:
             vol_hyst_mode="none",
         )
         
-        # Expected: 2*0.001 + (5+5)*1e-4 + 5*1e-4 + 10*1e-4
-        #         = 0.002 + 0.001 + 0.0005 + 0.001 = 0.0045
-        expected = 0.0045
+        # Two fees, two slippage legs, one full spread, edge and profit.
+        expected = 0.0050
         assert abs(rt - expected) < 1e-6, f"Expected {expected}, got {rt}"
     
     def test_volatility_multiplier_increase_mode(self):
