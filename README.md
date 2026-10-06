@@ -6,6 +6,25 @@ A predictive trading engine grounded in Complex Consciousness Theory (CCT) and U
 
 **Offline execution and evaluation implemented; a profitable production strategy is not established.**
 
+The fixed external-signal experiment adds five-day Ridge/boosting forecasts,
+forex/equities/oil/rates, Alternative.me Fear & Greed and settled funding/taker
+flow. Each available external feature has past-only 0–2 /3–9 /10–20 calendar-day
+windows to represent a distributed market response. Refit every 20 days with
+a 126-day training-weight half-life; publication latency is handled separately.
+No extra Kalman/EKF filters these lag weights. All nine candidates were replayed
+with ordinary and doubled costs, with development selection frozen first.
+**The new models did not improve the existing momentum candidate.** Macro Ridge
+returned +0.99% in 2025 and +6.86% in January–September 2026, versus momentum's
++19.59% /+10.18%. None of the five source additions improved forecast MSE under
+the prescribed uncertainty test. Every new model exceeded the 20% conservative
+drawdown bound on the continuous account. Macro/sentiment snapshots lack
+first-release vintages, and Fear & Greed is a composite index rather than news
+NLP. See [all source, algorithm and lag results](docs/evaluation/THETABOT_EXTERNAL_SIGNALS_2026-10-06.md)
+and [the fixed experiment](docs/evaluation/EXTERNAL_SIGNAL_RESEARCH_PLAN.md).
+This does not reject a mining-energy mechanism: WTI in a joint macro group is
+not an isolated test of miners' electricity costs. Regional electricity and
+gas data need their own publication-aware, BTC-focused experiment.
+
 The user-defined research drawdown budget is now **20%**. A fixed seven-variant
 comparison adds trailing covariance volatility sizing and a peak-preserving
 cushion budget to the existing BTC/ETH/BNB momentum allocation. The development
