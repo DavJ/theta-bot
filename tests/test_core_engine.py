@@ -42,10 +42,8 @@ class TestCostModel:
 
         cost = compute_cost_per_turnover(fee_rate, slippage_bps, spread_bps)
 
-        # Expected: fee_rate + 2*(slippage_bps/10000) + (spread_bps/10000)
-        # = 0.001 + 2*(5/10000) + (2/10000)
-        # = 0.001 + 0.001 + 0.0002 = 0.0022
-        expected = 0.0022
+        # Per fill: fee + slippage + half the full spread.
+        expected = 0.0016
         assert abs(cost - expected) < 1e-10
 
     def test_cost_model_zero_slippage_spread(self):
@@ -56,8 +54,8 @@ class TestCostModel:
     def test_cost_model_high_slippage(self):
         """Test cost with high slippage."""
         cost = compute_cost_per_turnover(0.001, 50.0, 0.0)
-        # 0.001 + 2*50/10000 = 0.001 + 0.01 = 0.011
-        assert abs(cost - 0.011) < 1e-10
+        # 0.001 + 50/10000 = 0.006
+        assert abs(cost - 0.006) < 1e-10
 
 
 class TestHysteresis:
@@ -280,9 +278,10 @@ class TestPortfolio:
 
         updated = apply_fill(portfolio, execution)
 
-        # USDT: 1000 - (0.01 * 50000) - 5 - 2.5 = 1000 - 500 - 7.5 = 492.5
+        # avg_price is the actual fill. Slippage is already in that price.
+        # USDT: 1000 - (0.01 * 50000) - 5 = 495
         # Base: 0 + 0.01 = 0.01
-        assert abs(updated.usdt - 492.5) < 1e-10
+        assert abs(updated.usdt - 495.0) < 1e-10
         assert abs(updated.base - 0.01) < 1e-10
 
     def test_apply_fill_sell(self):
@@ -299,9 +298,9 @@ class TestPortfolio:
 
         updated = apply_fill(portfolio, execution)
 
-        # USDT: 500 + (0.005 * 50000) - 2.5 - 1.25 = 500 + 250 - 3.75 = 746.25
+        # USDT: 500 + (0.005 * 50000) - 2.5 = 747.5
         # Base: 0.01 - 0.005 = 0.005
-        assert abs(updated.usdt - 746.25) < 1e-10
+        assert abs(updated.usdt - 747.5) < 1e-10
         assert abs(updated.base - 0.005) < 1e-10
 
     def test_apply_fill_skipped(self):

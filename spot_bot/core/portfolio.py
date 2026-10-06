@@ -77,16 +77,18 @@ def apply_fill(
         Updated portfolio state after applying the fill.
 
     For BUY (positive delta):
-        usdt -= notional + fee + slippage
+        usdt -= notional + fee
         base += filled_base
         avg_entry_price updated via weighted average
 
     For SELL (negative delta):
-        usdt += notional - fee - slippage
+        usdt += notional - fee
         base -= filled_base
         avg_entry_price unchanged (or reset to None if position closed)
 
     Equity and exposure are recomputed from the updated balances.
+    avg_price is the actual fill price, already including slippage/spread.
+    slippage_paid is a diagnostic cost, not an additional cash debit.
     """
     if execution.status == "SKIPPED" or execution.filled_base == 0.0:
         # No change to portfolio
@@ -98,7 +100,7 @@ def apply_fill(
     realized_pnl = portfolio.realized_pnl_quote
 
     notional = abs(execution.filled_base) * execution.avg_price
-    total_cost = execution.fee_paid + execution.slippage_paid
+    total_cost = execution.fee_paid
 
     if execution.filled_base > 0:
         # BUY: spend USDT, gain base, update avg_entry_price

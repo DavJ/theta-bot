@@ -1,0 +1,99 @@
+{
+  "retrieved_at": "2026-10-06T16:53:05.138340+00:00",
+  "sources": [
+    {
+      "url": "https://www.eia.gov/electricity/wholesale/xls/ice_electric-2026.xlsx",
+      "sha256": "748fef7d0cd5bfc530f701ab0d730d1543a43ef5ebcc406d37e967967b337de5",
+      "bytes": 74748,
+      "sheets": [
+        {
+          "sheet": "2026",
+          "headers": [
+            "Price hub",
+            "Trade date",
+            "Delivery start date",
+            "Delivery \nend date",
+            "High price $/MWh",
+            "Low price $/MWh",
+            "Wtd avg price $/MWh",
+            "Change",
+            "Daily volume MWh",
+            "Number of trades",
+            "Number of counterparties",
+            "None"
+          ],
+          "ercot_rows": 0,
+          "first_date": null,
+          "last_date": null,
+          "data_rows": 955,
+          "actual_price_hubs": [
+            "Indiana Hub RT Peak",
+            "Mid C Peak",
+            "NP15 EZ Gen DA LMP Peak",
+            "Nepool MH DA LMP Peak",
+            "PJM WH Real Time Peak",
+            "Palo Verde Peak",
+            "SP15 EZ Gen DA LMP Peak"
+          ],
+          "first_trade_date": "2025-12-26T00:00:00",
+          "last_trade_date": "2026-09-29T00:00:00"
+        }
+      ]
+    },
+    {
+      "url": "https://www.eia.gov/electricity/wholesale/xls/archive/ice_electric-2022final.xlsx",
+      "sha256": "b8cdbd4651aff8c97433252e426c460dbae8bf91868c41cc01580dfb859d19d7",
+      "bytes": 102695,
+      "sheets": [
+        {
+          "sheet": "2022",
+          "headers": [
+            "Price hub",
+            "Trade date",
+            "Delivery start date",
+            "Delivery \nend date",
+            "High price $/MWh",
+            "Low price $/MWh",
+            "Wtd avg price $/MWh",
+            "Change",
+            "Daily volume MWh",
+            "Number of trades",
+            "Number of counterparties",
+            "None"
+          ],
+          "ercot_rows": 0,
+          "first_date": null,
+          "last_date": null,
+          "data_rows": 1277,
+          "actual_price_hubs": [
+            "Indiana Hub RT Peak",
+            "Mid C Peak",
+            "NP15 EZ Gen DA LMP Peak",
+            "Nepool MH DA LMP Peak",
+            "PJM WH Real Time Peak",
+            "Palo Verde Peak",
+            "SP15 EZ Gen DA LMP Peak"
+          ],
+          "first_trade_date": "2021-12-29T00:00:00",
+          "last_trade_date": "2022-12-27T00:00:00"
+        }
+      ]
+    }
+  ],
+  "first_release_times_verified": false,
+  "used_in_model": false,
+  "interpretation": "Source audit only; ERCOT is listed on the EIA description but absent from both inspected electricity workbooks. No energy signal was fitted or economically evaluated here.",
+  "official_sources": {
+    "mining_cost_mechanism": "https://www.jbs.cam.ac.uk/faculty-research/centres/alternative-finance/publications/cambridge-digital-mining-industry-report/",
+    "eia_description": "https://www.eia.gov/electricity/wholesale/",
+    "ercot_direct_dam_report": "https://www.ercot.com/mp/data-products/data-product-details?id=NP4-180-ER",
+    "henry_hub_gas_series": "https://fred.stlouisfed.org/series/DHHNGSP"
+  },
+  "next_test_requirements": [
+    "Isolate the BTC mining-energy hypothesis rather than jointly interpreting all macro inputs.",
+    "Use regional electricity and gas prices; verify actual hub/time coverage, not only catalogue labels.",
+    "Separate trade time, delivery period, release time and subsequent price corrections.",
+    "Compare past-only lagged predictions after trading costs under the same 20% research drawdown budget.",
+    "Do not imply that mining costs mechanically determine future BTC returns."
+  ]
+}

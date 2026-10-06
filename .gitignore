@@ -80,6 +80,8 @@ test_cache_int/
 # Allowlist: committed real market data for evaluation
 !data/BTCUSDT_1H_real.csv.gz
 !data/README.md
+!docs/evaluation/*.json
+!docs/evaluation/*.md
 # Exclude: synthetic test data
 data/*_synthetic*.csv.gz
 # Exclude: raw data directories (users should download their own)

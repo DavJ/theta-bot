@@ -4,9 +4,136 @@ A predictive trading engine grounded in Complex Consciousness Theory (CCT) and U
 
 ## Status
 
-✅ **Implementation Complete** - Model fully implemented and mathematically validated  
-🔬 **Testing Infrastructure Ready** - Tools for real market data testing now available  
-⏳ **Awaiting Real Data Validation** - Model tested on synthetic data only, real market data testing needed before production
+**Offline execution and evaluation implemented; a profitable production strategy is not established.**
+
+The fixed external-signal experiment adds five-day Ridge/boosting forecasts,
+forex/equities/oil/rates, Alternative.me Fear & Greed and settled funding/taker
+flow. Each available external feature has past-only 0–2 /3–9 /10–20 calendar-day
+windows to represent a distributed market response. Refit every 20 days with
+a 126-day training-weight half-life; publication latency is handled separately.
+No extra Kalman/EKF filters these lag weights. All nine candidates were replayed
+with ordinary and doubled costs, with development selection frozen first.
+**The new models did not improve the existing momentum candidate.** Macro Ridge
+returned +0.99% in 2025 and +6.86% in January–September 2026, versus momentum's
++19.59% /+10.18%. None of the five source additions improved forecast MSE under
+the prescribed uncertainty test. Every new model exceeded the 20% conservative
+drawdown bound on the continuous account. Macro/sentiment snapshots lack
+first-release vintages, and Fear & Greed is a composite index rather than news
+NLP. See [all source, algorithm and lag results](docs/evaluation/THETABOT_EXTERNAL_SIGNALS_2026-10-06.md)
+and [the fixed experiment](docs/evaluation/EXTERNAL_SIGNAL_RESEARCH_PLAN.md).
+This does not reject a mining-energy mechanism: WTI in a joint macro group is
+not an isolated test of miners' electricity costs. Regional electricity and
+gas data need their own publication-aware, BTC-focused experiment.
+
+The user-defined research drawdown budget is now **20%**. A fixed seven-variant
+comparison adds trailing covariance volatility sizing and a peak-preserving
+cushion budget to the existing BTC/ETH/BNB momentum allocation. The development
+selection is the 50% aggregate target cap: **+19.59% net in 2025**, **+10.18% in
+January–September 2026**, and +103.91% over one continuous 2022–September 2026
+account. Its close-only drawdown is −16.98%; the conservative daily high/low
+portfolio drawdown bound is **−18.54%**, or −19.24% with doubled fees/slippage.
+All periods were previously known, so passing this historical screen does not
+establish a new confirmed alpha. A fixed artificial 40% simultaneous open gap
+raises its drawdown bound to −27.30%; the 20% budget is not a guaranteed loss cap.
+No risk settings or live/default sizing are enabled by this experiment. See the
+[complete risk-budget results](docs/evaluation/THETABOT_RISK_BUDGET_2026-10-06.md)
+and [the fixed 20% protocol](docs/evaluation/RISK_BUDGET_RESEARCH_PLAN.md).
+
+The earlier fixed experiment adds a shared-cash spot portfolio on BTC, ETH and BNB,
+weekly rebalancing, daily risk exits, actual market fills and a 30% aggregate target cap.
+The 30-day momentum/inverse-volatility candidate returns **+11.45% in 2025** and
+**+6.16% in January–September 2026**, after fees, slippage and spread. It is an exploratory
+candidate identified after comparison: the development-frozen four-horizon allocation
+returns only **+1.11% and −0.88%**, and fails the economic screen. No live orders were placed.
+See [the complete portfolio and execution evidence](docs/evaluation/THETABOT_EXECUTION_PORTFOLIO_2026-10-06.md)
+and the [fixed protocol](docs/evaluation/EXECUTION_PORTFOLIO_RESEARCH_PLAN.md).
+
+An additional position-size sensitivity holds that exploratory model fixed and
+replays 30/50/75/100% aggregate caps, using spot cash only. At the 100% target cap,
+the historical net returns are +41.64% in 2025 and +19.07% in January–September 2026;
+the continuous 2022–September 2026 account has a −31.34% maximum drawdown.
+Higher exposure increases both profit and loss; it does not establish a new alpha
+advantage or change the live/default configuration. See the
+[complete sizing and adverse-period evidence](docs/evaluation/THETABOT_EXPOSURE_2026-10-06.md).
+
+This round also corrects round-trip slippage, cost-per-turnover units, actual hysteresis
+bounds and a one-candle delay in completed-day signals. Use `--execution-policy market`
+in paper/replay/backtest to compare execution at the known decision price. Live exchange
+execution continues to use `--order-type`. Earlier reports below preserve the results
+of their earlier implementation; their execution metrics are superseded by the latest replay.
+
+The 2026-10-06 audit fixes full-dataset percentile leakage, same-bar sizing/volatility leakage,
+retroactive timeout fills, duplicated slippage charges, duplicated regime budgets, lost cost basis,
+and Sharpe annualization. The regression suite and chronological screening run in CI.
+
+On checksum-verified BTCUSDT 1h archives for April–September 2026, the candidate selected on
+development data (`kalman_mr_dual`) returns **+0.82% net on the July–September holdout**.
+Development return is **−0.74%**, one of three holdout subperiods is negative, and a 30% initial
+allocation buy-and-hold returns **+8.88%** on the same holdout. The current paper screen fails.
+These results use 1000 USDT, a 30% maximum target exposure, 0.1% fees per fill, 5 bps slippage,
+and 2 bps spread. Open positions are marked to market, not forcibly liquidated.
+
+See [the reproducible evaluation](docs/evaluation/THETABOT_2026-10-06.md).
+The synthetic research results below are not evidence of production profitability.
+
+The expanded comparison adds momentum, EMA trend, close-channel breakout, range reversion,
+two exposure ensembles, calibrated forecast averaging and correlation-aware Kalman fusion.
+On 2022–2024 development data the frozen winner is Kalman fusion, but it loses **0.87% in
+2025** and **2.86% in January–September 2026** after costs. Breakout is the strongest observed
+2025 candidate (**+2.31%**, then **+0.94%** in 2026 diagnostics); this exploratory comparison
+does not establish a fresh confirmed trading edge. New strategies can exit losing inventory
+and enforce the exposure cap at decision prices, overriding turnover hysteresis.
+See [all 11 approaches, costs, forecast errors and reproducible results](docs/evaluation/THETABOT_MULTI_2026-10-06.md).
+
+The strategies are available through `spot_bot.run_live --strategy`, including
+`ensemble_equal`, `ensemble_regime`, `forecast_mean`, and `kalman_fusion`. Daily forecast
+calibration requires at least 126 completed training outcomes and earlier indicator warmup;
+use enough history (for example 10,000 hourly candles). Shorter fusion histories stay in cash.
+EKF is not needed for the implemented linear measurement model. No live mode is enabled.
+
+```bash
+# Offline example with enough history; no exchange orders
+python -m spot_bot.run_live --mode backtest --strategy kalman_fusion \
+  --csv-in data/raw/BTCUSDT_1h_2024_2025.csv --limit-total 20000 --timeframe 1h \
+  --fee-rate 0.001 --slippage-bps 5 --spread-bps 2 --max-exposure 0.3 \
+  --out-summary bench_out/kalman_fusion_summary.json
+```
+
+For portfolio research, download the three symbols' daily archives with
+`scripts.download_binance_archive --timeframe 1d` (at most 24 months per call), then run
+`python -m scripts.research_execution_portfolio --help`. The allocation and replay APIs
+are `spot_bot.portfolio.trend.TrendPortfolio` and
+`spot_bot.backtest.portfolio.run_portfolio_backtest`. They use completed-day targets,
+shared cash, core fee accounting and sell-before-buy execution; they do not connect
+to an exchange. Optional `risk=PortfolioRisk(...)` supplies completed-return
+covariance and/or an account cushion controller through `spot_bot.portfolio.risk`.
+Risk reductions run at known daily opens; account peaks are never reset after
+losses. Run `python -m scripts.research_risk_budget --help` to reproduce the fixed
+20% experiment. The replay reports close-only drawdown, sampled open/close
+drawdown and a conservative intraday bound separately; daily highs/lows only
+affect the next day's sizing.
+
+## Reproduce the current evaluation
+
+```bash
+pip install -r requirements.txt
+python -m pytest -q tests
+
+# Existing real dataset; runs fully offline
+python -m spot_bot.evaluate --out bench_out/evaluation
+
+# Complete public archive months; SHA-256 checked, no credentials
+python -m scripts.download_binance_archive --start-month 2026-04 --end-month 2026-09 \
+  --out data/raw/BTCUSDT_1h_2026_04_09.csv
+python -m spot_bot.evaluate --csv data/raw/BTCUSDT_1h_2026_04_09.csv \
+  --data-source binance_archive --out bench_out/evaluation_recent
+```
+
+The evaluator selects one existing strategy on the first 60% of observations, freezes that
+choice, and tests it on the remaining 40% with historical feature warmup and fresh cash.
+It writes `summary.json`, `report.md`, and holdout equity/trades CSVs. Add
+`--require-paper-pass` to return a failing exit status when any screening check fails.
+Passing the historical screen does not enable live execution.
 
 ## Quick Start (Spot Bot 2.0)
 

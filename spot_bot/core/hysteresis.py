@@ -6,6 +6,7 @@ Single source of truth for hysteresis threshold computation and application.
 from __future__ import annotations
 import math
 from typing import Tuple, Union, Dict
+from spot_bot.core.cost_model import compute_round_trip_cost
 # spot_bot/core/hysteresis.py
 
 
@@ -83,7 +84,7 @@ def compute_return_threshold(
         Return threshold as a fraction (e.g., 0.01 for 1%)
     
     Formula:
-        cost_r = 2*fee_rate + (spread_bps + slippage_bps)*1e-4
+        cost_r = 2*fee_rate + (spread_bps + 2*slippage_bps)*1e-4
         edge_r = edge_bps*1e-4
         minp_r = min_profit_bps*1e-4
         
@@ -105,7 +106,7 @@ def compute_return_threshold(
     rv_norm = rv / rv_ref_safe
     
     # Convert costs to return units (round-trip)
-    cost_r = 2.0 * float(fee_rate) + (float(spread_bps) + float(slippage_bps)) * 1e-4
+    cost_r = compute_round_trip_cost(float(fee_rate), float(slippage_bps), float(spread_bps))
     
     # Add edge and min profit
     edge_r = float(edge_bps) * 1e-4
@@ -195,7 +196,7 @@ def compute_hysteresis_threshold(
         rv = max(rv_current, 1e-12)
         rv_ref_safe = max(rv_ref, 1e-12)
         rv_norm = rv / rv_ref_safe
-        cost_r = 2.0*fee_rate + (slippage_bps + spread_bps)*1e-4  # round-trip approx
+        cost_r = 2.0*fee_rate + (2*slippage_bps + spread_bps)*1e-4
         edge_r = edge_bps*1e-4
         
         # Volatility multiplier based on mode
@@ -209,9 +210,13 @@ def compute_hysteresis_threshold(
         raw = hyst_k * (cost_r + edge_r) * vol_mult
         
         # Smooth minimum + smooth maximum (avoid binary transitions)
-        x = soft_max(raw, hyst_floor, alpha_floor)         # enforce MIN hysteresis smoothly
-        x = soft_min(x, max_delta_e_min, alpha_cap)        # enforce MAX hysteresis smoothly
+        x = soft_max(raw, hyst_floor, alpha_floor)
+        x = soft_min(x, max_delta_e_min, alpha_cap)
+        x = clamp(x, hyst_floor, max_delta_e_min)
     """
+    if not (math.isfinite(hyst_floor) and math.isfinite(max_delta_e_min)
+            and 0 <= hyst_floor <= max_delta_e_min):
+        raise ValueError("Hysteresis requires 0 <= floor <= finite cap")
     # Ensure rv_current and rv_ref are valid
     rv = max(float(rv_current) if rv_current else 0.0, 1e-12)
     rv_ref_safe = max(float(rv_ref) if rv_ref else 0.0, 1e-12)
@@ -220,7 +225,7 @@ def compute_hysteresis_threshold(
     rv_norm = rv / rv_ref_safe
     
     # Convert costs into return units (round-trip approximation)
-    cost_r = 2.0 * float(fee_rate) + (float(slippage_bps) + float(spread_bps)) * 1e-4
+    cost_r = compute_round_trip_cost(float(fee_rate), float(slippage_bps), float(spread_bps))
     
     # Add small extra required edge in bps
     edge_r = float(edge_bps) * 1e-4
@@ -249,6 +254,9 @@ def compute_hysteresis_threshold(
     # Apply smooth floor and cap for stability (avoid binary transitions)
     hyst_after_floor = soft_max(hyst_raw, float(hyst_floor), float(alpha_floor))      # enforce floor smoothly
     hyst_final = soft_min(hyst_after_floor, float(max_delta_e_min), float(alpha_cap))     # enforce cap smoothly
+    # tanh approximations can lie below the floor or above the cap. Bounds are
+    # constraints, so clamp the approximation before it controls trading.
+    hyst_final = max(float(hyst_floor), min(float(max_delta_e_min), hyst_final))
     
     # Compute binding flags (use small epsilon for numerical tolerance)
     eps = 1e-9

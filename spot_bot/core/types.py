@@ -85,9 +85,9 @@ class ExecutionResult:
     """Result of trade execution (real or simulated)."""
 
     filled_base: float  # Actual base quantity filled
-    avg_price: float  # Average fill price
+    avg_price: float  # Actual average fill price, including slippage/spread
     fee_paid: float  # Fee paid in quote currency
-    slippage_paid: float  # Slippage cost in quote currency
+    slippage_paid: float  # Diagnostic execution cost, already included in avg_price
     status: str  # "filled", "partial", "rejected", "SKIPPED"
     raw: Optional[Dict[str, Any]] = None  # Raw execution data for debugging
 

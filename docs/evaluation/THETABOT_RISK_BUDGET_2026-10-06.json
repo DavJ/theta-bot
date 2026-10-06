@@ -1,0 +1,2698 @@
+{
+  "protocol": "docs/evaluation/RISK_BUDGET_RESEARCH_PLAN.md",
+  "frozen_candidate": "static_50",
+  "development": {
+    "static_50": {
+      "final_equity": 1543.2520402477853,
+      "total_return": 0.5432520402477853,
+      "net_pnl": 543.2520402477853,
+      "fees_paid_total": 40.448094277079164,
+      "slippage_paid_total": 24.268939421103937,
+      "gross_pnl_cost_addback": 607.9690739459684,
+      "maxDD": -0.16553384959024742,
+      "trades_count": 268,
+      "max_observed_drawdown": -0.16570706839063631,
+      "max_intraday_drawdown_bound": -0.17892376853205116,
+      "risk_reduction_trades": 0,
+      "turnover": 40.44809427707916,
+      "mean_exposure": 0.2281829863182971,
+      "max_close_exposure": 0.5285630150032667,
+      "sharpe": 0.9427297827097444,
+      "cagr": 0.15546016111369543,
+      "drawdown_within_20pct_bound": true
+    },
+    "static_75": {
+      "final_equity": 1867.5695722931762,
+      "total_return": 0.8675695722931762,
+      "net_pnl": 867.5695722931762,
+      "fees_paid_total": 65.80833240266153,
+      "slippage_paid_total": 39.48510191879042,
+      "gross_pnl_cost_addback": 972.8630066146281,
+      "maxDD": -0.23924325695563187,
+      "trades_count": 280,
+      "max_observed_drawdown": -0.23948597594886745,
+      "max_intraday_drawdown_bound": -0.257494220273897,
+      "risk_reduction_trades": 0,
+      "turnover": 65.80833240266155,
+      "mean_exposure": 0.3425943364395742,
+      "max_close_exposure": 0.7744762269315815,
+      "sharpe": 0.9475769733131101,
+      "cagr": 0.23124106360961472,
+      "drawdown_within_20pct_bound": false
+    },
+    "vol_15": {
+      "final_equity": 1441.2589454219442,
+      "total_return": 0.4412589454219442,
+      "net_pnl": 441.2589454219442,
+      "fees_paid_total": 31.916118588513854,
+      "slippage_paid_total": 19.149722147129232,
+      "gross_pnl_cost_addback": 492.3247861575873,
+      "maxDD": -0.12459487286063864,
+      "trades_count": 304,
+      "max_observed_drawdown": -0.1246978865103443,
+      "max_intraday_drawdown_bound": -0.13520289739861047,
+      "risk_reduction_trades": 108,
+      "turnover": 31.91611858851385,
+      "mean_exposure": 0.1685892786530529,
+      "max_close_exposure": 0.6126979753399003,
+      "sharpe": 1.0674883804392257,
+      "cagr": 0.12944666160202445,
+      "drawdown_within_20pct_bound": true
+    },
+    "vol_25": {
+      "final_equity": 1747.450311387384,
+      "total_return": 0.747450311387384,
+      "net_pnl": 747.4503113873841,
+      "fees_paid_total": 55.159182208781154,
+      "slippage_paid_total": 33.09555389942662,
+      "gross_pnl_cost_addback": 835.7050474955919,
+      "maxDD": -0.19473387990962876,
+      "trades_count": 349,
+      "max_observed_drawdown": -0.19489473959590953,
+      "max_intraday_drawdown_bound": -0.21065726216406522,
+      "risk_reduction_trades": 136,
+      "turnover": 55.15918220878115,
+      "mean_exposure": 0.2750603536461227,
+      "max_close_exposure": 0.9953613931279772,
+      "sharpe": 1.0315212276986254,
+      "cagr": 0.2042811475238735,
+      "drawdown_within_20pct_bound": false
+    },
+    "cushion_3": {
+      "final_equity": 1280.864525601493,
+      "total_return": 0.2808645256014929,
+      "net_pnl": 280.8645256014929,
+      "fees_paid_total": 27.384334629395465,
+      "slippage_paid_total": 16.430569312613883,
+      "gross_pnl_cost_addback": 324.6794295435023,
+      "maxDD": -0.13906119564107633,
+      "trades_count": 320,
+      "max_observed_drawdown": -0.13907216474533535,
+      "max_intraday_drawdown_bound": -0.14953258196108643,
+      "risk_reduction_trades": 103,
+      "turnover": 27.384334629395465,
+      "mean_exposure": 0.15365631405716024,
+      "max_close_exposure": 0.5491751716497458,
+      "sharpe": 0.7309625383893423,
+      "cagr": 0.08592968113242505,
+      "drawdown_within_20pct_bound": true
+    },
+    "cushion_5": {
+      "final_equity": 987.3458055143967,
+      "total_return": -0.012654194485603284,
+      "net_pnl": -12.654194485603284,
+      "fees_paid_total": 7.70652111953132,
+      "slippage_paid_total": 4.623912555164892,
+      "gross_pnl_cost_addback": -0.3237608109070722,
+      "maxDD": -0.16425742407114097,
+      "trades_count": 79,
+      "max_observed_drawdown": -0.16427420603510778,
+      "max_intraday_drawdown_bound": -0.1828620319483346,
+      "risk_reduction_trades": 36,
+      "turnover": 7.706521119531323,
+      "mean_exposure": 0.04730998248560218,
+      "max_close_exposure": 0.9014408132965646,
+      "sharpe": 0.0050918025835065385,
+      "cagr": -0.004232126286702664,
+      "drawdown_within_20pct_bound": true
+    },
+    "vol_25_cushion_5": {
+      "final_equity": 1237.0353795358915,
+      "total_return": 0.2370353795358915,
+      "net_pnl": 237.03537953589148,
+      "fees_paid_total": 29.683482678990508,
+      "slippage_paid_total": 17.81004936219382,
+      "gross_pnl_cost_addback": 284.5289115770758,
+      "maxDD": -0.15206650843878922,
+      "trades_count": 333,
+      "max_observed_drawdown": -0.15212654664286973,
+      "max_intraday_drawdown_bound": -0.1679323308705325,
+      "risk_reduction_trades": 102,
+      "turnover": 29.683482678990504,
+      "mean_exposure": 0.16840145900456682,
+      "max_close_exposure": 0.7305162387310499,
+      "sharpe": 0.561906287265874,
+      "cagr": 0.07341075778041928,
+      "drawdown_within_20pct_bound": true
+    }
+  },
+  "drawdown_limit": 0.2,
+  "criterion": "maximum positive 2022-2024 continuous net P&L with conservative drawdown <=20%",
+  "scenarios": {
+    "static_50": {
+      "policy": {
+        "approach": "momentum_vol",
+        "max_exposure": 0.5,
+        "asset_cap": 0.25,
+        "rebalance_weekday": 0,
+        "rebalance_band": 0.01
+      },
+      "risk": null,
+      "development": {
+        "final_equity": 1543.2520402477853,
+        "total_return": 0.5432520402477853,
+        "net_pnl": 543.2520402477853,
+        "fees_paid_total": 40.448094277079164,
+        "slippage_paid_total": 24.268939421103937,
+        "gross_pnl_cost_addback": 607.9690739459684,
+        "maxDD": -0.16553384959024742,
+        "trades_count": 268,
+        "max_observed_drawdown": -0.16570706839063631,
+        "max_intraday_drawdown_bound": -0.17892376853205116,
+        "risk_reduction_trades": 0,
+        "turnover": 40.44809427707916,
+        "mean_exposure": 0.2281829863182971,
+        "max_close_exposure": 0.5285630150032667,
+        "sharpe": 0.9427297827097444,
+        "cagr": 0.15546016111369543,
+        "drawdown_within_20pct_bound": true
+      },
+      "periods": {
+        "2025": {
+          "final_equity": 1195.9277384487755,
+          "total_return": 0.19592773844877548,
+          "net_pnl": 195.92773844877547,
+          "fees_paid_total": 9.592803144430682,
+          "slippage_paid_total": 5.755757946126122,
+          "gross_pnl_cost_addback": 211.27629953933229,
+          "maxDD": -0.09777341819682683,
+          "trades_count": 68,
+          "max_observed_drawdown": -0.0977734362267052,
+          "max_intraday_drawdown_bound": -0.13557195947431044,
+          "risk_reduction_trades": 0,
+          "turnover": 9.592803144430682,
+          "mean_exposure": 0.2196144376944087,
+          "max_close_exposure": 0.5214571805179917,
+          "sharpe": 1.3671078864128807,
+          "cagr": 0.19592773844877542,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1101.7941451574309,
+          "total_return": 0.10179414515743088,
+          "net_pnl": 101.79414515743088,
+          "fees_paid_total": 9.767035222687625,
+          "slippage_paid_total": 5.860067543726521,
+          "gross_pnl_cost_addback": 117.42124792384502,
+          "maxDD": -0.09381077337460009,
+          "trades_count": 75,
+          "max_observed_drawdown": -0.09449267453975685,
+          "max_intraday_drawdown_bound": -0.10098790819234615,
+          "risk_reduction_trades": 0,
+          "turnover": 9.767035222687625,
+          "mean_exposure": 0.2812987579469209,
+          "max_close_exposure": 0.518364251379343,
+          "sharpe": 0.9537503954564046,
+          "cagr": 0.13838236965006723,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 2039.0981481490169,
+          "total_return": 1.039098148149017,
+          "net_pnl": 1039.0981481490169,
+          "fees_paid_total": 73.8534057220484,
+          "slippage_paid_total": 44.31209633748676,
+          "gross_pnl_cost_addback": 1157.263650208552,
+          "maxDD": -0.169843045105476,
+          "trades_count": 432,
+          "max_observed_drawdown": -0.17046774871634507,
+          "max_intraday_drawdown_bound": -0.18541292644465757,
+          "risk_reduction_trades": 0,
+          "turnover": 73.8534057220484,
+          "mean_exposure": 0.23472719487554827,
+          "max_close_exposure": 0.5285630150032667,
+          "sharpe": 1.0226871127461665,
+          "cagr": 0.16181098178101294,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "doubled_costs": {
+        "2025": {
+          "final_equity": 1178.0013025485953,
+          "total_return": 0.17800130254859528,
+          "net_pnl": 178.00130254859528,
+          "fees_paid_total": 19.00169914503235,
+          "slippage_paid_total": 10.45118554933482,
+          "gross_pnl_cost_addback": 207.45418724296243,
+          "maxDD": -0.10112758307290992,
+          "trades_count": 67,
+          "max_observed_drawdown": -0.10112760104060181,
+          "max_intraday_drawdown_bound": -0.13560781129183375,
+          "risk_reduction_trades": 0,
+          "turnover": 9.500849572516175,
+          "mean_exposure": 0.21950622759354294,
+          "max_close_exposure": 0.5203034625853713,
+          "sharpe": 1.2584755621274992,
+          "cagr": 0.17800130254859536,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1086.8446541539822,
+          "total_return": 0.08684465415398222,
+          "net_pnl": 86.84465415398222,
+          "fees_paid_total": 19.401180536688106,
+          "slippage_paid_total": 10.670134065337225,
+          "gross_pnl_cost_addback": 116.91596875600754,
+          "maxDD": -0.09815779938602187,
+          "trades_count": 74,
+          "max_observed_drawdown": -0.09947308500753804,
+          "max_intraday_drawdown_bound": -0.10469766366017008,
+          "risk_reduction_trades": 0,
+          "turnover": 9.700590268344053,
+          "mean_exposure": 0.28136076609946103,
+          "max_close_exposure": 0.5344819344462798,
+          "sharpe": 0.8294494707386644,
+          "cagr": 0.11777857148996418,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 1882.4019190201789,
+          "total_return": 0.8824019190201788,
+          "net_pnl": 882.4019190201789,
+          "fees_paid_total": 141.23346274127428,
+          "slippage_paid_total": 77.67860853436906,
+          "gross_pnl_cost_addback": 1101.3139902958221,
+          "maxDD": -0.17749872478634,
+          "trades_count": 428,
+          "max_observed_drawdown": -0.17869831222629218,
+          "max_intraday_drawdown_bound": -0.19238246187061736,
+          "risk_reduction_trades": 0,
+          "turnover": 70.61673137063714,
+          "mean_exposure": 0.23477757685979797,
+          "max_close_exposure": 0.5287571254343644,
+          "sharpe": 0.9173955567595776,
+          "cagr": 0.1424201172705304,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "correlated_40pct_gap": {
+        "final_equity": 1671.279355108415,
+        "total_return": 0.6712793551084151,
+        "net_pnl": 671.2793551084151,
+        "fees_paid_total": 64.01403114740143,
+        "slippage_paid_total": 38.4084018546101,
+        "gross_pnl_cost_addback": 773.7017881104266,
+        "maxDD": -0.2602260439170685,
+        "trades_count": 406,
+        "max_observed_drawdown": -0.26037960647580005,
+        "max_intraday_drawdown_bound": -0.2729962100251748,
+        "risk_reduction_trades": 0,
+        "turnover": 64.01403114740141,
+        "mean_exposure": 0.22722299785956926,
+        "max_close_exposure": 0.5285630150032667,
+        "sharpe": 0.7056130702491697,
+        "cagr": 0.1141686242773381,
+        "drawdown_within_20pct_bound": false
+      },
+      "all_historical_drawdowns_within_20pct_bound": true
+    },
+    "static_75": {
+      "policy": {
+        "approach": "momentum_vol",
+        "max_exposure": 0.75,
+        "asset_cap": 0.375,
+        "rebalance_weekday": 0,
+        "rebalance_band": 0.01
+      },
+      "risk": null,
+      "development": {
+        "final_equity": 1867.5695722931762,
+        "total_return": 0.8675695722931762,
+        "net_pnl": 867.5695722931762,
+        "fees_paid_total": 65.80833240266153,
+        "slippage_paid_total": 39.48510191879042,
+        "gross_pnl_cost_addback": 972.8630066146281,
+        "maxDD": -0.23924325695563187,
+        "trades_count": 280,
+        "max_observed_drawdown": -0.23948597594886745,
+        "max_intraday_drawdown_bound": -0.257494220273897,
+        "risk_reduction_trades": 0,
+        "turnover": 65.80833240266155,
+        "mean_exposure": 0.3425943364395742,
+        "max_close_exposure": 0.7744762269315815,
+        "sharpe": 0.9475769733131101,
+        "cagr": 0.23124106360961472,
+        "drawdown_within_20pct_bound": false
+      },
+      "periods": {
+        "2025": {
+          "final_equity": 1305.3255586226899,
+          "total_return": 0.30532555862268984,
+          "net_pnl": 305.32555862268987,
+          "fees_paid_total": 15.251425091413669,
+          "slippage_paid_total": 9.150973756912691,
+          "gross_pnl_cost_addback": 329.7279574710162,
+          "maxDD": -0.14326167450424077,
+          "trades_count": 72,
+          "max_observed_drawdown": -0.14326169953241374,
+          "max_intraday_drawdown_bound": -0.1991474468703175,
+          "risk_reduction_trades": 0,
+          "turnover": 15.25142509141367,
+          "mean_exposure": 0.3291243542255151,
+          "max_close_exposure": 0.7717728186668015,
+          "sharpe": 1.3920821990573984,
+          "cagr": 0.30532555862268995,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1146.9374442473772,
+          "total_return": 0.14693744424737723,
+          "net_pnl": 146.93744424737724,
+          "fees_paid_total": 14.32099907802618,
+          "slippage_paid_total": 8.592351889223895,
+          "gross_pnl_cost_addback": 169.8507952146273,
+          "maxDD": -0.13811554867520226,
+          "trades_count": 80,
+          "max_observed_drawdown": -0.13908839186455035,
+          "max_intraday_drawdown_bound": -0.14834888897310428,
+          "risk_reduction_trades": 0,
+          "turnover": 14.32099907802618,
+          "mean_exposure": 0.4206681293738748,
+          "max_close_exposure": 0.7597844172839854,
+          "sharpe": 0.94252834196942,
+          "cagr": 0.2011697952732574,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 2793.7338100708203,
+          "total_return": 1.7937338100708202,
+          "net_pnl": 1793.7338100708203,
+          "fees_paid_total": 129.98726549867055,
+          "slippage_paid_total": 77.99232796874057,
+          "gross_pnl_cost_addback": 2001.7134035382312,
+          "maxDD": -0.2449013007772899,
+          "trades_count": 454,
+          "max_observed_drawdown": -0.2457536326838401,
+          "max_intraday_drawdown_bound": -0.2659219443157672,
+          "risk_reduction_trades": 0,
+          "turnover": 129.98726549867055,
+          "mean_exposure": 0.3520497408457749,
+          "max_close_exposure": 0.7744762269315815,
+          "sharpe": 1.0244456868424514,
+          "cagr": 0.2414240259957383,
+          "drawdown_within_20pct_bound": false
+        }
+      },
+      "doubled_costs": {
+        "2025": {
+          "final_equity": 1281.4760029049871,
+          "total_return": 0.28147600290498714,
+          "net_pnl": 281.4760029049871,
+          "fees_paid_total": 30.238893259473645,
+          "slippage_paid_total": 16.6317885921998,
+          "gross_pnl_cost_addback": 328.3466847566606,
+          "maxDD": -0.14806233939279212,
+          "trades_count": 73,
+          "max_observed_drawdown": -0.14806236429005948,
+          "max_intraday_drawdown_bound": -0.19922194659117554,
+          "risk_reduction_trades": 0,
+          "turnover": 15.119446629736824,
+          "mean_exposure": 0.32894184498500545,
+          "max_close_exposure": 0.7721456503738043,
+          "sharpe": 1.3029831772835767,
+          "cagr": 0.2814760029049872,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1121.1231867484175,
+          "total_return": 0.12112318674841754,
+          "net_pnl": 121.12318674841754,
+          "fees_paid_total": 28.317623477916136,
+          "slippage_paid_total": 15.573890337785055,
+          "gross_pnl_cost_addback": 165.01470056411873,
+          "maxDD": -0.14436564612561142,
+          "trades_count": 79,
+          "max_observed_drawdown": -0.14623748727835417,
+          "max_intraday_drawdown_bound": -0.15366723592451914,
+          "risk_reduction_trades": 0,
+          "turnover": 14.158811738958068,
+          "mean_exposure": 0.4208609284997657,
+          "max_close_exposure": 0.7603197183545566,
+          "sharpe": 0.8049799959654024,
+          "cagr": 0.16516203802700624,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 2481.1529004830445,
+          "total_return": 1.4811529004830446,
+          "net_pnl": 1481.1529004830445,
+          "fees_paid_total": 242.6495391651211,
+          "slippage_paid_total": 133.4572491089067,
+          "gross_pnl_cost_addback": 1857.2596887570721,
+          "maxDD": -0.25538838179275447,
+          "trades_count": 451,
+          "max_observed_drawdown": -0.2570173641284498,
+          "max_intraday_drawdown_bound": -0.27538488285603047,
+          "risk_reduction_trades": 0,
+          "turnover": 121.32476958256055,
+          "mean_exposure": 0.3522205595959763,
+          "max_close_exposure": 0.7748871612062962,
+          "sharpe": 0.9203234205677215,
+          "cagr": 0.21080156757170831,
+          "drawdown_within_20pct_bound": false
+        }
+      },
+      "correlated_40pct_gap": {
+        "final_equity": 2027.2639840276938,
+        "total_return": 1.0272639840276938,
+        "net_pnl": 1027.2639840276938,
+        "fees_paid_total": 103.28603731013487,
+        "slippage_paid_total": 61.97150604571532,
+        "gross_pnl_cost_addback": 1192.521527383544,
+        "maxDD": -0.38101445875685813,
+        "trades_count": 424,
+        "max_observed_drawdown": -0.3812119457312053,
+        "max_intraday_drawdown_bound": -0.3970669922834552,
+        "risk_reduction_trades": 0,
+        "turnover": 103.28603731013489,
+        "mean_exposure": 0.34031611527224054,
+        "max_close_exposure": 0.7744762269315815,
+        "sharpe": 0.702577204174071,
+        "cagr": 0.16038840412013133,
+        "drawdown_within_20pct_bound": false
+      },
+      "all_historical_drawdowns_within_20pct_bound": false
+    },
+    "vol_15": {
+      "policy": {
+        "approach": "momentum_vol",
+        "max_exposure": 1.0,
+        "asset_cap": 0.5,
+        "rebalance_weekday": 0,
+        "rebalance_band": 0.01
+      },
+      "risk": {
+        "volatility_target": 0.15,
+        "volatility_window": 60,
+        "covariance_shrinkage": 0.25,
+        "drawdown_limit": null,
+        "drawdown_buffer": 0.02,
+        "cushion_multiplier": 5.0
+      },
+      "development": {
+        "final_equity": 1441.2589454219442,
+        "total_return": 0.4412589454219442,
+        "net_pnl": 441.2589454219442,
+        "fees_paid_total": 31.916118588513854,
+        "slippage_paid_total": 19.149722147129232,
+        "gross_pnl_cost_addback": 492.3247861575873,
+        "maxDD": -0.12459487286063864,
+        "trades_count": 304,
+        "max_observed_drawdown": -0.1246978865103443,
+        "max_intraday_drawdown_bound": -0.13520289739861047,
+        "risk_reduction_trades": 108,
+        "turnover": 31.91611858851385,
+        "mean_exposure": 0.1685892786530529,
+        "max_close_exposure": 0.6126979753399003,
+        "sharpe": 1.0674883804392257,
+        "cagr": 0.12944666160202445,
+        "drawdown_within_20pct_bound": true
+      },
+      "periods": {
+        "2025": {
+          "final_equity": 1188.3864346229193,
+          "total_return": 0.1883864346229193,
+          "net_pnl": 188.3864346229193,
+          "fees_paid_total": 9.241261860930328,
+          "slippage_paid_total": 5.544830258667709,
+          "gross_pnl_cost_addback": 203.17252674251733,
+          "maxDD": -0.07448385446307537,
+          "trades_count": 81,
+          "max_observed_drawdown": -0.07448386852712385,
+          "max_intraday_drawdown_bound": -0.10498712557950063,
+          "risk_reduction_trades": 27,
+          "turnover": 9.241261860930326,
+          "mean_exposure": 0.19068032722431444,
+          "max_close_exposure": 0.5187544646454451,
+          "sharpe": 1.5079991532723294,
+          "cagr": 0.18838643462291937,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1110.4649766648251,
+          "total_return": 0.11046497666482515,
+          "net_pnl": 110.46497666482514,
+          "fees_paid_total": 8.62928177210807,
+          "slippage_paid_total": 5.177456101086222,
+          "gross_pnl_cost_addback": 124.27171453801944,
+          "maxDD": -0.06388451605990286,
+          "trades_count": 83,
+          "max_observed_drawdown": -0.06419023403940516,
+          "max_intraday_drawdown_bound": -0.08023764737005723,
+          "risk_reduction_trades": 22,
+          "turnover": 8.629281772108072,
+          "mean_exposure": 0.23637667802033027,
+          "max_close_exposure": 0.5583732361728677,
+          "sharpe": 1.0566812479873322,
+          "cagr": 0.15037606952839688,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 1895.8832195084383,
+          "total_return": 0.8958832195084383,
+          "net_pnl": 895.8832195084383,
+          "fees_paid_total": 60.41111319520309,
+          "slippage_paid_total": 36.246757770424104,
+          "gross_pnl_cost_addback": 992.5410904740655,
+          "maxDD": -0.12459487286063864,
+          "trades_count": 487,
+          "max_observed_drawdown": -0.1246978865103443,
+          "max_intraday_drawdown_bound": -0.13520289739861047,
+          "risk_reduction_trades": 174,
+          "turnover": 60.411113195203086,
+          "mean_exposure": 0.18393972638054487,
+          "max_close_exposure": 0.6126979753399003,
+          "sharpe": 1.148376916231941,
+          "cagr": 0.14413749069905424,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "doubled_costs": {
+        "2025": {
+          "final_equity": 1173.4763552429424,
+          "total_return": 0.17347635524294241,
+          "net_pnl": 173.47635524294242,
+          "fees_paid_total": 18.36822648513331,
+          "slippage_paid_total": 10.102768923118047,
+          "gross_pnl_cost_addback": 201.94735065119377,
+          "maxDD": -0.07689482159275296,
+          "trades_count": 81,
+          "max_observed_drawdown": -0.07689483562418709,
+          "max_intraday_drawdown_bound": -0.10501689986822704,
+          "risk_reduction_trades": 27,
+          "turnover": 9.184113242566655,
+          "mean_exposure": 0.19073342471993607,
+          "max_close_exposure": 0.5187957688068267,
+          "sharpe": 1.4012745296263074,
+          "cagr": 0.17347635524294236,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1095.3766611185395,
+          "total_return": 0.09537666111853946,
+          "net_pnl": 95.37666111853946,
+          "fees_paid_total": 17.165788523646857,
+          "slippage_paid_total": 9.440808429254439,
+          "gross_pnl_cost_addback": 121.98325807144076,
+          "maxDD": -0.06699028677460972,
+          "trades_count": 83,
+          "max_observed_drawdown": -0.06760774780550094,
+          "max_intraday_drawdown_bound": -0.08201281149359663,
+          "risk_reduction_trades": 22,
+          "turnover": 8.582894261823427,
+          "mean_exposure": 0.2362499327427271,
+          "max_close_exposure": 0.558624089470466,
+          "sharpe": 0.9286132998804176,
+          "cagr": 0.12952600018605476,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 1772.968794507231,
+          "total_return": 0.772968794507231,
+          "net_pnl": 772.968794507231,
+          "fees_paid_total": 116.4943204890614,
+          "slippage_paid_total": 64.07218885489418,
+          "gross_pnl_cost_addback": 953.5353038511865,
+          "maxDD": -0.12951136670444696,
+          "trades_count": 485,
+          "max_observed_drawdown": -0.13008746482893319,
+          "max_intraday_drawdown_bound": -0.14193137652670462,
+          "risk_reduction_trades": 171,
+          "turnover": 58.24716024453068,
+          "mean_exposure": 0.184108769542329,
+          "max_close_exposure": 0.6133130045420564,
+          "sharpe": 1.0342288086145417,
+          "cagr": 0.12810773191279345,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "correlated_40pct_gap": {
+        "final_equity": 1639.7722356282513,
+        "total_return": 0.6397722356282514,
+        "net_pnl": 639.7722356282513,
+        "fees_paid_total": 54.10576500844086,
+        "slippage_paid_total": 32.46349184490775,
+        "gross_pnl_cost_addback": 726.3414924815999,
+        "maxDD": -0.2027116705621922,
+        "trades_count": 464,
+        "max_observed_drawdown": -0.20280549178637386,
+        "max_intraday_drawdown_bound": -0.2134175622042236,
+        "risk_reduction_trades": 155,
+        "turnover": 54.10576500844087,
+        "mean_exposure": 0.17916517859337022,
+        "max_close_exposure": 0.6126979753399003,
+        "sharpe": 0.829158103580861,
+        "cagr": 0.10971400170424928,
+        "drawdown_within_20pct_bound": false
+      },
+      "all_historical_drawdowns_within_20pct_bound": true
+    },
+    "vol_25": {
+      "policy": {
+        "approach": "momentum_vol",
+        "max_exposure": 1.0,
+        "asset_cap": 0.5,
+        "rebalance_weekday": 0,
+        "rebalance_band": 0.01
+      },
+      "risk": {
+        "volatility_target": 0.25,
+        "volatility_window": 60,
+        "covariance_shrinkage": 0.25,
+        "drawdown_limit": null,
+        "drawdown_buffer": 0.02,
+        "cushion_multiplier": 5.0
+      },
+      "development": {
+        "final_equity": 1747.450311387384,
+        "total_return": 0.747450311387384,
+        "net_pnl": 747.4503113873841,
+        "fees_paid_total": 55.159182208781154,
+        "slippage_paid_total": 33.09555389942662,
+        "gross_pnl_cost_addback": 835.7050474955919,
+        "maxDD": -0.19473387990962876,
+        "trades_count": 349,
+        "max_observed_drawdown": -0.19489473959590953,
+        "max_intraday_drawdown_bound": -0.21065726216406522,
+        "risk_reduction_trades": 136,
+        "turnover": 55.15918220878115,
+        "mean_exposure": 0.2750603536461227,
+        "max_close_exposure": 0.9953613931279772,
+        "sharpe": 1.0315212276986254,
+        "cagr": 0.2042811475238735,
+        "drawdown_within_20pct_bound": false
+      },
+      "periods": {
+        "2025": {
+          "final_equity": 1328.1499281580222,
+          "total_return": 0.32814992815802224,
+          "net_pnl": 328.14992815802225,
+          "fees_paid_total": 15.477281062552175,
+          "slippage_paid_total": 9.286495686464892,
+          "gross_pnl_cost_addback": 352.9137049070393,
+          "maxDD": -0.1216989669491575,
+          "trades_count": 93,
+          "max_observed_drawdown": -0.12169898900377774,
+          "max_intraday_drawdown_bound": -0.1722554620450788,
+          "risk_reduction_trades": 34,
+          "turnover": 15.477281062552173,
+          "mean_exposure": 0.3091202336533402,
+          "max_close_exposure": 0.8455133345906585,
+          "sharpe": 1.5515847924461978,
+          "cagr": 0.32814992815802224,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1167.3611144291197,
+          "total_return": 0.16736111442911966,
+          "net_pnl": 167.36111442911965,
+          "fees_paid_total": 13.157743166703385,
+          "slippage_paid_total": 7.89443755507396,
+          "gross_pnl_cost_addback": 188.413295150897,
+          "maxDD": -0.10740943760502863,
+          "trades_count": 92,
+          "max_observed_drawdown": -0.10790016221220455,
+          "max_intraday_drawdown_bound": -0.11741732891540635,
+          "risk_reduction_trades": 25,
+          "turnover": 13.157743166703389,
+          "mean_exposure": 0.3821333957479178,
+          "max_close_exposure": 0.9168154843035767,
+          "sharpe": 1.068468157477081,
+          "cagr": 0.2298528061998586,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 2713.8765332863622,
+          "total_return": 1.7138765332863621,
+          "net_pnl": 1713.8765332863622,
+          "fees_paid_total": 113.84482710953407,
+          "slippage_paid_total": 68.30695340020372,
+          "gross_pnl_cost_addback": 1896.0283137961,
+          "maxDD": -0.19935085592828017,
+          "trades_count": 565,
+          "max_observed_drawdown": -0.199789004071523,
+          "max_intraday_drawdown_bound": -0.21930137667964789,
+          "risk_reduction_trades": 222,
+          "turnover": 113.84482710953407,
+          "mean_exposure": 0.299259504820998,
+          "max_close_exposure": 0.9953613931279772,
+          "sharpe": 1.145980614681411,
+          "cagr": 0.2338687432402684,
+          "drawdown_within_20pct_bound": false
+        }
+      },
+      "doubled_costs": {
+        "2025": {
+          "final_equity": 1302.2149923121183,
+          "total_return": 0.3022149923121183,
+          "net_pnl": 302.2149923121183,
+          "fees_paid_total": 30.647895621975294,
+          "slippage_paid_total": 16.85676575286812,
+          "gross_pnl_cost_addback": 349.7196536869617,
+          "maxDD": -0.12553780981003904,
+          "trades_count": 93,
+          "max_observed_drawdown": -0.1255378317786212,
+          "max_intraday_drawdown_bound": -0.17233525146814466,
+          "risk_reduction_trades": 34,
+          "turnover": 15.323947810987649,
+          "mean_exposure": 0.30922967086795095,
+          "max_close_exposure": 0.8456101672335082,
+          "sharpe": 1.450075792633912,
+          "cagr": 0.30221499231211824,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1143.4368390131049,
+          "total_return": 0.14343683901310486,
+          "net_pnl": 143.43683901310487,
+          "fees_paid_total": 26.05957546181298,
+          "slippage_paid_total": 14.332079699815823,
+          "gross_pnl_cost_addback": 183.8284941747337,
+          "maxDD": -0.12015983397194074,
+          "trades_count": 91,
+          "max_observed_drawdown": -0.12109166604162613,
+          "max_intraday_drawdown_bound": -0.12986307427066568,
+          "risk_reduction_trades": 24,
+          "turnover": 13.029787730906492,
+          "mean_exposure": 0.38236354042086657,
+          "max_close_exposure": 0.9170494773925765,
+          "sharpe": 0.9401899338779157,
+          "cagr": 0.19627071596724655,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 2440.768394126365,
+          "total_return": 1.440768394126365,
+          "net_pnl": 1440.768394126365,
+          "fees_paid_total": 213.98795599296483,
+          "slippage_paid_total": 117.69362972026899,
+          "gross_pnl_cost_addback": 1772.4499798395987,
+          "maxDD": -0.2155563860862888,
+          "trades_count": 557,
+          "max_observed_drawdown": -0.21638720377749443,
+          "max_intraday_drawdown_bound": -0.23512049509826227,
+          "risk_reduction_trades": 216,
+          "turnover": 106.9939779964824,
+          "mean_exposure": 0.29936071782636264,
+          "max_close_exposure": 0.9966297877781808,
+          "sharpe": 1.0350483463484903,
+          "cagr": 0.20662627685695178,
+          "drawdown_within_20pct_bound": false
+        }
+      },
+      "correlated_40pct_gap": {
+        "final_equity": 2135.678179384927,
+        "total_return": 1.1356781793849269,
+        "net_pnl": 1135.6781793849268,
+        "fees_paid_total": 95.0577666191264,
+        "slippage_paid_total": 57.034631375281094,
+        "gross_pnl_cost_addback": 1287.7705773793343,
+        "maxDD": -0.31104659715095895,
+        "trades_count": 529,
+        "max_observed_drawdown": -0.31118422224840125,
+        "max_intraday_drawdown_bound": -0.32596544345013434,
+        "risk_reduction_trades": 194,
+        "turnover": 95.05776661912638,
+        "mean_exposure": 0.2910522163983997,
+        "max_close_exposure": 0.9953613931279772,
+        "sharpe": 0.8381672144930563,
+        "cagr": 0.17318353101314332,
+        "drawdown_within_20pct_bound": false
+      },
+      "all_historical_drawdowns_within_20pct_bound": false
+    },
+    "cushion_3": {
+      "policy": {
+        "approach": "momentum_vol",
+        "max_exposure": 1.0,
+        "asset_cap": 0.5,
+        "rebalance_weekday": 0,
+        "rebalance_band": 0.01
+      },
+      "risk": {
+        "volatility_target": null,
+        "volatility_window": 60,
+        "covariance_shrinkage": 0.25,
+        "drawdown_limit": 0.2,
+        "drawdown_buffer": 0.02,
+        "cushion_multiplier": 3
+      },
+      "development": {
+        "final_equity": 1280.864525601493,
+        "total_return": 0.2808645256014929,
+        "net_pnl": 280.8645256014929,
+        "fees_paid_total": 27.384334629395465,
+        "slippage_paid_total": 16.430569312613883,
+        "gross_pnl_cost_addback": 324.6794295435023,
+        "maxDD": -0.13906119564107633,
+        "trades_count": 320,
+        "max_observed_drawdown": -0.13907216474533535,
+        "max_intraday_drawdown_bound": -0.14953258196108643,
+        "risk_reduction_trades": 103,
+        "turnover": 27.384334629395465,
+        "mean_exposure": 0.15365631405716024,
+        "max_close_exposure": 0.5491751716497458,
+        "sharpe": 0.7309625383893423,
+        "cagr": 0.08592968113242505,
+        "drawdown_within_20pct_bound": true
+      },
+      "periods": {
+        "2025": {
+          "final_equity": 1197.5947460672555,
+          "total_return": 0.19759474606725552,
+          "net_pnl": 197.59474606725553,
+          "fees_paid_total": 12.66382356050661,
+          "slippage_paid_total": 7.598372564802981,
+          "gross_pnl_cost_addback": 217.85694219256513,
+          "maxDD": -0.10164439297482852,
+          "trades_count": 120,
+          "max_observed_drawdown": -0.10167953527865248,
+          "max_intraday_drawdown_bound": -0.1312808087928532,
+          "risk_reduction_trades": 58,
+          "turnover": 12.663823560506613,
+          "mean_exposure": 0.2428885726948181,
+          "max_close_exposure": 0.5415582443186249,
+          "sharpe": 1.253327963782338,
+          "cagr": 0.19759474606725558,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1051.1946320205489,
+          "total_return": 0.05119463202054885,
+          "net_pnl": 51.19463202054885,
+          "fees_paid_total": 8.989636028005233,
+          "slippage_paid_total": 5.3936197589666435,
+          "gross_pnl_cost_addback": 65.57788780752074,
+          "maxDD": -0.08843554804337428,
+          "trades_count": 92,
+          "max_observed_drawdown": -0.08868033566518141,
+          "max_intraday_drawdown_bound": -0.09465283519305179,
+          "risk_reduction_trades": 30,
+          "turnover": 8.989636028005233,
+          "mean_exposure": 0.2476309000865395,
+          "max_close_exposure": 0.5479701150376188,
+          "sharpe": 0.5466793897665895,
+          "cagr": 0.06903093158607176,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 1547.1686220700176,
+          "total_return": 0.5471686220700176,
+          "net_pnl": 547.1686220700176,
+          "fees_paid_total": 48.202542573589746,
+          "slippage_paid_total": 28.921595231011487,
+          "gross_pnl_cost_addback": 624.2927598746188,
+          "maxDD": -0.13906119564107633,
+          "trades_count": 515,
+          "max_observed_drawdown": -0.13907216474533535,
+          "max_intraday_drawdown_bound": -0.14953258196108643,
+          "risk_reduction_trades": 177,
+          "turnover": 48.202542573589746,
+          "mean_exposure": 0.16364782891372762,
+          "max_close_exposure": 0.5491751716497458,
+          "sharpe": 0.815144780046647,
+          "cagr": 0.09621795206500439,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "doubled_costs": {
+        "2025": {
+          "final_equity": 1176.2639030321704,
+          "total_return": 0.17626390303217046,
+          "net_pnl": 176.26390303217045,
+          "fees_paid_total": 24.986775941666842,
+          "slippage_paid_total": 13.742986910253116,
+          "gross_pnl_cost_addback": 214.9936658840904,
+          "maxDD": -0.10371828689401363,
+          "trades_count": 120,
+          "max_observed_drawdown": -0.1037183037377325,
+          "max_intraday_drawdown_bound": -0.13142188406904143,
+          "risk_reduction_trades": 57,
+          "turnover": 12.493387970833421,
+          "mean_exposure": 0.24230081956196456,
+          "max_close_exposure": 0.5419970660051512,
+          "sharpe": 1.1377796144041001,
+          "cagr": 0.17626390303217043,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1030.9608273596768,
+          "total_return": 0.03096082735967684,
+          "net_pnl": 30.96082735967684,
+          "fees_paid_total": 17.153597843460997,
+          "slippage_paid_total": 9.433937103915914,
+          "gross_pnl_cost_addback": 57.54836230705376,
+          "maxDD": -0.09618901441175054,
+          "trades_count": 89,
+          "max_observed_drawdown": -0.09662254917496294,
+          "max_intraday_drawdown_bound": -0.10211953488787473,
+          "risk_reduction_trades": 27,
+          "turnover": 8.576798921730498,
+          "mean_exposure": 0.2376236925891207,
+          "max_close_exposure": 0.548407917140896,
+          "sharpe": 0.3713778059039276,
+          "cagr": 0.04160900254117461,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 1393.1169740808907,
+          "total_return": 0.3931169740808907,
+          "net_pnl": 393.1169740808907,
+          "fees_paid_total": 84.11104632281746,
+          "slippage_paid_total": 46.261301754337495,
+          "gross_pnl_cost_addback": 523.4893221580456,
+          "maxDD": -0.14194752320381165,
+          "trades_count": 481,
+          "max_observed_drawdown": -0.14197812968987356,
+          "max_intraday_drawdown_bound": -0.15216649181290198,
+          "risk_reduction_trades": 148,
+          "turnover": 42.05552316140872,
+          "mean_exposure": 0.1518210544524526,
+          "max_close_exposure": 0.54130401109153,
+          "sharpe": 0.6585562203764919,
+          "cagr": 0.07228148006688362,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "correlated_40pct_gap": {
+        "final_equity": 1069.4171584712474,
+        "total_return": 0.06941715847124738,
+        "net_pnl": 69.41715847124738,
+        "fees_paid_total": 16.769109090718104,
+        "slippage_paid_total": 10.061500103627058,
+        "gross_pnl_cost_addback": 96.24776766559253,
+        "maxDD": -0.19089056251590375,
+        "trades_count": 200,
+        "max_observed_drawdown": -0.19089056251590375,
+        "max_intraday_drawdown_bound": -0.19746627509187697,
+        "risk_reduction_trades": 65,
+        "turnover": 16.769109090718107,
+        "mean_exposure": 0.06800627651539863,
+        "max_close_exposure": 0.5491751716497458,
+        "sharpe": 0.18304470468569886,
+        "cagr": 0.014227441720379819,
+        "drawdown_within_20pct_bound": true
+      },
+      "all_historical_drawdowns_within_20pct_bound": true
+    },
+    "cushion_5": {
+      "policy": {
+        "approach": "momentum_vol",
+        "max_exposure": 1.0,
+        "asset_cap": 0.5,
+        "rebalance_weekday": 0,
+        "rebalance_band": 0.01
+      },
+      "risk": {
+        "volatility_target": null,
+        "volatility_window": 60,
+        "covariance_shrinkage": 0.25,
+        "drawdown_limit": 0.2,
+        "drawdown_buffer": 0.02,
+        "cushion_multiplier": 5
+      },
+      "development": {
+        "final_equity": 987.3458055143967,
+        "total_return": -0.012654194485603284,
+        "net_pnl": -12.654194485603284,
+        "fees_paid_total": 7.70652111953132,
+        "slippage_paid_total": 4.623912555164892,
+        "gross_pnl_cost_addback": -0.3237608109070722,
+        "maxDD": -0.16425742407114097,
+        "trades_count": 79,
+        "max_observed_drawdown": -0.16427420603510778,
+        "max_intraday_drawdown_bound": -0.1828620319483346,
+        "risk_reduction_trades": 36,
+        "turnover": 7.706521119531323,
+        "mean_exposure": 0.04730998248560218,
+        "max_close_exposure": 0.9014408132965646,
+        "sharpe": 0.0050918025835065385,
+        "cagr": -0.004232126286702664,
+        "drawdown_within_20pct_bound": true
+      },
+      "periods": {
+        "2025": {
+          "final_equity": 1300.551660034018,
+          "total_return": 0.3005516600340179,
+          "net_pnl": 300.5516600340179,
+          "fees_paid_total": 18.198904680703073,
+          "slippage_paid_total": 10.91946148963101,
+          "gross_pnl_cost_addback": 329.67002620435204,
+          "maxDD": -0.12855796054430024,
+          "trades_count": 150,
+          "max_observed_drawdown": -0.12855798603922064,
+          "max_intraday_drawdown_bound": -0.19360709016791,
+          "risk_reduction_trades": 76,
+          "turnover": 18.198904680703077,
+          "mean_exposure": 0.3311258877498746,
+          "max_close_exposure": 0.9016885551813815,
+          "sharpe": 1.35123705525122,
+          "cagr": 0.3005516600340179,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1045.0428298177515,
+          "total_return": 0.045042829817751456,
+          "net_pnl": 45.04282981775145,
+          "fees_paid_total": 12.186288446243047,
+          "slippage_paid_total": 7.311519715241592,
+          "gross_pnl_cost_addback": 64.5406379792361,
+          "maxDD": -0.12203083073041232,
+          "trades_count": 135,
+          "max_observed_drawdown": -0.12228851847986422,
+          "max_intraday_drawdown_bound": -0.13001348377270983,
+          "risk_reduction_trades": 61,
+          "turnover": 12.186288446243045,
+          "mean_exposure": 0.32413992027346805,
+          "max_close_exposure": 0.903247375265426,
+          "sharpe": 0.4141745476109964,
+          "cagr": 0.06067469554397675,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 987.3458055143967,
+          "total_return": -0.012654194485603284,
+          "net_pnl": -12.654194485603284,
+          "fees_paid_total": 7.70652111953132,
+          "slippage_paid_total": 4.623912555164892,
+          "gross_pnl_cost_addback": -0.3237608109070722,
+          "maxDD": -0.16425742407114097,
+          "trades_count": 79,
+          "max_observed_drawdown": -0.16427420603510778,
+          "max_intraday_drawdown_bound": -0.1828620319483346,
+          "risk_reduction_trades": 36,
+          "turnover": 7.706521119531323,
+          "mean_exposure": 0.029902964708316025,
+          "max_close_exposure": 0.9014408132965646,
+          "sharpe": 0.004048109783421652,
+          "cagr": -0.002677063866843077,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "doubled_costs": {
+        "2025": {
+          "final_equity": 1267.6783210051033,
+          "total_return": 0.26767832100510325,
+          "net_pnl": 267.67832100510327,
+          "fees_paid_total": 35.85132613614518,
+          "slippage_paid_total": 19.71862050528458,
+          "gross_pnl_cost_addback": 323.24826764653307,
+          "maxDD": -0.130400395511183,
+          "trades_count": 150,
+          "max_observed_drawdown": -0.13040042095350635,
+          "max_intraday_drawdown_bound": -0.19365924167079573,
+          "risk_reduction_trades": 76,
+          "turnover": 17.925663068072595,
+          "mean_exposure": 0.3296215463215674,
+          "max_close_exposure": 0.9029057074999121,
+          "sharpe": 1.2341012285943935,
+          "cagr": 0.26767832100510325,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1000.196210480291,
+          "total_return": 0.00019621048029102895,
+          "net_pnl": 0.19621048029102894,
+          "fees_paid_total": 22.259383369128823,
+          "slippage_paid_total": 12.241789165777567,
+          "gross_pnl_cost_addback": 34.69738301519742,
+          "maxDD": -0.13266839670067965,
+          "trades_count": 123,
+          "max_observed_drawdown": -0.13307008727995973,
+          "max_intraday_drawdown_bound": -0.13995849774278513,
+          "risk_reduction_trades": 51,
+          "turnover": 11.129691684564412,
+          "mean_exposure": 0.289871824985263,
+          "max_close_exposure": 0.9044472736349101,
+          "sharpe": 0.082448962401062,
+          "cagr": 0.0002623413660625129,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 1001.5850392996066,
+          "total_return": 0.001585039299606592,
+          "net_pnl": 1.585039299606592,
+          "fees_paid_total": 38.97660190276211,
+          "slippage_paid_total": 21.437087028636633,
+          "gross_pnl_cost_addback": 61.99872823100534,
+          "maxDD": -0.16352382403055576,
+          "trades_count": 360,
+          "max_observed_drawdown": -0.16356818883368962,
+          "max_intraday_drawdown_bound": -0.1878964575908264,
+          "risk_reduction_trades": 97,
+          "turnover": 19.488300951381053,
+          "mean_exposure": 0.07848979308640029,
+          "max_close_exposure": 0.9026607016926094,
+          "sharpe": 0.052073334424963584,
+          "cagr": 0.00033343581063016714,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "correlated_40pct_gap": {
+        "final_equity": 987.3458055143967,
+        "total_return": -0.012654194485603284,
+        "net_pnl": -12.654194485603284,
+        "fees_paid_total": 7.70652111953132,
+        "slippage_paid_total": 4.623912555164892,
+        "gross_pnl_cost_addback": -0.3237608109070722,
+        "maxDD": -0.16425742407114097,
+        "trades_count": 79,
+        "max_observed_drawdown": -0.16427420603510778,
+        "max_intraday_drawdown_bound": -0.1828620319483346,
+        "risk_reduction_trades": 36,
+        "turnover": 7.706521119531323,
+        "mean_exposure": 0.029902964708316025,
+        "max_close_exposure": 0.9014408132965646,
+        "sharpe": 0.004048109783421652,
+        "cagr": -0.002677063866843077,
+        "drawdown_within_20pct_bound": true
+      },
+      "all_historical_drawdowns_within_20pct_bound": true
+    },
+    "vol_25_cushion_5": {
+      "policy": {
+        "approach": "momentum_vol",
+        "max_exposure": 1.0,
+        "asset_cap": 0.5,
+        "rebalance_weekday": 0,
+        "rebalance_band": 0.01
+      },
+      "risk": {
+        "volatility_target": 0.25,
+        "volatility_window": 60,
+        "covariance_shrinkage": 0.25,
+        "drawdown_limit": 0.2,
+        "drawdown_buffer": 0.02,
+        "cushion_multiplier": 5
+      },
+      "development": {
+        "final_equity": 1237.0353795358915,
+        "total_return": 0.2370353795358915,
+        "net_pnl": 237.03537953589148,
+        "fees_paid_total": 29.683482678990508,
+        "slippage_paid_total": 17.81004936219382,
+        "gross_pnl_cost_addback": 284.5289115770758,
+        "maxDD": -0.15206650843878922,
+        "trades_count": 333,
+        "max_observed_drawdown": -0.15212654664286973,
+        "max_intraday_drawdown_bound": -0.1679323308705325,
+        "risk_reduction_trades": 102,
+        "turnover": 29.683482678990504,
+        "mean_exposure": 0.16840145900456682,
+        "max_close_exposure": 0.7305162387310499,
+        "sharpe": 0.561906287265874,
+        "cagr": 0.07341075778041928,
+        "drawdown_within_20pct_bound": true
+      },
+      "periods": {
+        "2025": {
+          "final_equity": 1323.36878665435,
+          "total_return": 0.32336878665435004,
+          "net_pnl": 323.36878665435006,
+          "fees_paid_total": 14.98700612498938,
+          "slippage_paid_total": 8.992328720317182,
+          "gross_pnl_cost_addback": 347.3481214996566,
+          "maxDD": -0.11189493835300146,
+          "trades_count": 106,
+          "max_observed_drawdown": -0.11189496065387383,
+          "max_intraday_drawdown_bound": -0.17225597386395897,
+          "risk_reduction_trades": 43,
+          "turnover": 14.98700612498938,
+          "mean_exposure": 0.2994793907728558,
+          "max_close_exposure": 0.8164601540928631,
+          "sharpe": 1.5586334171362652,
+          "cagr": 0.32336878665435,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1100.498083078539,
+          "total_return": 0.10049808307853891,
+          "net_pnl": 100.49808307853891,
+          "fees_paid_total": 11.483454162042447,
+          "slippage_paid_total": 6.889858968834075,
+          "gross_pnl_cost_addback": 118.87139620941544,
+          "maxDD": -0.10389329320910923,
+          "trades_count": 96,
+          "max_observed_drawdown": -0.10424498856238129,
+          "max_intraday_drawdown_bound": -0.11214693748820148,
+          "risk_reduction_trades": 32,
+          "turnover": 11.483454162042445,
+          "mean_exposure": 0.33913779403530236,
+          "max_close_exposure": 0.7624534606558003,
+          "sharpe": 0.777274818002022,
+          "cagr": 0.13659235077377274,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 1620.6353168767016,
+          "total_return": 0.6206353168767016,
+          "net_pnl": 620.6353168767016,
+          "fees_paid_total": 53.91597979630048,
+          "slippage_paid_total": 32.349645656481755,
+          "gross_pnl_cost_addback": 706.9009423294838,
+          "maxDD": -0.15206650843878922,
+          "trades_count": 547,
+          "max_observed_drawdown": -0.15212654664286973,
+          "max_intraday_drawdown_bound": -0.17225597386395886,
+          "risk_reduction_trades": 183,
+          "turnover": 53.91597979630048,
+          "mean_exposure": 0.18513605559700252,
+          "max_close_exposure": 0.8095690754142323,
+          "sharpe": 0.7691527461223436,
+          "cagr": 0.10697524486756826,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "doubled_costs": {
+        "2025": {
+          "final_equity": 1297.7512659244258,
+          "total_return": 0.29775126592442575,
+          "net_pnl": 297.75126592442575,
+          "fees_paid_total": 29.57218179340383,
+          "slippage_paid_total": 16.2651157285346,
+          "gross_pnl_cost_addback": 343.5885634463642,
+          "maxDD": -0.11470276553150349,
+          "trades_count": 108,
+          "max_observed_drawdown": -0.1147027877724246,
+          "max_intraday_drawdown_bound": -0.17233629141588214,
+          "risk_reduction_trades": 45,
+          "turnover": 14.786090896701912,
+          "mean_exposure": 0.2991468962499124,
+          "max_close_exposure": 0.814253694942279,
+          "sharpe": 1.4570605702222088,
+          "cagr": 0.2977512659244257,
+          "drawdown_within_20pct_bound": true
+        },
+        "2026_01_09": {
+          "final_equity": 1063.1862193497263,
+          "total_return": 0.06318621934972635,
+          "net_pnl": 63.18621934972634,
+          "fees_paid_total": 22.072537647592068,
+          "slippage_paid_total": 12.139194215956966,
+          "gross_pnl_cost_addback": 97.39795121327538,
+          "maxDD": -0.11508396783299757,
+          "trades_count": 99,
+          "max_observed_drawdown": -0.11566035636371674,
+          "max_intraday_drawdown_bound": -0.12246895173433414,
+          "risk_reduction_trades": 35,
+          "turnover": 11.036268823796034,
+          "mean_exposure": 0.3249485866672025,
+          "max_close_exposure": 0.7629131009177905,
+          "sharpe": 0.543811795767172,
+          "cagr": 0.08536693888955282,
+          "drawdown_within_20pct_bound": true
+        },
+        "continuous": {
+          "final_equity": 1375.4240744212543,
+          "total_return": 0.3754240744212543,
+          "net_pnl": 375.4240744212543,
+          "fees_paid_total": 90.03374691373926,
+          "slippage_paid_total": 49.5187476344664,
+          "gross_pnl_cost_addback": 514.97656896946,
+          "maxDD": -0.15660762977296494,
+          "trades_count": 516,
+          "max_observed_drawdown": -0.15662193189470752,
+          "max_intraday_drawdown_bound": -0.17233629141588214,
+          "risk_reduction_trades": 167,
+          "turnover": 45.01687345686963,
+          "mean_exposure": 0.1656711813648639,
+          "max_close_exposure": 0.8081510533371115,
+          "sharpe": 0.5572286529562017,
+          "cagr": 0.06940041918733342,
+          "drawdown_within_20pct_bound": true
+        }
+      },
+      "correlated_40pct_gap": {
+        "final_equity": 989.1429691648614,
+        "total_return": -0.01085703083513863,
+        "net_pnl": -10.85703083513863,
+        "fees_paid_total": 17.687100201891198,
+        "slippage_paid_total": 10.612266400375436,
+        "gross_pnl_cost_addback": 17.442335767128004,
+        "maxDD": -0.2455078147393901,
+        "trades_count": 211,
+        "max_observed_drawdown": -0.2455078147393901,
+        "max_intraday_drawdown_bound": -0.2534014524254343,
+        "risk_reduction_trades": 66,
+        "turnover": 17.687100201891198,
+        "mean_exposure": 0.0734775987237638,
+        "max_close_exposure": 0.7305162387310499,
+        "sharpe": 0.06614315773029869,
+        "cagr": -0.0022952197593349988,
+        "drawdown_within_20pct_bound": false
+      },
+      "all_historical_drawdowns_within_20pct_bound": true
+    }
+  },
+  "gates": {
+    "development_eligible": true,
+    "historical_drawdown_limit": true,
+    "later_nominal_positive": true,
+    "later_and_continuous_cost_stress_positive": true
+  },
+  "research_screen_passed": true,
+  "live_eligible": false,
+  "initial_usdt_per_account": 1000.0,
+  "costs": {
+    "fee_rate": 0.001,
+    "slippage_bps": 5.0,
+    "spread_bps": 2.0
+  },
+  "stress_costs": {
+    "fee_rate": 0.002,
+    "slippage_bps": 10.0,
+    "spread_bps": 2.0
+  },
+  "gap": {
+    "date": "2024-03-11 00:00:00+00:00",
+    "price_multiplier_from_date": 0.6,
+    "included_in_historical_screen": false
+  },
+  "reconciliation": "all paths: nonnegative cash/inventory, NAV and executed cost totals checked",
+  "limitations": [
+    "All source periods, model and present-day survivor universe are already known.",
+    "Summed daily highs/lows are conservative bounds, not simultaneous portfolio observations.",
+    "Risk orders use prior closed returns, prior high bounds and current open only.",
+    "Daily execution, price gaps and minimum notionals can breach an exposure or drawdown target.",
+    "Budget floor is never reset; falling below it can prevent future recovery in cash.",
+    "Terminal holdings are marked to market; no forced sale or final sale costs.",
+    "Latency, liquidity, taxes and cash interest are not modeled."
+  ],
+  "as_of": "2026-10-06 14:00:00+00:00",
+  "daily_provenance": [
+    {
+      "source": "binance_archive",
+      "symbol": "BNBUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2022-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-01.zip",
+          "sha256": "662a4e0172144ca01f445e543a95985b7e74625876e82b7fd3d39b7955eaf848",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-02.zip",
+          "sha256": "885a69c5de1c88dc85ae9dc00894bbce4d7b2adad386ad9a6f9fd47f8b6bcf4c",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-03.zip",
+          "sha256": "b90ca82881847acca7ae92a0fa683d667e1eb324e074d393107c2f83e5702366",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-04.zip",
+          "sha256": "5bab193539510bf059623e85ce3e531a512d45c499b9c7f830ff4a122132dddb",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-05.zip",
+          "sha256": "f73bffec1e556dbaef3e02539cd7d7f6f72e13e213cf402e3ed208a881c39f39",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-06.zip",
+          "sha256": "fcb679a1d470123c6de42bd5d75eae964187e324cb66ea16f0a9ccd9b3a5a389",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-07.zip",
+          "sha256": "46f6d4b2166e7227745d88bf0d6772c3c5a1f86be612bb32f47c05352f09253c",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-08.zip",
+          "sha256": "3dcc2907868a36cceffe7ce64404c9a109d4b34c7da7b7fa8a5e678b0f71480c",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-09.zip",
+          "sha256": "ee847c48fe6f37cac5c68e64bbf38c134d81fdce442a16a3f0e4d0ee9a12af52",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-10.zip",
+          "sha256": "0f78133575aa5a2ec24e9a813e6aacdbd414ba86c492d495ee94f4f6d17f6446",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-11.zip",
+          "sha256": "8a00ca305b5e0849dac8f04508890b521260518c4930cf0b70af8c311b7906a8",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2022-12.zip",
+          "sha256": "cfbd0e1a447f02ddc84ea313147644c4d8b7e2ebdee9693a7c54febab0a5b8ca",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-01.zip",
+          "sha256": "05be0f46d31ecf6caca990c4be77f866f52cf5481361ff4abbdbd3e2a4ea374a",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-02.zip",
+          "sha256": "410fbb22da231870ad59911391bdf07bb4aa8665aa3949c64aaf2c54ce64c849",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-03.zip",
+          "sha256": "26fd3b5676cf6931773f5e87d341e7cc9c17cfee57b11a64921346c3bce725a0",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-04.zip",
+          "sha256": "b4cd24822818759814338a0a86b2e36e88ad888690c8cface82f9efde3ac4b96",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-05.zip",
+          "sha256": "3ab0a70edd10567d640dd6c7c35926716153292708b0651d939f42e5adf4fda4",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-06.zip",
+          "sha256": "34b239403a1c0b3fdf062080dcf195e0ccd336cd192c7d85dcc8b7c5e26b1cbe",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-07.zip",
+          "sha256": "82ef4a7e5cfefe5916b50bb6225b134baf854d7125395b292442deb27e0322df",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-08.zip",
+          "sha256": "391f00309a8c85ad58517287ffd288156c8b50c2e129b5ca430315d4cbcbd2a5",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-09.zip",
+          "sha256": "8bd6326ced778911b9ccd13a7b9d475fd72a4990b2e08946a0ad435d7a53ca6b",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-10.zip",
+          "sha256": "1b12d8d8687a2c3184612fadb23d403815e4b38011b2dc8ad9c7aaab53c85a49",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-11.zip",
+          "sha256": "265f43677cdca9c19e7cef1cee1614339bd2589a1207733f6f6f8a24fceff628",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2023-12.zip",
+          "sha256": "cd892efd72678fe5885b47607a6dd57422bcfacfd899a23155a4c832a3349b98",
+          "rows": 31,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "80ea10969823933db6a2dc7f41ef26ec92e6d43a762b085ab81fccf046476a05",
+      "rows": 730,
+      "start": "2022-01-01 00:00:00+00:00",
+      "end": "2023-12-31 00:00:00+00:00",
+      "gap_policy": "reject"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "BNBUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2024-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-01.zip",
+          "sha256": "5d4bdb84616da2d4b6a83b9b9360c40eec0871648a0cac65734e33444faf678c",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-02.zip",
+          "sha256": "1ab8349b900bb461b5099079b33c8e81225bcf405788b6f3b2c818a8a31f882f",
+          "rows": 29,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-03.zip",
+          "sha256": "fa6108d195ab1e9ba3a93edd617fd09fc5af2ca8a58f655dc710d91415c517ae",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-04.zip",
+          "sha256": "d7fc923f6a8b776a567eb475a6fa86cb471b06588455e6e3f4648b292d7d5d17",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-05.zip",
+          "sha256": "805a64670052eedac4a271e180555347e4a027c2a551c57ea66b2827e4fd9eac",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-06.zip",
+          "sha256": "3295c5a0ecb21631caa8f5c95d8d895c434c34edb2c3d4699155a0e2893cf949",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-07.zip",
+          "sha256": "7d2b8921df19108e5f92ca27e5a846bf06831d03fc072879de63c1f66aebd33a",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-08.zip",
+          "sha256": "074f124320c2aff60894d49aa3de8a76284c27af73379e41fe88fa0c2f191c28",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-09.zip",
+          "sha256": "c6594d1164647e075218c6c61fd98081c655c27db443fb2fa7d5543fbeae6afd",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-10.zip",
+          "sha256": "b9d1534493268393431f6a189a905041a794ae553f242b495c102fcd5292c3ae",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-11.zip",
+          "sha256": "e056a4d76b86fae5d833a9d2ad1c2fdf4e33d894c93a10fb12135fa258ef152b",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2024-12.zip",
+          "sha256": "cb56172239def1e8e6c983b6050971333bb6aeb3d3305be702e780d3ee2becf0",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-01.zip",
+          "sha256": "50d7646f9fdeebba62408547b775ca328f85d1464139a1e22a761b6068edcd8d",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-02.zip",
+          "sha256": "ca8f4a9bdf0be827132459db5ab7da08f633456dfb99ae4e3bb1fe54225597ba",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-03.zip",
+          "sha256": "71231a1cb118abbe98f2a5e330c699afe37e2998f025c13f3e7abbf0b034705b",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-04.zip",
+          "sha256": "a90bca13bf407336c7c5646ba8c54d0cd5bceb923d30a1dd904050b83ae0116b",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-05.zip",
+          "sha256": "0ec9f578274d77a7a6550a78f60fcb958e53ed4f96dc2e3bfae3bfa8f0f41552",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-06.zip",
+          "sha256": "0724ea1a2ca134c138acf4c27f88c99a7271d2ac9f065ca1f2c2ebd1361838ed",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-07.zip",
+          "sha256": "060a89450cfa7baf8b2068962b9d961c63b6a533970256d7fc8356162ba00905",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-08.zip",
+          "sha256": "3a26bfe42a85f8b7abef970107417d2c777f64976f84ad9137ee6b31b91d7663",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-09.zip",
+          "sha256": "6742bc46e9a4b297ac5f3d33b940a114e444bbdfd0181f71c07d06f1853b5458",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-10.zip",
+          "sha256": "721bbfffa88553681a7dd9422e58ccef9499a875f51efadc35ae22538c4975ef",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-11.zip",
+          "sha256": "63fbd535e881fadbf1a7e66cb3f646537f09ea0ec7af78f1ae0e635a7b1df816",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2025-12.zip",
+          "sha256": "2c80ad1f432956cc84b4e03ccb3c77c6bda03b18dd9a61a53a572d25ccaeaf55",
+          "rows": 31,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "9708fc92dd95f02b08b5109343ef475e9f5c1e9dab73d836e0413c76a1ff2d63",
+      "rows": 731,
+      "start": "2024-01-01 00:00:00+00:00",
+      "end": "2025-12-31 00:00:00+00:00",
+      "gap_policy": "reject"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "BNBUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2026-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-01.zip",
+          "sha256": "e936735fca3f568a7908b0c04d6c949164bb4a140bf0f79e8ab9ea9c79280ace",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-02.zip",
+          "sha256": "dabf1ab6be9e7d81b1980545277c7e9f0a92547e082f1484c2a6f7010b652292",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-03.zip",
+          "sha256": "e5d509e6ddd93bfcdf5851de4d9aedd4cebb6c8fcde3a17453d84d2257b264cc",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-04.zip",
+          "sha256": "bf742554d0749a19ee88cd08c85308e6bc3652cd1d75c0a1b5838f76bec59af6",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-05.zip",
+          "sha256": "57fdd7420c15964ac2e64b36c9b673ee00dc17a73ac1cb40d5e88c74962fa0f4",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-06.zip",
+          "sha256": "21c09cc8a91e8ee4ac1876016c47535c8659493658c08c17a8475ade9e1f3706",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-07.zip",
+          "sha256": "37e8ac736c88e4b4311d63fb2a28d5867939bc1b3aea62a0bebd21a001baa04c",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-08.zip",
+          "sha256": "a40275d0befbee8674d84562a3e3e322f2dff5002de58fcc74bc9c784b416e84",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/1d/BNBUSDT-1d-2026-09.zip",
+          "sha256": "cc18e6cc061a8af29e8715edbc61928507e47a9ea428691ba56c045379d4dee9",
+          "rows": 30,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "7cc8dc9d5c2c84ea8f7da01cc2940a13eea2272c2e16845daeea994be865e29f",
+      "rows": 273,
+      "start": "2026-01-01 00:00:00+00:00",
+      "end": "2026-09-30 00:00:00+00:00",
+      "gap_policy": "reject"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "BTCUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2022-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-01.zip",
+          "sha256": "a4a2e0432a8f0b42e2da71ac26599b2e6385b579ca4feba692a95cb897decdcd",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-02.zip",
+          "sha256": "faffa5eadb9ebf0b32742773777596d0dbf3f282e94a16dd05cf1eb7b53a3763",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-03.zip",
+          "sha256": "452129b478585b18931f728f89daed9d2a19d4824b932af7a099366efd4db639",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-04.zip",
+          "sha256": "70413f67212d012ebfd600a6ebf20c03a9c8311bf764ab6d21d1bfd2d21d1b19",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-05.zip",
+          "sha256": "53eee1be2d5b461dabc67645ad706610b0465d8bbacd5f9cd99fc790c68f18f5",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-06.zip",
+          "sha256": "dd5047ce33c16231bcb01f534951a709937bbfe0c0667c61f20f188cf9b94de4",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-07.zip",
+          "sha256": "216567f1a8bc1dbeaada097f7eddff12dafde177c16b26507c762a613a57eb5f",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-08.zip",
+          "sha256": "fc8bd69e95141afb6f83c5a4450c3f6b49c4a1cb16e42d90eb960c3ffa9e766e",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-09.zip",
+          "sha256": "68a8357e23277ebd98842fd88d492b012d53dd578b5061cafb8c070c440b235e",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-10.zip",
+          "sha256": "5b086535cba596ef1b465f247a26385b4ccfd12673a76f225e2dd9e00dddadfd",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-11.zip",
+          "sha256": "142202b226078f54342c4a1d74c8c6081a98c655d7d6f6fba06314f9c101e2d9",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2022-12.zip",
+          "sha256": "aff24746afa9a3dbd355dd3462bcef80e59e96ed9aa55f79007532f9e07991bf",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-01.zip",
+          "sha256": "a9fd53b75add7cc42fb4779a545811606260f79810f3826215d6ebecda11bb36",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-02.zip",
+          "sha256": "13df1e3633f15be3eeba4768d0cc323ef221191002657b53936a6d0fb5e6556f",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-03.zip",
+          "sha256": "1cb1209700ec74fa4592048de2e4ea4a38ab2bd622dfe03f1d6195c249501381",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-04.zip",
+          "sha256": "999e86be73731ebc347c6ada94abceb5e291b65e7f1b4df2ce390af1aa2a4a08",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-05.zip",
+          "sha256": "c343e4689784c29f83d25147a096dd44b6ae5c1063c909f8adda82b56414469d",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-06.zip",
+          "sha256": "634919565c55a29729543d730927ca4b547c0e52d118a38de730f37fdd7617ef",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-07.zip",
+          "sha256": "32363d37de02e6ad8d334ac332c685f8cdf5684733a9f2cfbca40e15e591396b",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-08.zip",
+          "sha256": "8c5e47bfe3f0b0273534379e8ba5c93e69c84d67e8b9a03f293d6621bead2a5f",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-09.zip",
+          "sha256": "2fe68ecad48d6927a9280d89700e991cb6481dc2767698c785f2b2d1c0b14744",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-10.zip",
+          "sha256": "358b83bf0c2a5d5390a4bc4d4ae14fa9df0f56139642ad996c0df0f7bc712400",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-11.zip",
+          "sha256": "fac9823cac7bf56a3a6038c3b79417e949b00c172939e62000451c8c25edd7c1",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2023-12.zip",
+          "sha256": "056dad65795c9264ef90ee668a4c245e8fec73ebcbb272d28f5596c389913979",
+          "rows": 31,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "a3007a8558cb2f9a61e2b18b0b743a635372beb528cc30b6706cc4e04ef97c00",
+      "rows": 730,
+      "start": "2022-01-01 00:00:00+00:00",
+      "end": "2023-12-31 00:00:00+00:00",
+      "gap_policy": "reject"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "BTCUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2024-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-01.zip",
+          "sha256": "474c1ce6fbb09e42cfc7231fee249aecc58af2fb5918570ffeba37998926b4a4",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-02.zip",
+          "sha256": "4dae0b3d6b8ea59e39e6493b7964040c52459ea7b0a50b9c2793dcbfae53800d",
+          "rows": 29,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-03.zip",
+          "sha256": "f7cd4fcafe79d1fac0c830d5fe152f7b3b9100e7c97e40352188766388af0ae0",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-04.zip",
+          "sha256": "b4a8542c33e5251fb53f8a3352dd4e6f3cde4ac25f2c24935db8089aa1a2c3a0",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-05.zip",
+          "sha256": "0175f696039b9e30f06c6398d218c99e577661ac30424869c648fe9770507248",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-06.zip",
+          "sha256": "8a0f6416c2a83cfa15ba26c688d716fdafe35bb1748dd244f0550e8b2f7e38f7",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-07.zip",
+          "sha256": "9a2963ef6541b4d7630eff8df7b2eaee48ece33180af03c34b0bf92675692899",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-08.zip",
+          "sha256": "df41fe3260920b85da86855b4880f34618982e689081317d3d63b9b3bbcb1d53",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-09.zip",
+          "sha256": "89e459b2a8f4b138dc742d9358c0084fcabf719d40468e156c3149a3635f3359",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-10.zip",
+          "sha256": "d442a5f158d45d9ff7b1584b35023a4161cf915a3857f5e71a2a2e6aa68c69c5",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-11.zip",
+          "sha256": "b197219d9e8b5e933226e1cd24fe2b7bfc3a2e8a3e74e6f7dc08a48f314da8c3",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2024-12.zip",
+          "sha256": "82ec90210f492694b9d01722f97f579108ee787968b8485b53d736ea735700da",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-01.zip",
+          "sha256": "3a3eb1b723d944deb4dbef5ae361bbe39340a17fe987fe22e397ef03dca268d2",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-02.zip",
+          "sha256": "27cfde08c9eb8e3801fb049e3be351a3e50ab46abd8553c24023fa98ea5e919e",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-03.zip",
+          "sha256": "5874e405f55c46f040de1a8ea9daae583dc12b5bcaef6078b21aae9c627cedcc",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-04.zip",
+          "sha256": "8068a571425857cb0f5f71f75e733d3bc1e731362a09f84f835bbea6e087aeb2",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-05.zip",
+          "sha256": "2b87aa0c63641ba1e954855bcfed96d7fc4eb21efe7936f354ff74e8e06cfcea",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-06.zip",
+          "sha256": "dc4bbe2c75f04372b909febe8e6b379b053f88423d78cdb3ad8b0be3a66d6ede",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-07.zip",
+          "sha256": "1ea64a346f6be0aaf455eb1ce107e6d38367164d97d0dd3719b9f9bb239796f4",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-08.zip",
+          "sha256": "6720b573210cfbb98765f4a0de6826033d203fda42a6c8364455144b703ceace",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-09.zip",
+          "sha256": "9934e6d98a90139039bb070a90ba409ff1832ad80116920adcf088090ce4c996",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-10.zip",
+          "sha256": "3597639a18f343c768e374157e8bd08dd046bb33693495ff4e13380abac1260e",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-11.zip",
+          "sha256": "9eded1225f9e3f3d4f127fad46111eb403553c1125cf6d11995e69d91d037290",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2025-12.zip",
+          "sha256": "b12a106198f3be3ba5916195f75c1c6d34d8e5302ab77b8fd7c4b1b58b6144f4",
+          "rows": 31,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "0b37968813177473cb355ef0de3082cfa51202719b9025db54363e8f4e8ccf78",
+      "rows": 731,
+      "start": "2024-01-01 00:00:00+00:00",
+      "end": "2025-12-31 00:00:00+00:00",
+      "gap_policy": "reject"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "BTCUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2026-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-01.zip",
+          "sha256": "b7775ddec3ddd3edafc6ad5abcc94d6ab8b8f063a0911d8a3f3daae6a8bbad2e",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-02.zip",
+          "sha256": "f8806308002477a1a28d6cc55ec9ea7bd91bfd4b44c04500d9fc4aec50fd9464",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-03.zip",
+          "sha256": "b81fb1942f9653564f355e3bd62dc06e0552d1c64bc966f7dce5a9c1f8780c47",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-04.zip",
+          "sha256": "1f7da05da9f9a8f30945bde41872ca649c61d6e6e324e916f4c3cbafa0a9276a",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-05.zip",
+          "sha256": "978936e8f1f80b570248f8d4478d6fe08d94b98bc1c7d372feb27573ff466cde",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-06.zip",
+          "sha256": "7020d4d850a875b93f0b0fa6df4a4c36ab615273e2ab03f9e896852330dad77e",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-07.zip",
+          "sha256": "74ddc3e39aae9445b9f9dae00d53fe2ce6ff503ee469417e207a8f5970bad11a",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-08.zip",
+          "sha256": "fd8374a811ac7d3f4144d9c857c4f10796402c178316a25ed0c2f0ca6e16a8c1",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1d/BTCUSDT-1d-2026-09.zip",
+          "sha256": "4944279ced64d3b1822c7c535043f2bbf41bc97d9000b8d857753352c1949769",
+          "rows": 30,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "e72ff992894bf429ef6e3ca658f090a093ee92658914855a6557d361d8854e9c",
+      "rows": 273,
+      "start": "2026-01-01 00:00:00+00:00",
+      "end": "2026-09-30 00:00:00+00:00",
+      "gap_policy": "reject"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "ETHUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2022-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-01.zip",
+          "sha256": "d992b05664b21cef2e104aa93ab1de487fe396f68dc9767380d87998cc7969a1",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-02.zip",
+          "sha256": "2d7eeb5c0c0574ebfff2d7369f3b991e2693fe81a2defc87525c667598c3ceef",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-03.zip",
+          "sha256": "0cfffeb995ad02f64b0a1235db34fbca7982aef8b104ee4bb7fd52605323ad53",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-04.zip",
+          "sha256": "2e3269eb718fd3c75f41a11f03c91f3e3af91bd14815b79b216ec371a876ec57",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-05.zip",
+          "sha256": "fe39dd94b5e65aced7b4979fd6357fcd3700ae556a9d03c507d9983d507a628e",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-06.zip",
+          "sha256": "62633207619685b148ef58bdc910b78a33fef724ac2b507ef57e7878145516dc",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-07.zip",
+          "sha256": "6b4b9bdc7b0e1e6b87b95e750343d898c0df36d9d885bfeae594ca4e29ac0981",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-08.zip",
+          "sha256": "9f54ee2471795608f083a175285cbfd77f5de473cbeaa0d491b3751cf791a3a9",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-09.zip",
+          "sha256": "64daaa8bedcb3e82736d5b6426974aadd814007067fc81380ae87e04e1112714",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-10.zip",
+          "sha256": "01a81d5a27053ead87542d1329763bfd22978080f6c3e7ee588f189cd49ff8d6",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-11.zip",
+          "sha256": "83cef6abcb76dffbac6c6ad0e2842dd218f226e1e4a1839e78e35b12dd68a015",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2022-12.zip",
+          "sha256": "e3f2c5851ef573c35733f29293188310099683948692d8e8ba008b17fdbd508f",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-01.zip",
+          "sha256": "811ff55e20735e6fff55ef37c0c3e922eb6d26d41fe84fc04b2a03c0179549ad",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-02.zip",
+          "sha256": "2f6cdf5aa6613ab3621dbd730a234935e8909f980f1195f7581abf145e422cce",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-03.zip",
+          "sha256": "dbfe653bf62ebac3e4e2bf5c96160de6c76bcbd76e4979ca2105d11cf2bdf77e",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-04.zip",
+          "sha256": "d316aea182914c088b06d03640812bae72e889a347ed9dcc78bb8ad10ed1bdf9",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-05.zip",
+          "sha256": "a86ef09c35c764e6f0066953074ffb0dc93239afe92e3d73e232fbc95cdeab51",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-06.zip",
+          "sha256": "4932a5fd8853ddf99f3853a501e5f35ffad45a07a466bbf4603ddb7fb4c821ac",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-07.zip",
+          "sha256": "f66293651e4a841fe9bc36cc76483bdb9c1faaa085377fbbd2fd064cd401cd5e",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-08.zip",
+          "sha256": "e694749c085b888401f51002dbd21bc8cf0c4d801d2da311e72d6c1ae97627d4",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-09.zip",
+          "sha256": "c1faa848529e17e15deafb208d817155576ef51e556813109cdb60c0153ac73d",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-10.zip",
+          "sha256": "baadc74c685a63d7ba453531c9f4d1df81a5719200501ab229018352a1be9630",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-11.zip",
+          "sha256": "8faf9f53efe268d25d01b987b3a364cd9f1983703ab2f78486192c29218b1faf",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2023-12.zip",
+          "sha256": "1778c56d995fe5d32a0816a5214feabcd84d594f4e882315b4e225d6e86e5275",
+          "rows": 31,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "6205aa4bd075914648dd02ad176b4bea84809e2810c83b4b9905cfbf8b9594d8",
+      "rows": 730,
+      "start": "2022-01-01 00:00:00+00:00",
+      "end": "2023-12-31 00:00:00+00:00",
+      "gap_policy": "reject"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "ETHUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2024-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-01.zip",
+          "sha256": "49598e812edcbf446f20d21a3ffc382a6f51fc1982a7e4224b78a416dbe36e8d",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-02.zip",
+          "sha256": "36ebece2c2a6fcccdc4ee2924cd037870e88fa09877208843e2cbdf5f5c93a44",
+          "rows": 29,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-03.zip",
+          "sha256": "78f5a6edba263350c1df6d4678596570ae5ce5df38edd4e253ec89431fbddfc0",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-04.zip",
+          "sha256": "d0a5088a3d49cea7269dc3bf7f29912e23a390c87fb7b14acbed210ac9be8177",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-05.zip",
+          "sha256": "d0c98ff2f16913e1c1f9bb72165086056ae9923db5b07f113ca6eaf334b87bbf",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-06.zip",
+          "sha256": "5198557b48b8df354f5dc07e76270e988416f9e8972e577d9c327b31d2cb1db1",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-07.zip",
+          "sha256": "ae4a1a154d9c4e27bb7551293216d6824a0455fef7ecea0efb5084e145ba1ac5",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-08.zip",
+          "sha256": "e41fc2dcefc5d0737fd74e943602327cfdbcde04dec40d94030cfcf01720e593",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-09.zip",
+          "sha256": "6e6add68412a0d89199fb6185b88b24994c32522e4ee67ac88d02ab8b81eb1c1",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-10.zip",
+          "sha256": "cc2ae0b168f8ddd7b45441a30ae9aa95f748ec9ecaa19ab3cf5e9ec21fc63783",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-11.zip",
+          "sha256": "fe8b32f1ab7a3a72316b404ffc9d7002cb75801364f12dc52eddfedbb3e3af43",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2024-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2024-12.zip",
+          "sha256": "e36880cb5d79157599878eb97db2d20a5bc10f904384501f0b3571a09c1b6bcc",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-01.zip",
+          "sha256": "fb1c6329259282a4174c646629515704da03c713bff9106f8da01ec188112a09",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-02.zip",
+          "sha256": "ed3cf4f55aa296a25e092d73170c6772fa33e089c8ee5bdd379198fa94675361",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-03.zip",
+          "sha256": "37a2a5d88861944141de683f7584d01cfeb23c0a69ba0aa2613fa6ec14b33960",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-04.zip",
+          "sha256": "88554fccbad3d445fb7aad16440ef62aeb7b5a0d0d0be26101919753a455e106",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-05.zip",
+          "sha256": "05f9099dc0225439cdcd08661281bc958f4984a02c5219ff019c7988140a4511",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-06.zip",
+          "sha256": "1a436c3f4e79c6ef65e06749c7be302800f2bbe84b283f36b670688f1fe8e706",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-07.zip",
+          "sha256": "507452f08f6df58e28c66a56eb114c274a601908b7a36cca028f4f1fe685c5a0",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-08.zip",
+          "sha256": "caaf73478addeaf0d1a1d470284448a8eea201ec8b54acbf4996327ee5fd30d3",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-09.zip",
+          "sha256": "2362f78fe5ef79628fe7a16fcd720ba5e2490bd05806943d092d0c2bbc025403",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-10.zip",
+          "sha256": "7ac29ddc8e5af97d63293df20ca5fe2d31952754d06fa7592992cd1b9ccc2fbb",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-11.zip",
+          "sha256": "ca97638b3e43fa8fc6cfe9e01ebec4cd6b59ac5b37b694f951ae30719424bbed",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2025-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2025-12.zip",
+          "sha256": "eaf731c713e58a6d0e7a196c9887c41c5ed6066c73de68f878dfbe4a48de05e8",
+          "rows": 31,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "78eceeaacd43c58ec5de97ec49087651c36bf7664c7338c09019a3ac9628d66a",
+      "rows": 731,
+      "start": "2024-01-01 00:00:00+00:00",
+      "end": "2025-12-31 00:00:00+00:00",
+      "gap_policy": "reject"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "ETHUSDT",
+      "timeframe": "1d",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2026-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-01.zip",
+          "sha256": "809eceed4a7a4eddf08f70e4c505f454ecf9d715d72269fa36db37964e4159f4",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-02.zip",
+          "sha256": "c853802f359f27a9e935f9ea48cdc66207b0c7bd6d22241e7bf240722d0e1600",
+          "rows": 28,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-03.zip",
+          "sha256": "ce8ec50be4226da6d0c7724dac25c1a35dac8d75c8f3207d5aa8a0991ee54d9a",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-04.zip",
+          "sha256": "c557fd27446c4a07abbfe6afbb8ca7eac8c42ed689bc71f6eacc75764e740668",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-05.zip",
+          "sha256": "68144fec96f98d4dee301b12c58de1769024de73d3675edf0897467ea1885f37",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-06.zip",
+          "sha256": "d22d6b4c69773795dfa271c571814efe19b6a579366e056e7f740fe937fd408d",
+          "rows": 30,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-07.zip",
+          "sha256": "6d4ae181331392a59efb8064c24392ccbfc80818bf0261a403900d7143966a10",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-08.zip",
+          "sha256": "6c9cc2988041dea44dfd0a16dcc8c201ead6ead44a24e642db279e378239f3f1",
+          "rows": 31,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2026-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1d/ETHUSDT-1d-2026-09.zip",
+          "sha256": "89fab70a5619b0da4bddc7d174e1ae6abf6ecd7656c89804d67b649dc716e2c4",
+          "rows": 30,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "97fdd37727e05677d0c91e264a93c548299bbc215b5b1e5a541e59f0cb4610b3",
+      "rows": 273,
+      "start": "2026-01-01 00:00:00+00:00",
+      "end": "2026-09-30 00:00:00+00:00",
+      "gap_policy": "reject"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 from pathlib import Path
 import tempfile
+import sys
 
 from spot_bot.core.hysteresis import apply_hysteresis, compute_hysteresis_threshold
 from spot_bot.backtest import run_backtest
@@ -406,7 +407,7 @@ class TestHystModeCLI:
         
         # Run backtest with exposure mode (default)
         result = subprocess.run([
-            'python', '-m', 'spot_bot.run_live',
+            sys.executable, '-m', 'spot_bot.run_live',
             '--mode', 'backtest',
             '--strategy', 'kalman_mr_dual',
             '--csv-in', csv_path,
@@ -419,6 +420,7 @@ class TestHystModeCLI:
             '--min-notional', '10',
             '--hyst-floor', '0.05',
             '--hyst-mode', 'exposure',
+            '--rv-window', '24', '--conc-window', '48', '--psi-window', '48',
             '--out-summary', summary_path,
         ], capture_output=True, text=True, env={'PYTHONPATH': '.'})
         
@@ -440,7 +442,7 @@ class TestHystModeCLI:
         
         # Run backtest with zscore mode on strategy that doesn't provide zscore
         result = subprocess.run([
-            'python', '-m', 'spot_bot.run_live',
+            sys.executable, '-m', 'spot_bot.run_live',
             '--mode', 'backtest',
             '--strategy', 'meanrev',  # meanrev doesn't provide zscore
             '--csv-in', csv_path,
@@ -453,6 +455,7 @@ class TestHystModeCLI:
             '--min-notional', '10',
             '--hyst-floor', '0.05',
             '--hyst-mode', 'zscore',
+            '--rv-window', '24', '--conc-window', '48', '--psi-window', '48',
         ], capture_output=True, text=True, env={'PYTHONPATH': '.'})
         
         # Should fail with proper error message

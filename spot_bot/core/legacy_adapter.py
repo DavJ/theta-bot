@@ -79,7 +79,10 @@ class LegacyStrategyAdapter:
 
         # Compute target exposure with risk scaling
         # This mimics the logic from run_live.py and fast_backtest.py
-        if risk_state == "ON":
+        if getattr(self.strategy, "owns_regime", False):
+            target_exposure = max(0.0, min(desired_exposure, self.max_exposure))
+            risk_state, risk_budget = "SOURCE", 1.0
+        elif risk_state == "ON":
             target_exposure = desired_exposure * risk_budget
             target_exposure = min(target_exposure, self.max_exposure)
         else:
@@ -119,6 +122,7 @@ def compute_step_with_core(
     alpha_floor: float = 6.0,
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
+    execution_policy: str = "limit_then_market",
 ) -> TradePlan:
     """
     Compute trading step using unified core engine.
@@ -183,6 +187,8 @@ def compute_step_with_core(
         base=current_btc,
         equity=equity,
         exposure=exposure,
+        avg_entry_price=balances.get("avg_entry_price"),
+        realized_pnl_quote=balances.get("realized_pnl_quote", 0.0),
     )
 
     # Wrap strategy with regime adapter
@@ -212,6 +218,9 @@ def compute_step_with_core(
         step_size=step_size,
         min_usdt_reserve=min_usdt_reserve,
         allow_short=False,
+        allow_loss_exits=bool(getattr(strategy, "allow_loss_exits", False)),
+        max_exposure=max_exposure if getattr(strategy, "owns_regime", False) else None,
+        execution_policy=execution_policy,
     )
 
     # Run core engine step
@@ -251,6 +260,7 @@ def compute_step_with_core_full(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> StepResultFromCore:
     """
     Compute trading step using core engine and return full StepResult.
@@ -294,6 +304,8 @@ def compute_step_with_core_full(
         base=current_btc,
         equity=equity,
         exposure=exposure,
+        avg_entry_price=balances.get("avg_entry_price"),
+        realized_pnl_quote=balances.get("realized_pnl_quote", 0.0),
     )
     
     # Get regime decision (for backward compat logging)
@@ -314,6 +326,7 @@ def compute_step_with_core_full(
     # Create engine params
     params = EngineParams(
         fee_rate=fee_rate,
+        min_profit_bps=min_profit_bps,
         slippage_bps=slippage_bps,
         spread_bps=spread_bps,
         hyst_k=hyst_k,
@@ -329,6 +342,9 @@ def compute_step_with_core_full(
         step_size=step_size,
         min_usdt_reserve=min_usdt_reserve,
         allow_short=False,
+        allow_loss_exits=bool(getattr(strategy, "allow_loss_exits", False)),
+        max_exposure=max_exposure if getattr(strategy, "owns_regime", False) else None,
+        execution_policy=execution_policy,
     )
     
     # Run core engine step
@@ -392,6 +408,7 @@ def plan_from_live_inputs(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> StepResultFromCore:
     """
     Primary entry point for run_live.py to plan trades using core engine.
@@ -428,6 +445,7 @@ def plan_from_live_inputs(
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
         min_profit_bps=min_profit_bps,
+        execution_policy=execution_policy,
     )
 
 

@@ -37,6 +37,7 @@ from spot_bot.strategies.kalman import KalmanStrategy
 from spot_bot.strategies.lstm_kalman import LSTMKalmanStrategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
+from spot_bot.strategies.multi_strategy import MULTI_APPROACHES, MultiStrategy
 
 
 def _str_to_bool(v: str) -> bool:
@@ -319,6 +320,7 @@ def compute_step(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> StepResult:
     """
     Compute trading step using unified core engine.
@@ -353,6 +355,7 @@ def compute_step(
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
         min_profit_bps=min_profit_bps,
+        execution_policy=execution_policy,
     )
     
     # For paper mode, execute the trade
@@ -381,8 +384,18 @@ def compute_step(
             step_size=step_size,
             min_usdt_reserve=min_usdt_reserve,
             min_profit_bps=min_profit_bps,
+            execution_policy=execution_policy,
+            allow_loss_exits=bool(getattr(strategy, "allow_loss_exits", False)),
         )
-        core_execution = simulate_execution(result.plan, result.close, params)
+        portfolio = PortfolioState(
+            usdt=current_usdt,
+            base=current_btc,
+            equity=equity_usdt,
+            exposure=result.plan.target_exposure if result.plan else 0.0,
+            avg_entry_price=balances.get("avg_entry_price"),
+            realized_pnl_quote=balances.get("realized_pnl_quote", 0.0),
+        )
+        core_execution = simulate_execution(result.plan, result.close, params, portfolio=portfolio)
         
         # Build execution_result dict for backward compatibility
         if core_execution.status == "filled":
@@ -399,16 +412,12 @@ def compute_step(
             }
             
             # Apply fill to get updated balances
-            portfolio = PortfolioState(
-                usdt=current_usdt,
-                base=current_btc,
-                equity=equity_usdt,
-                exposure=result.plan.target_exposure if result.plan else 0.0,
-            )
             updated = apply_fill(portfolio, core_execution)
             current_btc = updated.base
             current_usdt = updated.usdt
             equity_usdt = updated.equity
+            balances["avg_entry_price"] = updated.avg_entry_price
+            balances["realized_pnl_quote"] = updated.realized_pnl_quote
             
             # Update broker state if provided (for state persistence)
             if broker:
@@ -462,6 +471,7 @@ def run_replay(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
     if ohlcv_df is None or ohlcv_df.empty:
         raise ValueError("Replay requires non-empty OHLCV data.")
@@ -521,6 +531,7 @@ def run_replay(
                 alpha_cap=alpha_cap,
                 vol_hyst_mode=vol_hyst_mode,
                 min_profit_bps=min_profit_bps,
+                execution_policy=execution_policy,
             )
         except ValueError as exc:
             msg = str(exc)
@@ -648,7 +659,11 @@ def _compute_feature_outputs(
         risk_budget_series = (risk_budget_series * vol_guard).clip(lower=0.0, upper=1.0)
 
     intent_series: pd.Series
-    if isinstance(strategy, MeanRevDualKalmanStrategy):
+    if isinstance(strategy, MultiStrategy):
+        intent_series = strategy.generate_series(valid)
+        risk_state_series = pd.Series("SOURCE", index=valid.index)
+        risk_budget_series = pd.Series(1.0, index=valid.index)
+    elif isinstance(strategy, MeanRevDualKalmanStrategy):
         # Risk budgets are applied below via risk_budget_series to avoid double scaling.
         intent_series = strategy.generate_series(valid, risk_budget_series, apply_budget=False).reindex(valid.index)
         intent_series = intent_series.fillna(0.0)
@@ -675,7 +690,7 @@ def _compute_feature_outputs(
         intent_series = desired_exposure_series.reindex(valid.index).fillna(0.0).clip(lower=0.0, upper=1.0)
 
     target_exp_series = (intent_series * risk_budget_series).clip(lower=0.0, upper=float(max_exposure))
-    target_exp_series = target_exp_series.where(risk_state_series == "ON", 0.0)
+    target_exp_series = target_exp_series.where(risk_state_series.isin(["ON", "SOURCE"]), 0.0)
     target_btc_series = target_exp_series * equity / valid["close"]
 
     valid["risk_state"] = risk_state_series
@@ -716,6 +731,7 @@ def run_once_on_df(
     alpha_cap: float = 6.0,
     vol_hyst_mode: str = "increase",
     min_profit_bps: float = 5.0,
+    execution_policy: str = "limit_then_market",
 ) -> StepResult:
     return compute_step(
         ohlcv_df=ohlcv_df,
@@ -739,6 +755,7 @@ def run_once_on_df(
         alpha_cap=alpha_cap,
         vol_hyst_mode=vol_hyst_mode,
         min_profit_bps=min_profit_bps,
+        execution_policy=execution_policy,
     )
 
 
@@ -753,6 +770,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-exposure", dest="max_exposure", type=float, default=0.3)
     parser.add_argument("--fee-rate", dest="fee_rate", type=float, default=0.001)
     parser.add_argument("--slippage-bps", dest="slippage_bps", type=float, default=0.0)
+    parser.add_argument("--execution-policy", choices=["limit_then_market", "market"],
+                        default="limit_then_market", help="Planner/simulation order policy; live execution uses --order-type")
     parser.add_argument("--spread-bps", dest="spread_bps", type=float, default=0.0)
     parser.add_argument("--min-notional", dest="min_notional", type=float, default=10.0)
     parser.add_argument("--step-size", dest="step_size", type=float, default=None)
@@ -823,7 +842,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rv-reduce", dest="rv_reduce", type=float, default=None)
     parser.add_argument("--rv-guard", dest="rv_guard", type=float, default=None)
     parser.add_argument(
-        "--strategy", type=str, choices=["none", "meanrev", "kalman", "kalman_mr_dual", "lstm_kalman"], default="meanrev"
+        "--strategy", type=str, choices=["none", "meanrev", "kalman", "kalman_mr_dual", "lstm_kalman", *MULTI_APPROACHES], default="meanrev"
     )
     # Execution type flags
     parser.add_argument(
@@ -965,7 +984,10 @@ def main() -> None:
         }
         regime_cfg = {k: v for k, v in regime_cfg.items() if v is not None}
         regime_engine = RegimeEngine(regime_cfg)
-        if args.strategy == "kalman":
+        if args.strategy in MULTI_APPROACHES:
+            strategy = MultiStrategy(args.strategy, max_exposure, fee_rate, args.slippage_bps, spread_bps,
+                                     candle_interval=timeframe)
+        elif args.strategy == "kalman":
             strategy = KalmanStrategy()
         elif args.strategy == "kalman_mr_dual":
             strategy = MeanRevDualKalmanStrategy()
@@ -1034,6 +1056,7 @@ def main() -> None:
                 alpha_floor=args.alpha_floor,
                 alpha_cap=args.alpha_cap,
                 vol_hyst_mode=args.vol_hyst_mode,
+                execution_policy=args.execution_policy,
             )
             if args.out_equity:
                 try:
@@ -1102,6 +1125,7 @@ def main() -> None:
                 alpha_floor=args.alpha_floor,
                 alpha_cap=args.alpha_cap,
                 vol_hyst_mode=args.vol_hyst_mode,
+                execution_policy=args.execution_policy,
             )
             print(f"Replay finished: {len(equity_df)} steps, {len(trades_df)} trades, equity_out={args.replay_equity_out}")
             if logger:
@@ -1176,6 +1200,7 @@ def main() -> None:
                     alpha_floor=args.alpha_floor,
                     alpha_cap=args.alpha_cap,
                     vol_hyst_mode=args.vol_hyst_mode,
+                    execution_policy=args.execution_policy,
                 )
             except ValueError as exc:
                 print(str(exc))
