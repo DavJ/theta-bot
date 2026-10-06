@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NamedTuple, Optional
+from typing import Iterator, NamedTuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -47,6 +47,9 @@ class DualKalmanParams:
     conf_power: float = 1.0  # Power to apply to confidence when scaling risk budget
     snr_s0: float = 0.02  # SNR normalization constant (default 0.02, range 0.01-0.05 for crypto)
     snr_enabled: bool = False  # Enable SNR-based confidence component
+    price_space: str = "dollars"  # Legacy control, or scale-invariant log_vol research mode
+    volatility_window: int = 120
+    volatility_floor: float = 0.0001  # One basis point in hourly log-return units
 
 
 class MeanRevDualKalmanStrategy(Strategy):
@@ -56,6 +59,12 @@ class MeanRevDualKalmanStrategy(Strategy):
 
     def __init__(self, **kwargs) -> None:
         params = DualKalmanParams(**kwargs)
+        if params.price_space not in {"dollars", "log_vol"}:
+            raise ValueError("price_space must be dollars or log_vol")
+        if params.volatility_window < 2 or not np.isfinite(params.volatility_floor) or params.volatility_floor <= 0:
+            raise ValueError("Volatility window must be >= 2 and floor must be finite and positive")
+        if params.r <= 0 or params.q_level < 0 or params.q_slope < 0:
+            raise ValueError("Filter covariance must be positive and process noise nonnegative")
         self.params = params
 
     def _build_regime_signal(self, features_df: pd.DataFrame) -> pd.Series:
@@ -77,39 +86,51 @@ class MeanRevDualKalmanStrategy(Strategy):
         )
         return z
 
-    def _run_filters(self, close: pd.Series, z: pd.Series) -> FilterOutput:
-        regime = RegimeKalman1D(q=self.params.q_r, r=self.params.r_z, mean=0.0, var=1.0)
-        scale_vals = []
-        for val in z:
-            r_hat = regime.step(val)
-            r_hat = np.clip(r_hat, -self.params.r_max, self.params.r_max)
-            scale = float(np.clip(np.exp(r_hat), self.params.s_min, self.params.s_max))
-            scale_vals.append(scale)
+    def _filter_steps(self, close: pd.Series, z: pd.Series) -> Iterator[FilterOutput]:
+        """Use identical filtering in single-intent and vectorized paths.
 
-        price_series = close.astype(float)
+        log_vol uses dimensionless prices and trailing return variance. The
+        variance is lagged: today's surprise cannot normalize itself away.
+        The dollar mode is retained as a reproducible control.
+        """
+        prices = close.astype(float)
+        variances = None
+        if self.params.price_space == "log_vol":
+            if not np.isfinite(prices.to_numpy()).all() or (prices <= 0).any():
+                raise ValueError("log_vol requires finite positive close prices")
+            prices = np.log(prices) - np.log(prices.iloc[0])
+            floor = self.params.volatility_floor ** 2
+            variances = (
+                prices.diff().rolling(self.params.volatility_window, min_periods=2)
+                .var(ddof=0).shift(1).fillna(floor).clip(lower=floor)
+            )
+
+        regime = RegimeKalman1D(q=self.params.q_r, r=self.params.r_z, mean=0.0, var=1.0)
         main = AdaptiveLevelTrendKalman(
             q_level=self.params.q_level,
             q_slope=self.params.q_slope,
             r=self.params.r,
-            level=float(price_series.iloc[0]) if not price_series.empty else None,
+            level=float(prices.iloc[0]) if not prices.empty else None,
         )
+        if variances is not None:
+            main.P = np.eye(2, dtype=float) * float(variances.iloc[0])
 
-        residual = 0.0
-        sigma2 = self.params.r
-        level = float(price_series.iloc[0]) if not price_series.empty else 0.0
-        slope = 0.0
-        for y, scale in zip(price_series, scale_vals):
-            level, slope, residual, sigma2 = main.step(y, scale=scale)
-        sigma = float(np.sqrt(max(sigma2, MIN_VARIANCE)))
-        last_scale = float(scale_vals[-1]) if scale_vals else 1.0
-        return FilterOutput(
-            level=level,
-            slope=slope,
-            residual=residual,
-            sigma=sigma,
-            scale=last_scale,
-            innovation_var=float(sigma2),
-        )
+        for i, (price, z_val) in enumerate(zip(prices, z)):
+            r_hat = np.clip(regime.step(z_val), -self.params.r_max, self.params.r_max)
+            scale = float(np.clip(np.exp(r_hat), self.params.s_min, self.params.s_max))
+            if variances is not None:
+                variance = float(variances.iloc[i])
+                main.r = variance
+                main.q_level = (self.params.q_level / self.params.r) * variance
+                main.q_slope = (self.params.q_slope / self.params.r) * variance
+            level, slope, residual, sigma2 = main.step(price, scale=scale)
+            yield FilterOutput(level, slope, residual, float(np.sqrt(max(sigma2, MIN_VARIANCE))), scale, sigma2)
+
+    def _run_filters(self, close: pd.Series, z: pd.Series) -> FilterOutput:
+        last = FilterOutput(0.0, 0.0, 0.0, np.sqrt(self.params.r), 1.0, self.params.r)
+        for last in self._filter_steps(close, z):
+            pass
+        return last
 
     def _raw_signal(self, u_t: float) -> float:
         return -self.params.k_u * u_t
@@ -129,8 +150,8 @@ class MeanRevDualKalmanStrategy(Strategy):
         eps = 1e-12  # Small constant for numerical stability
         
         # Normalize slope to returns units if needed
-        # slope is already in price units from Kalman, so divide by price
-        slope_rel = slope / max(price, eps)
+        # In log space the slope is already a relative return.
+        slope_rel = slope if self.params.price_space == "log_vol" else slope / max(price, eps)
         
         # SNR = signal strength / noise strength
         snr_raw = abs(slope_rel) / (rv + eps)
@@ -211,6 +232,7 @@ class MeanRevDualKalmanStrategy(Strategy):
             "snr_raw": snr_raw,
             "snr_conf": snr_conf,
             "conf_eff": conf_eff,
+            "price_space": self.params.price_space,
         }
         return Intent(desired_exposure=desired_exposure, reason="Dual Kalman mean reversion", diagnostics=diagnostics)
 
@@ -239,22 +261,9 @@ class MeanRevDualKalmanStrategy(Strategy):
         if self.params.snr_enabled and "rv" in features_df:
             rv_series = pd.to_numeric(features_df.get("rv"), errors="coerce").reindex(close.index).fillna(0.02)
 
-        regime = RegimeKalman1D(q=self.params.q_r, r=self.params.r_z, mean=0.0, var=1.0)
-        main = AdaptiveLevelTrendKalman(
-            q_level=self.params.q_level,
-            q_slope=self.params.q_slope,
-            r=self.params.r,
-            level=float(close.iloc[0]),
-        )
-
         exposures = []
-        sigma2 = self.params.r
-        for i, (price, z_val, budget) in enumerate(zip(close, z, budgets)):
-            r_hat = regime.step(z_val)
-            r_hat = np.clip(r_hat, -self.params.r_max, self.params.r_max)
-            scale = float(np.clip(np.exp(r_hat), self.params.s_min, self.params.s_max))
-            level, slope, residual, sigma2 = main.step(price, scale=scale)
-            sigma = float(np.sqrt(max(sigma2, MIN_VARIANCE)))
+        for i, (price, budget, filtered) in enumerate(zip(close, budgets, self._filter_steps(close, z))):
+            level, slope, residual, sigma, scale, sigma2 = filtered
             u_t = residual / sigma if sigma > 0 else 0.0
             
             # Compute NIS-based confidence per bar

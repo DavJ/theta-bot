@@ -29,6 +29,7 @@ from spot_bot.strategies.kalman import KalmanStrategy
 from spot_bot.strategies.lstm_kalman import LSTMKalmanStrategy
 from spot_bot.strategies.mean_reversion import MeanReversionStrategy
 from spot_bot.strategies.meanrev_dual_kalman import MeanRevDualKalmanStrategy
+from spot_bot.strategies.multi_strategy import MULTI_APPROACHES, MultiStrategy
 
 TIMESTAMP_COL = "timestamp"
 SECONDS_PER_DAY = 24 * 3600
@@ -124,6 +125,11 @@ def _compute_intents_with_regime(
     close = pd.to_numeric(features["close"], errors="coerce")
 
     # Generate raw intent from strategy (computed on close[i]).
+    if isinstance(strategy, MultiStrategy):
+        # Each source uses its own declared regime rule. The theta gate is a
+        # component of the ensemble, not an external veto over every approach.
+        raw = strategy.generate_series(features).reindex(features.index).fillna(0.0)
+        return raw.shift(1).fillna(0.0).clip(0.0, float(max_exposure))
     if isinstance(strategy, MeanRevDualKalmanStrategy):
         # Retain confidence scaling, but apply the already-lagged regime budget
         # once, below. Passing it here both doubled and misaligned that budget.
@@ -259,6 +265,9 @@ def run_backtest(
     fill_margin_bps: float = 1.0,
     limit_timeout_bars: int = 1,
     evaluation_start: str | pd.Timestamp | None = None,
+    dual_price_space: str = "dollars",
+    allow_loss_exits: bool | None = None,
+    enforce_exposure_cap: bool | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
     """
     Run fast backtest using unified core engine.
@@ -314,11 +323,14 @@ def run_backtest(
 
     # Instantiate strategy
     strategy_obj: Any
-    if strategy_name == "kalman_mr_dual":
+    if strategy_name in MULTI_APPROACHES:
+        strategy_obj = MultiStrategy(strategy_name, max_exposure, fee_rate, slippage_bps, spread_bps)
+    elif strategy_name == "kalman_mr_dual":
         strategy_obj = MeanRevDualKalmanStrategy(
             conf_power=conf_power,
             snr_s0=snr_s0,
             snr_enabled=snr_enabled,
+            price_space=dual_price_space,
         )
     elif strategy_name == "kalman":
         strategy_obj = KalmanStrategy()
@@ -376,6 +388,10 @@ def run_backtest(
         hyst_conf_k=hyst_conf_k,
         fill_margin_bps=fill_margin_bps,
         limit_timeout_bars=limit_timeout_bars,
+        allow_loss_exits=bool(getattr(strategy_obj, "allow_loss_exits", False)
+                             if allow_loss_exits is None else allow_loss_exits),
+        max_exposure=(max_exposure if (isinstance(strategy_obj, MultiStrategy)
+                                      if enforce_exposure_cap is None else enforce_exposure_cap) else None),
     )
 
     # Initialize portfolio
@@ -497,6 +513,7 @@ def run_backtest(
                 "timestamp": ts,
                 "close": price,
                 "position_btc": portfolio.base,
+                "exposure": portfolio.exposure,
                 "usdt": portfolio.usdt,
                 "avg_entry_price": portfolio.avg_entry_price,
                 "realized_pnl_quote": portfolio.realized_pnl_quote,
@@ -562,6 +579,8 @@ def run_backtest(
         "trades_count": float(len(trades_df)),
         "turnover": turnover,
         "time_in_market": time_in_market,
+        "mean_exposure": time_in_market,
+        "fraction_bars_in_market": float(np.mean(np.asarray(exposures_time) > 0)) if exposures_time else 0.0,
         "gross_pnl": gross_pnl,
         "fees_paid_total": fees_paid_total,
         "slippage_paid_total": slippage_paid_total,

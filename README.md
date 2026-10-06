@@ -20,6 +20,29 @@ and 2 bps spread. Open positions are marked to market, not forcibly liquidated.
 See [the reproducible evaluation](docs/evaluation/THETABOT_2026-10-06.md).
 The synthetic research results below are not evidence of production profitability.
 
+The expanded comparison adds momentum, EMA trend, close-channel breakout, range reversion,
+two exposure ensembles, calibrated forecast averaging and correlation-aware Kalman fusion.
+On 2022–2024 development data the frozen winner is Kalman fusion, but it loses **0.87% in
+2025** and **2.86% in January–September 2026** after costs. Breakout is the strongest observed
+2025 candidate (**+2.31%**, then **+0.94%** in 2026 diagnostics); this exploratory comparison
+does not establish a fresh confirmed trading edge. New strategies can exit losing inventory
+and enforce the exposure cap at decision prices, overriding turnover hysteresis.
+See [all 11 approaches, costs, forecast errors and reproducible results](docs/evaluation/THETABOT_MULTI_2026-10-06.md).
+
+The strategies are available through `spot_bot.run_live --strategy`, including
+`ensemble_equal`, `ensemble_regime`, `forecast_mean`, and `kalman_fusion`. Daily forecast
+calibration requires at least 126 completed training outcomes and earlier indicator warmup;
+use enough history (for example 10,000 hourly candles). Shorter fusion histories stay in cash.
+EKF is not needed for the implemented linear measurement model. No live mode is enabled.
+
+```bash
+# Offline example with enough history; no exchange orders
+python -m spot_bot.run_live --mode backtest --strategy kalman_fusion \
+  --csv-in data/raw/BTCUSDT_1h_2024_2025.csv --limit-total 20000 --timeframe 1h \
+  --fee-rate 0.001 --slippage-bps 5 --spread-bps 2 --max-exposure 0.3 \
+  --out-summary bench_out/kalman_fusion_summary.json
+```
+
 ## Reproduce the current evaluation
 
 ```bash

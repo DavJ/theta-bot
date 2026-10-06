@@ -21,7 +21,7 @@ import requests
 BASE_URL = "https://data.binance.vision/data/spot/monthly/klines"
 
 
-def parse_archive(payload: bytes, symbol: str, timeframe: str, month: str) -> pd.DataFrame:
+def parse_archive(payload: bytes, symbol: str, timeframe: str, month: str, *, allow_gaps=False) -> pd.DataFrame:
     expected_name = f"{symbol}-{timeframe}-{month}.csv"
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
         names = archive.namelist()
@@ -39,12 +39,15 @@ def parse_archive(payload: bytes, symbol: str, timeframe: str, month: str) -> pd
     start = pd.Timestamp(f"{month}-01", tz="UTC")
     end = start + pd.offsets.MonthBegin(1)
     expected = pd.date_range(start, end, freq=timeframe, inclusive="left")
-    if len(frame) != len(expected) or not pd.DatetimeIndex(frame.timestamp).equals(expected):
-        raise ValueError("Archive contains missing, duplicate, out-of-order or out-of-month candles.")
+    actual = pd.DatetimeIndex(frame.timestamp)
+    valid_subset = (len(actual) > 0 and actual.is_unique and actual.is_monotonic_increasing
+                    and actual.isin(expected).all() and len(expected) - len(actual) <= 24)
+    if not actual.equals(expected) and not (allow_gaps and valid_subset):
+        raise ValueError(f"Archive {month} contains missing, duplicate, out-of-order or out-of-month candles.")
     return frame
 
 
-def fetch_month(symbol, timeframe, month):
+def fetch_month(symbol, timeframe, month, *, allow_gaps=False):
     filename = f"{symbol}-{timeframe}-{month}.zip"
     url = f"{BASE_URL}/{symbol}/{timeframe}/{filename}"
     checksum = requests.get(url + ".CHECKSUM", timeout=20)
@@ -57,11 +60,15 @@ def fetch_month(symbol, timeframe, month):
     actual = hashlib.sha256(response.content).hexdigest()
     if actual != expected_hash.lower():
         raise ValueError(f"Archive checksum mismatch for {month}")
-    frame = parse_archive(response.content, symbol, timeframe, month)
-    return frame, {"month": month, "url": url, "sha256": actual, "rows": len(frame)}
+    frame = parse_archive(response.content, symbol, timeframe, month, allow_gaps=allow_gaps)
+    start = pd.Timestamp(f"{month}-01", tz="UTC")
+    expected = pd.date_range(start, start + pd.offsets.MonthBegin(1), freq=timeframe, inclusive="left")
+    missing = expected.difference(pd.DatetimeIndex(frame.timestamp))
+    return frame, {"month": month, "url": url, "sha256": actual, "rows": len(frame),
+                   "missing_timestamps": missing.astype(str).tolist()}
 
 
-def download(symbol, timeframe, start_month, end_month, out):
+def download(symbol, timeframe, start_month, end_month, out, *, allow_gaps=False):
     if not re.fullmatch(r"[A-Z0-9]{4,20}", symbol):
         raise ValueError("Symbol must be an uppercase Binance spot symbol.")
     if timeframe not in {"1h", "4h", "1d"}:
@@ -77,7 +84,7 @@ def download(symbol, timeframe, start_month, end_month, out):
     if len(months) > 24:
         raise ValueError("Download at most 24 months per request.")
     with ThreadPoolExecutor(max_workers=3) as pool:
-        results = list(pool.map(lambda month: fetch_month(symbol, timeframe, month), months))
+        results = list(pool.map(lambda month: fetch_month(symbol, timeframe, month, allow_gaps=allow_gaps), months))
     frame = pd.concat([item[0] for item in results], ignore_index=True)
     output = frame.to_csv(index=False).encode()
     manifest = {
@@ -86,6 +93,7 @@ def download(symbol, timeframe, start_month, end_month, out):
         "archives": [item[1] for item in results],
         "dataset_sha256": hashlib.sha256(output).hexdigest(),
         "rows": len(frame), "start": str(frame.timestamp.iloc[0]), "end": str(frame.timestamp.iloc[-1]),
+        "gap_policy": "preserve_and_report" if allow_gaps else "reject",
     }
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -103,9 +111,12 @@ def main():
     parser.add_argument("--start-month", default=start.strftime("%Y-%m"))
     parser.add_argument("--end-month", default=end.strftime("%Y-%m"))
     parser.add_argument("--out", type=Path, default=Path("data/raw/BTCUSDT_1h_recent.csv"))
+    parser.add_argument("--allow-gaps", action="store_true",
+                        help="Research only: preserve and report up to 24 missing candles per month; never fill them")
     args = parser.parse_args()
     try:
-        manifest = download(args.symbol, args.timeframe, args.start_month, args.end_month, args.out)
+        manifest = download(args.symbol, args.timeframe, args.start_month, args.end_month, args.out,
+                            allow_gaps=args.allow_gaps)
     except (ValueError, requests.RequestException, zipfile.BadZipFile) as exc:
         parser.error(str(exc))
     print(f"Verified {len(manifest['archives'])} archives; {manifest['rows']} closed candles; {args.out}")

@@ -58,7 +58,7 @@ class EvaluationConfig:
             raise ValueError("timeframe must be positive.")
 
 
-def load_market_data(path: Path, config: EvaluationConfig, as_of: pd.Timestamp) -> pd.DataFrame:
+def load_market_data(path: Path, config: EvaluationConfig, as_of: pd.Timestamp, *, allow_gaps=False) -> pd.DataFrame:
     raw = pd.read_csv(path)
     if "timestamp" not in raw:
         raise ValueError("CSV must explicitly contain timestamp and OHLCV columns.")
@@ -76,7 +76,9 @@ def load_market_data(path: Path, config: EvaluationConfig, as_of: pd.Timestamp) 
             (df.high < df[["open", "close"]].max(axis=1))).any():
         raise ValueError("Invalid OHLC ranges.")
     delta = _timeframe_to_timedelta(config.timeframe)
-    if not df.timestamp.diff().dropna().eq(delta).all():
+    intervals = df.timestamp.diff().dropna()
+    valid_cadence = intervals.ge(delta).all() and intervals.mod(delta).eq(pd.Timedelta(0)).all()
+    if not intervals.eq(delta).all() and not (allow_gaps and valid_cadence):
         raise ValueError("Missing candles or timestamps incompatible with timeframe.")
     if df.empty or df.timestamp.iloc[-1] + delta > as_of:
         raise ValueError("Dataset is empty or contains an unclosed/future candle.")

@@ -1,0 +1,1743 @@
+{
+  "protocol": "docs/evaluation/MULTI_STRATEGY_RESEARCH_PLAN.md",
+  "config": {
+    "timeframe": "1h",
+    "psi_mode": "scale_phase",
+    "psi_window": 200,
+    "rv_window": 120,
+    "conc_window": 200,
+    "base": 2.0,
+    "fee_rate": 0.001,
+    "slippage_bps": 5.0,
+    "spread_bps": 2.0,
+    "max_exposure": 0.3,
+    "initial_usdt": 1000.0,
+    "holdout_fraction": 0.4,
+    "max_data_age_days": 7.0,
+    "min_trades": 20,
+    "min_sharpe": 1.0,
+    "max_drawdown": 0.15
+  },
+  "candidates": [
+    {
+      "name": "legacy_theta",
+      "strategy": "kalman_mr_dual",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    },
+    {
+      "name": "log_vol_theta",
+      "strategy": "kalman_mr_dual",
+      "price_space": "log_vol",
+      "conf_power": 1.0
+    },
+    {
+      "name": "log_vol_no_conf",
+      "strategy": "kalman_mr_dual",
+      "price_space": "log_vol",
+      "conf_power": 0.0
+    },
+    {
+      "name": "momentum",
+      "strategy": "momentum",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    },
+    {
+      "name": "ema_trend",
+      "strategy": "ema_trend",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    },
+    {
+      "name": "breakout",
+      "strategy": "breakout",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    },
+    {
+      "name": "range_reversion",
+      "strategy": "range_reversion",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    },
+    {
+      "name": "ensemble_equal",
+      "strategy": "ensemble_equal",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    },
+    {
+      "name": "ensemble_regime",
+      "strategy": "ensemble_regime",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    },
+    {
+      "name": "forecast_mean",
+      "strategy": "forecast_mean",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    },
+    {
+      "name": "kalman_fusion",
+      "strategy": "kalman_fusion",
+      "price_space": "dollars",
+      "conf_power": 1.0
+    }
+  ],
+  "frozen_candidate": "kalman_fusion",
+  "development": {
+    "legacy_theta": {
+      "final_equity": 670.9720458605498,
+      "total_return": -0.3290279541394502,
+      "cagr": -0.12677097677288485,
+      "vol": 0.01699451231682542,
+      "sharpe": -7.968289388784972,
+      "maxDD": -0.3305053703039334,
+      "trades_count": 5978.0,
+      "turnover": 248.68541877546517,
+      "time_in_market": 0.019753517594548128,
+      "mean_exposure": 0.019753517594548128,
+      "fraction_bars_in_market": 0.3954236959472562,
+      "gross_pnl": 18.712830738428792,
+      "fees_paid_total": 248.68541877546517,
+      "slippage_paid_total": 99.05536610241386,
+      "net_pnl": -329.02795413945023,
+      "planned_actions_count": 5978.0,
+      "limit_fill_attempts": 5978.0,
+      "limit_fills": 2000.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.12866138472458089,
+        "2023": -0.12829872672694986,
+        "2024": -0.11661547845508391
+      }
+    },
+    "log_vol_theta": {
+      "final_equity": 100.19493120007195,
+      "total_return": -0.899805068799928,
+      "cagr": -0.5423135127180188,
+      "vol": 0.083069464601153,
+      "sharpe": -9.366993546736907,
+      "maxDD": -0.9013194911857687,
+      "trades_count": 9419.0,
+      "turnover": 729.3152678990375,
+      "time_in_market": 0.09026739064138128,
+      "mean_exposure": 0.09026739064138128,
+      "fraction_bars_in_market": 0.4150475082412255,
+      "gross_pnl": 100.80474952316871,
+      "fees_paid_total": 729.3152678990375,
+      "slippage_paid_total": 271.2945504240592,
+      "net_pnl": -899.805068799928,
+      "planned_actions_count": 9424.0,
+      "limit_fill_attempts": 9424.0,
+      "limit_fills": 3211.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.5088816533611284,
+        "2023": -0.5563740935204822,
+        "2024": -0.5401219371432326
+      }
+    },
+    "log_vol_no_conf": {
+      "final_equity": 114.17998805513392,
+      "total_return": -0.885820011944866,
+      "cagr": -0.5215404796894512,
+      "vol": 0.09102636370628955,
+      "sharpe": -8.05297401575693,
+      "maxDD": -0.8880582727056489,
+      "trades_count": 8383.0,
+      "turnover": 705.457831254914,
+      "time_in_market": 0.09738284469266836,
+      "mean_exposure": 0.09738284469266836,
+      "fraction_bars_in_market": 0.4140779522978476,
+      "gross_pnl": 85.89365984017513,
+      "fees_paid_total": 705.457831254914,
+      "slippage_paid_total": 266.2558405301272,
+      "net_pnl": -885.8200119448661,
+      "planned_actions_count": 8384.0,
+      "limit_fill_attempts": 8384.0,
+      "limit_fills": 2700.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.5066446913105414,
+        "2023": -0.5236649739507797,
+        "2024": -0.5141327010177951
+      }
+    },
+    "momentum": {
+      "final_equity": 1435.9263565790825,
+      "total_return": 0.4359263565790825,
+      "cagr": 0.13078702969561573,
+      "vol": 0.11045526327822076,
+      "sharpe": 1.1680646018093999,
+      "maxDD": -0.11336857416593384,
+      "trades_count": 208.0,
+      "turnover": 27.003461241933167,
+      "time_in_market": 0.16306068777130417,
+      "mean_exposure": 0.16306068777130417,
+      "fraction_bars_in_market": 0.5528407989140973,
+      "gross_pnl": 472.66254849043594,
+      "fees_paid_total": 27.00346124193317,
+      "slippage_paid_total": 9.73273066942026,
+      "net_pnl": 435.9263565790825,
+      "planned_actions_count": 209.0,
+      "limit_fill_attempts": 209.0,
+      "limit_fills": 111.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.05752722567095914,
+        "2023": 0.32401648298220165,
+        "2024": 0.15072079639258895
+      }
+    },
+    "ema_trend": {
+      "final_equity": 1258.6121484504577,
+      "total_return": 0.25861214845045755,
+      "cagr": 0.08127261939394992,
+      "vol": 0.10631394104154211,
+      "sharpe": 0.7881859568180666,
+      "maxDD": -0.14925513991043068,
+      "trades_count": 118.0,
+      "turnover": 5.558178547290924,
+      "time_in_market": 0.15697102755760917,
+      "mean_exposure": 0.15697102755760917,
+      "fraction_bars_in_market": 0.5369788636804343,
+      "gross_pnl": 266.54644282023173,
+      "fees_paid_total": 5.5581785472909235,
+      "slippage_paid_total": 2.3761158224831225,
+      "net_pnl": 258.61214845045765,
+      "planned_actions_count": 119.0,
+      "limit_fill_attempts": 119.0,
+      "limit_fills": 67.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.08426296042591175,
+        "2023": 0.1770520578610948,
+        "2024": 0.1676843715617411
+      }
+    },
+    "breakout": {
+      "final_equity": 1225.7226024044435,
+      "total_return": 0.22572260240444342,
+      "cagr": 0.07158969382078006,
+      "vol": 0.09961619112756034,
+      "sharpe": 0.7439404157500535,
+      "maxDD": -0.14926426596910497,
+      "trades_count": 141.0,
+      "turnover": 14.527843712777846,
+      "time_in_market": 0.13280098928287504,
+      "mean_exposure": 0.13280098928287504,
+      "fraction_bars_in_market": 0.448594143882102,
+      "gross_pnl": 245.5151905804514,
+      "fees_paid_total": 14.527843712777846,
+      "slippage_paid_total": 5.264744463230076,
+      "net_pnl": 225.72260240444348,
+      "planned_actions_count": 141.0,
+      "limit_fill_attempts": 141.0,
+      "limit_fills": 73.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.13991318835097966,
+        "2023": 0.20694484418197678,
+        "2024": 0.1807623110405152
+      }
+    },
+    "range_reversion": {
+      "final_equity": 985.9928605247444,
+      "total_return": -0.014007139475255559,
+      "cagr": -0.004780671600479569,
+      "vol": 0.028933903022786915,
+      "sharpe": -0.15114875093004732,
+      "maxDD": -0.0631107415110548,
+      "trades_count": 30.0,
+      "turnover": 5.490009402474023,
+      "time_in_market": 0.010254964769992936,
+      "mean_exposure": 0.010254964769992936,
+      "fraction_bars_in_market": 0.034438627108784176,
+      "gross_pnl": -6.152944712593996,
+      "fees_paid_total": 5.490009402474023,
+      "slippage_paid_total": 2.36418536018758,
+      "net_pnl": -14.007139475255599,
+      "planned_actions_count": 30.0,
+      "limit_fill_attempts": 30.0,
+      "limit_fills": 13.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.03246482884596302,
+        "2023": 0.051299833694316455,
+        "2024": -0.030650449138610147
+      }
+    },
+    "ensemble_equal": {
+      "final_equity": 1185.2734513756652,
+      "total_return": 0.1852734513756653,
+      "cagr": 0.05944296898451529,
+      "vol": 0.06913734854939159,
+      "sharpe": 0.8698001548232694,
+      "maxDD": -0.10918792506985725,
+      "trades_count": 482.0,
+      "turnover": 29.470207005141585,
+      "time_in_market": 0.11256740727667527,
+      "mean_exposure": 0.11256740727667527,
+      "fraction_bars_in_market": 0.8273802598409928,
+      "gross_pnl": 226.00039722011178,
+      "fees_paid_total": 29.470207005141585,
+      "slippage_paid_total": 11.256738839304965,
+      "net_pnl": 185.27345137566522,
+      "planned_actions_count": 482.0,
+      "limit_fill_attempts": 482.0,
+      "limit_fills": 171.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.08218655452077828,
+        "2023": 0.1614091483013005,
+        "2024": 0.11193371493610083
+      }
+    },
+    "ensemble_regime": {
+      "final_equity": 1223.3392569906573,
+      "total_return": 0.22333925699065738,
+      "cagr": 0.07088138532521104,
+      "vol": 0.07900257866504345,
+      "sharpe": 0.9063733634939473,
+      "maxDD": -0.11189687982970367,
+      "trades_count": 500.0,
+      "turnover": 31.082691331651628,
+      "time_in_market": 0.12737976888772334,
+      "mean_exposure": 0.12737976888772334,
+      "fraction_bars_in_market": 0.8273802598409928,
+      "gross_pnl": 266.3696604770189,
+      "fees_paid_total": 31.082691331651628,
+      "slippage_paid_total": 11.947712154709953,
+      "net_pnl": 223.3392569906573,
+      "planned_actions_count": 500.0,
+      "limit_fill_attempts": 500.0,
+      "limit_fills": 173.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": -0.08352194282026948,
+        "2023": 0.17205610119024684,
+        "2024": 0.1388760006236327
+      }
+    },
+    "forecast_mean": {
+      "final_equity": 1464.0138613597574,
+      "total_return": 0.4640138613597573,
+      "cagr": 0.13825320965152366,
+      "vol": 0.10960018372118333,
+      "sharpe": 1.2363816903852187,
+      "maxDD": -0.09919741463645342,
+      "trades_count": 141.0,
+      "turnover": 7.214461357081236,
+      "time_in_market": 0.18224354410061425,
+      "mean_exposure": 0.18224354410061425,
+      "fraction_bars_in_market": 0.6226100445995734,
+      "gross_pnl": 474.2509615804504,
+      "fees_paid_total": 7.214461357081235,
+      "slippage_paid_total": 3.0226388636117894,
+      "net_pnl": 464.01386135975736,
+      "planned_actions_count": 141.0,
+      "limit_fill_attempts": 141.0,
+      "limit_fills": 75.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": 0.0,
+        "2023": 0.13157383259976219,
+        "2024": 0.29378553938121965
+      }
+    },
+    "kalman_fusion": {
+      "final_equity": 1483.9989882051043,
+      "total_return": 0.48399898820510434,
+      "cagr": 0.1435082225358777,
+      "vol": 0.10725104425768298,
+      "sharpe": 1.3040379130027735,
+      "maxDD": -0.09925646425218874,
+      "trades_count": 114.0,
+      "turnover": 1.298192140150534,
+      "time_in_market": 0.17748163509854284,
+      "mean_exposure": 0.17748163509854284,
+      "fraction_bars_in_market": 0.6067868916036455,
+      "gross_pnl": 485.50241016219445,
+      "fees_paid_total": 1.2981921401505339,
+      "slippage_paid_total": 0.20522981693962628,
+      "net_pnl": 483.9989882051043,
+      "planned_actions_count": 114.0,
+      "limit_fill_attempts": 114.0,
+      "limit_fills": 64.0,
+      "calendar_returns_continuous_portfolio": {
+        "2022": 0.0,
+        "2023": 0.14482479721176933,
+        "2024": 0.2962673343723832
+      }
+    }
+  },
+  "validation_2025": {
+    "legacy_theta": {
+      "final_equity": 847.1714353129909,
+      "total_return": -0.15282856468700912,
+      "cagr": -0.15282856468700912,
+      "vol": 0.014317725206622375,
+      "sharpe": -11.576428201705875,
+      "maxDD": -0.1544478521690424,
+      "trades_count": 2162.0,
+      "turnover": 100.26087723864526,
+      "time_in_market": 0.02127764210069721,
+      "mean_exposure": 0.02127764210069721,
+      "fraction_bars_in_market": 0.4273972602739726,
+      "gross_pnl": -8.613978989880188,
+      "fees_paid_total": 100.26087723864526,
+      "slippage_paid_total": 43.95370845848368,
+      "net_pnl": -152.82856468700913,
+      "planned_actions_count": 2162.0,
+      "limit_fill_attempts": 2162.0,
+      "limit_fills": 580.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.15282856468700912
+      }
+    },
+    "log_vol_theta": {
+      "final_equity": 367.6924315322841,
+      "total_return": -0.632307568467716,
+      "cagr": -0.632307568467716,
+      "vol": 0.07184406221235899,
+      "sharpe": -13.889357300762029,
+      "maxDD": -0.6346831563286994,
+      "trades_count": 3433.0,
+      "turnover": 438.35843125645727,
+      "time_in_market": 0.0984740421604227,
+      "mean_exposure": 0.0984740421604227,
+      "fraction_bars_in_market": 0.4200913242009132,
+      "gross_pnl": -7.572458564517376,
+      "fees_paid_total": 438.3584312564573,
+      "slippage_paid_total": 186.3766786467412,
+      "net_pnl": -632.3075684677159,
+      "planned_actions_count": 3433.0,
+      "limit_fill_attempts": 3433.0,
+      "limit_fills": 933.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.632307568467716
+      }
+    },
+    "log_vol_no_conf": {
+      "final_equity": 374.1846217239127,
+      "total_return": -0.6258153782760874,
+      "cagr": -0.6258153782760874,
+      "vol": 0.0789634093483057,
+      "sharpe": -12.408658468214027,
+      "maxDD": -0.6282412850917362,
+      "trades_count": 3004.0,
+      "turnover": 410.9574260561918,
+      "time_in_market": 0.10653344269552459,
+      "mean_exposure": 0.10653344269552459,
+      "fraction_bars_in_market": 0.4200913242009132,
+      "gross_pnl": -37.686657670127886,
+      "fees_paid_total": 410.9574260561919,
+      "slippage_paid_total": 177.1712945497676,
+      "net_pnl": -625.8153782760874,
+      "planned_actions_count": 3004.0,
+      "limit_fill_attempts": 3004.0,
+      "limit_fills": 765.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.6258153782760874
+      }
+    },
+    "momentum": {
+      "final_equity": 1012.7601273289204,
+      "total_return": 0.012760127328920401,
+      "cagr": 0.012760127328920401,
+      "vol": 0.07594289913480873,
+      "sharpe": 0.2049305714499141,
+      "maxDD": -0.061031835678841045,
+      "trades_count": 51.0,
+      "turnover": 8.95421658789768,
+      "time_in_market": 0.13356111550063401,
+      "mean_exposure": 0.13356111550063401,
+      "fraction_bars_in_market": 0.4520547945205479,
+      "gross_pnl": 25.12256507259334,
+      "fees_paid_total": 8.95421658789768,
+      "slippage_paid_total": 3.408221155775296,
+      "net_pnl": 12.760127328920362,
+      "planned_actions_count": 51.0,
+      "limit_fill_attempts": 51.0,
+      "limit_fills": 17.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": 0.012760127328920401
+      }
+    },
+    "ema_trend": {
+      "final_equity": 1015.0909425106834,
+      "total_return": 0.015090942510683325,
+      "cagr": 0.015090942510683325,
+      "vol": 0.08614974862316005,
+      "sharpe": 0.21693234496364008,
+      "maxDD": -0.06402241440071336,
+      "trades_count": 27.0,
+      "turnover": 1.978776652734351,
+      "time_in_market": 0.1723638015069129,
+      "mean_exposure": 0.1723638015069129,
+      "fraction_bars_in_market": 0.5918949771689498,
+      "gross_pnl": 17.83494374114994,
+      "fees_paid_total": 1.978776652734351,
+      "slippage_paid_total": 0.7652245777322265,
+      "net_pnl": 15.090942510683362,
+      "planned_actions_count": 27.0,
+      "limit_fill_attempts": 27.0,
+      "limit_fills": 13.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": 0.015090942510683325
+      }
+    },
+    "breakout": {
+      "final_equity": 1023.1168761386267,
+      "total_return": 0.023116876138626674,
+      "cagr": 0.023116876138626674,
+      "vol": 0.06245106376143392,
+      "sharpe": 0.39716212214098073,
+      "maxDD": -0.04973326219570125,
+      "trades_count": 29.0,
+      "turnover": 3.734152805123668,
+      "time_in_market": 0.08692342088758215,
+      "mean_exposure": 0.08692342088758215,
+      "fraction_bars_in_market": 0.29315068493150687,
+      "gross_pnl": 28.519865022150306,
+      "fees_paid_total": 3.734152805123668,
+      "slippage_paid_total": 1.6688360783999299,
+      "net_pnl": 23.116876138626708,
+      "planned_actions_count": 29.0,
+      "limit_fill_attempts": 29.0,
+      "limit_fills": 8.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": 0.023116876138626674
+      }
+    },
+    "range_reversion": {
+      "final_equity": 995.8416398067278,
+      "total_return": -0.004158360193272204,
+      "cagr": -0.004158360193272204,
+      "vol": 0.03334412723267972,
+      "sharpe": -0.10828921461335904,
+      "maxDD": -0.03320918757671089,
+      "trades_count": 11.0,
+      "turnover": 2.3852448276292377,
+      "time_in_market": 0.02847496380232226,
+      "mean_exposure": 0.02847496380232226,
+      "fraction_bars_in_market": 0.0958904109589041,
+      "gross_pnl": -0.6890092407376078,
+      "fees_paid_total": 2.3852448276292377,
+      "slippage_paid_total": 1.084106124905342,
+      "net_pnl": -4.158360193272188,
+      "planned_actions_count": 11.0,
+      "limit_fill_attempts": 11.0,
+      "limit_fills": 2.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.004158360193272204
+      }
+    },
+    "ensemble_equal": {
+      "final_equity": 985.2566871442178,
+      "total_return": -0.01474331285578212,
+      "cagr": -0.01474331285578212,
+      "vol": 0.049822990650268635,
+      "sharpe": -0.2732058285234365,
+      "maxDD": -0.044748526118324465,
+      "trades_count": 180.0,
+      "turnover": 10.736759213428725,
+      "time_in_market": 0.10482557718862066,
+      "mean_exposure": 0.10482557718862066,
+      "fraction_bars_in_market": 0.8055936073059361,
+      "gross_pnl": 0.36839252031325476,
+      "fees_paid_total": 10.736759213428723,
+      "slippage_paid_total": 4.374946162666697,
+      "net_pnl": -14.743312855782165,
+      "planned_actions_count": 180.0,
+      "limit_fill_attempts": 180.0,
+      "limit_fills": 55.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.01474331285578212
+      }
+    },
+    "ensemble_regime": {
+      "final_equity": 984.0856120555865,
+      "total_return": -0.015914387944413577,
+      "cagr": -0.015914387944413577,
+      "vol": 0.05571454996126657,
+      "sharpe": -0.26008207968023334,
+      "maxDD": -0.04958450138228501,
+      "trades_count": 180.0,
+      "turnover": 11.01725016735422,
+      "time_in_market": 0.11600254281358038,
+      "mean_exposure": 0.11600254281358038,
+      "fraction_bars_in_market": 0.8055936073059361,
+      "gross_pnl": -0.4207949783634053,
+      "fees_paid_total": 11.017250167354218,
+      "slippage_paid_total": 4.47634279869591,
+      "net_pnl": -15.914387944413534,
+      "planned_actions_count": 180.0,
+      "limit_fill_attempts": 180.0,
+      "limit_fills": 55.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.015914387944413577
+      }
+    },
+    "forecast_mean": {
+      "final_equity": 954.961798389118,
+      "total_return": -0.04503820161088201,
+      "cagr": -0.04503820161088201,
+      "vol": 0.1258601775578907,
+      "sharpe": -0.3032098271865728,
+      "maxDD": -0.13775695711225364,
+      "trades_count": 37.0,
+      "turnover": 2.0128595357549584,
+      "time_in_market": 0.28146931941678277,
+      "mean_exposure": 0.28146931941678277,
+      "fraction_bars_in_market": 0.972716894977169,
+      "gross_pnl": -42.0695244750132,
+      "fees_paid_total": 2.0128595357549584,
+      "slippage_paid_total": 0.9558176001138136,
+      "net_pnl": -45.03820161088197,
+      "planned_actions_count": 37.0,
+      "limit_fill_attempts": 37.0,
+      "limit_fills": 11.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.04503820161088201
+      }
+    },
+    "kalman_fusion": {
+      "final_equity": 991.2709199544418,
+      "total_return": -0.00872908004555828,
+      "cagr": -0.00872908004555828,
+      "vol": 0.1278926643827125,
+      "sharpe": -0.004596670304049768,
+      "maxDD": -0.11266377416508898,
+      "trades_count": 31.0,
+      "turnover": 0.5867940042453588,
+      "time_in_market": 0.2883409553814431,
+      "mean_exposure": 0.2883409553814431,
+      "fraction_bars_in_market": 1.0,
+      "gross_pnl": -7.871074255067069,
+      "fees_paid_total": 0.5867940042453588,
+      "slippage_paid_total": 0.2712117862458207,
+      "net_pnl": -8.729080045558248,
+      "planned_actions_count": 31.0,
+      "limit_fill_attempts": 31.0,
+      "limit_fills": 9.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.00872908004555828
+      }
+    }
+  },
+  "stress_validation_2025": {
+    "legacy_theta": {
+      "final_equity": 728.7186806577733,
+      "total_return": -0.27128131934222666,
+      "cagr": -0.27128131934222666,
+      "vol": 0.014389071255532137,
+      "sharpe": -21.986009911114703,
+      "maxDD": -0.27160067373156593,
+      "trades_count": 2054.0,
+      "turnover": 88.50592760672279,
+      "time_in_market": 0.020036949596976727,
+      "mean_exposure": 0.020036949596976727,
+      "fraction_bars_in_market": 0.4023972602739726,
+      "gross_pnl": -8.620111177018146,
+      "fees_paid_total": 177.01185521344559,
+      "slippage_paid_total": 85.64935295176292,
+      "net_pnl": -271.28131934222665,
+      "planned_actions_count": 2054.0,
+      "limit_fill_attempts": 2054.0,
+      "limit_fills": 248.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.27128131934222666
+      }
+    },
+    "log_vol_theta": {
+      "final_equity": 135.3351187657459,
+      "total_return": -0.8646648812342541,
+      "cagr": -0.8646648812342541,
+      "vol": 0.07649638629613344,
+      "sharpe": -26.10376502142977,
+      "maxDD": -0.8648448802363223,
+      "trades_count": 3307.0,
+      "turnover": 293.9287929089145,
+      "time_in_market": 0.0982960359089146,
+      "mean_exposure": 0.0982960359089146,
+      "fraction_bars_in_market": 0.4208904109589041,
+      "gross_pnl": 0.08546770692271366,
+      "fees_paid_total": 587.857585817829,
+      "slippage_paid_total": 276.8927631233479,
+      "net_pnl": -864.6648812342542,
+      "planned_actions_count": 3307.0,
+      "limit_fill_attempts": 3307.0,
+      "limit_fills": 429.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.8646648812342541
+      }
+    },
+    "log_vol_no_conf": {
+      "final_equity": 144.48936627352333,
+      "total_return": -0.8555106337264766,
+      "cagr": -0.8555106337264766,
+      "vol": 0.08289798576695877,
+      "sharpe": -23.292434354414066,
+      "maxDD": -0.8557069840570657,
+      "trades_count": 2907.0,
+      "turnover": 278.80872436961835,
+      "time_in_market": 0.10633229213746952,
+      "mean_exposure": 0.10633229213746952,
+      "fraction_bars_in_market": 0.42100456621004567,
+      "gross_pnl": -32.08346165660146,
+      "fees_paid_total": 557.6174487392367,
+      "slippage_paid_total": 265.8097233306386,
+      "net_pnl": -855.5106337264767,
+      "planned_actions_count": 2907.0,
+      "limit_fill_attempts": 2907.0,
+      "limit_fills": 346.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.8555106337264766
+      }
+    },
+    "momentum": {
+      "final_equity": 1011.8241239186377,
+      "total_return": 0.01182412391863763,
+      "cagr": 0.01182412391863763,
+      "vol": 0.07793781592517701,
+      "sharpe": 0.18979047961115406,
+      "maxDD": -0.05544734283576489,
+      "trades_count": 47.0,
+      "turnover": 7.807039678718892,
+      "time_in_market": 0.13592130612678266,
+      "mean_exposure": 0.13592130612678266,
+      "fraction_bars_in_market": 0.4602739726027397,
+      "gross_pnl": 35.00845966456879,
+      "fees_paid_total": 15.614079357437785,
+      "slippage_paid_total": 7.570256388493282,
+      "net_pnl": 11.824123918637724,
+      "planned_actions_count": 47.0,
+      "limit_fill_attempts": 47.0,
+      "limit_fills": 8.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": 0.01182412391863763
+      }
+    },
+    "ema_trend": {
+      "final_equity": 1009.4865322753062,
+      "total_return": 0.009486532275306159,
+      "cagr": 0.009486532275306159,
+      "vol": 0.08702002987685876,
+      "sharpe": 0.15200692525800033,
+      "maxDD": -0.06261295307873625,
+      "trades_count": 23.0,
+      "turnover": 1.826590054112954,
+      "time_in_market": 0.17311628684662597,
+      "mean_exposure": 0.17311628684662597,
+      "fraction_bars_in_market": 0.5973744292237443,
+      "gross_pnl": 14.51381440476202,
+      "fees_paid_total": 3.653180108225908,
+      "slippage_paid_total": 1.3741020212298944,
+      "net_pnl": 9.486532275306217,
+      "planned_actions_count": 23.0,
+      "limit_fill_attempts": 23.0,
+      "limit_fills": 7.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": 0.009486532275306159
+      }
+    },
+    "breakout": {
+      "final_equity": 1015.7286222323173,
+      "total_return": 0.015728622232317413,
+      "cagr": 0.015728622232317413,
+      "vol": 0.0625992359279908,
+      "sharpe": 0.280593529686165,
+      "maxDD": -0.05423569720922498,
+      "trades_count": 29.0,
+      "turnover": 3.7228383327735433,
+      "time_in_market": 0.08697070400044227,
+      "mean_exposure": 0.08697070400044227,
+      "fraction_bars_in_market": 0.29315068493150687,
+      "gross_pnl": 27.2432575874689,
+      "fees_paid_total": 7.4456766655470865,
+      "slippage_paid_total": 4.068958689604492,
+      "net_pnl": 15.72862223231732,
+      "planned_actions_count": 29.0,
+      "limit_fill_attempts": 29.0,
+      "limit_fills": 4.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": 0.015728622232317413
+      }
+    },
+    "range_reversion": {
+      "final_equity": 993.9894572491005,
+      "total_return": -0.006010542750899517,
+      "cagr": -0.006010542750899517,
+      "vol": 0.03345919541956481,
+      "sharpe": -0.16344125488481714,
+      "maxDD": -0.03326836623150491,
+      "trades_count": 11.0,
+      "turnover": 2.3841960241384283,
+      "time_in_market": 0.028493952905513955,
+      "mean_exposure": 0.028493952905513955,
+      "fraction_bars_in_market": 0.0958904109589041,
+      "gross_pnl": 0.7447119676490019,
+      "fees_paid_total": 4.768392048276857,
+      "slippage_paid_total": 1.9868626702716488,
+      "net_pnl": -6.0105427508995035,
+      "planned_actions_count": 11.0,
+      "limit_fill_attempts": 11.0,
+      "limit_fills": 2.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.006010542750899517
+      }
+    },
+    "ensemble_equal": {
+      "final_equity": 977.1997132362344,
+      "total_return": -0.022800286763765554,
+      "cagr": -0.022800286763765554,
+      "vol": 0.05156802024447812,
+      "sharpe": -0.42147460645234885,
+      "maxDD": -0.051783158855053184,
+      "trades_count": 149.0,
+      "turnover": 9.13512987562406,
+      "time_in_market": 0.10666653620300237,
+      "mean_exposure": 0.10666653620300237,
+      "fraction_bars_in_market": 0.8001141552511416,
+      "gross_pnl": 3.8269964914659234,
+      "fees_paid_total": 18.27025975124812,
+      "slippage_paid_total": 8.357023503983402,
+      "net_pnl": -22.800286763765598,
+      "planned_actions_count": 149.0,
+      "limit_fill_attempts": 149.0,
+      "limit_fills": 24.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.022800286763765554
+      }
+    },
+    "ensemble_regime": {
+      "final_equity": 969.2270078216268,
+      "total_return": -0.03077299217837326,
+      "cagr": -0.03077299217837326,
+      "vol": 0.05766249140758134,
+      "sharpe": -0.5132260233764318,
+      "maxDD": -0.06126362644630568,
+      "trades_count": 154.0,
+      "turnover": 9.648761200544568,
+      "time_in_market": 0.11838574049227435,
+      "mean_exposure": 0.11838574049227435,
+      "fraction_bars_in_market": 0.8001141552511416,
+      "gross_pnl": -2.4759300177100894,
+      "fees_paid_total": 19.297522401089136,
+      "slippage_paid_total": 8.99953975957399,
+      "net_pnl": -30.772992178373215,
+      "planned_actions_count": 154.0,
+      "limit_fill_attempts": 154.0,
+      "limit_fills": 22.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.03077299217837326
+      }
+    },
+    "forecast_mean": {
+      "final_equity": 981.586357898515,
+      "total_return": -0.018413642101484995,
+      "cagr": -0.018413642101484995,
+      "vol": 0.12262377565624648,
+      "sharpe": -0.09024441591973363,
+      "maxDD": -0.11263845087084116,
+      "trades_count": 29.0,
+      "turnover": 1.3656724623516878,
+      "time_in_market": 0.27333665486191006,
+      "mean_exposure": 0.27333665486191006,
+      "fraction_bars_in_market": 0.9535388127853881,
+      "gross_pnl": -14.266779602082872,
+      "fees_paid_total": 2.7313449247033756,
+      "slippage_paid_total": 1.4155175746987914,
+      "net_pnl": -18.41364210148504,
+      "planned_actions_count": 30.0,
+      "limit_fill_attempts": 30.0,
+      "limit_fills": 6.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.018413642101484995
+      }
+    },
+    "kalman_fusion": {
+      "final_equity": 994.5676238173002,
+      "total_return": -0.005432376182699872,
+      "cagr": -0.005432376182699872,
+      "vol": 0.12683608547523184,
+      "sharpe": 0.020481607523663407,
+      "maxDD": -0.11118089545026383,
+      "trades_count": 29.0,
+      "turnover": 0.5897472270384614,
+      "time_in_market": 0.28713382823532657,
+      "mean_exposure": 0.28713382823532657,
+      "fraction_bars_in_market": 1.0,
+      "gross_pnl": -3.6975879052093403,
+      "fees_paid_total": 1.1794944540769228,
+      "slippage_paid_total": 0.5552938234135777,
+      "net_pnl": -5.432376182699841,
+      "planned_actions_count": 30.0,
+      "limit_fill_attempts": 30.0,
+      "limit_fills": 7.0,
+      "calendar_returns_continuous_portfolio": {
+        "2025": -0.005432376182699872
+      }
+    }
+  },
+  "diagnostic_2026": {
+    "legacy_theta": {
+      "final_equity": 906.1800735503854,
+      "total_return": -0.09381992644961468,
+      "cagr": -0.12341112633236118,
+      "vol": 0.01426749354225331,
+      "sharpe": -9.224773645033526,
+      "maxDD": -0.09400399110351271,
+      "trades_count": 1654.0,
+      "turnover": 78.5454982742767,
+      "time_in_market": 0.02122604070823711,
+      "mean_exposure": 0.02122604070823711,
+      "fraction_bars_in_market": 0.42628205128205127,
+      "gross_pnl": 17.772506110515437,
+      "fees_paid_total": 78.54549827427671,
+      "slippage_paid_total": 33.046934285853354,
+      "net_pnl": -93.81992644961463,
+      "planned_actions_count": 1654.0,
+      "limit_fill_attempts": 1654.0,
+      "limit_fills": 492.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": -0.09381992644961468
+      }
+    },
+    "log_vol_theta": {
+      "final_equity": 548.5455341083009,
+      "total_return": -0.45145446589169913,
+      "cagr": -0.5519481103060365,
+      "vol": 0.07192947053861896,
+      "sharpe": -11.125063137626725,
+      "maxDD": -0.4518860879347144,
+      "trades_count": 2559.0,
+      "turnover": 371.84976275510104,
+      "time_in_market": 0.09836679853668963,
+      "mean_exposure": 0.09836679853668963,
+      "fraction_bars_in_market": 0.422008547008547,
+      "gross_pnl": 74.26120087127123,
+      "fees_paid_total": 371.84976275510104,
+      "slippage_paid_total": 153.8659040078693,
+      "net_pnl": -451.4544658916991,
+      "planned_actions_count": 2559.0,
+      "limit_fill_attempts": 2559.0,
+      "limit_fills": 734.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": -0.45145446589169913
+      }
+    },
+    "log_vol_no_conf": {
+      "final_equity": 570.8652612252703,
+      "total_return": -0.42913473877472974,
+      "cagr": -0.527408032179109,
+      "vol": 0.07814938611273863,
+      "sharpe": -9.551377437619355,
+      "maxDD": -0.429598994137218,
+      "trades_count": 2256.0,
+      "turnover": 354.17874491060843,
+      "time_in_market": 0.10586072885280831,
+      "mean_exposure": 0.10586072885280831,
+      "fraction_bars_in_market": 0.422008547008547,
+      "gross_pnl": 72.49156326526739,
+      "fees_paid_total": 354.17874491060843,
+      "slippage_paid_total": 147.44755712938868,
+      "net_pnl": -429.1347387747297,
+      "planned_actions_count": 2256.0,
+      "limit_fill_attempts": 2256.0,
+      "limit_fills": 622.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": -0.42913473877472974
+      }
+    },
+    "momentum": {
+      "final_equity": 993.5047620698485,
+      "total_return": -0.006495237930151498,
+      "cagr": -0.008674591441486634,
+      "vol": 0.08322047872923063,
+      "sharpe": -0.06309193908309,
+      "maxDD": -0.0866150475007367,
+      "trades_count": 43.0,
+      "turnover": 6.6628321736423874,
+      "time_in_market": 0.17388483784518965,
+      "mean_exposure": 0.17388483784518965,
+      "fraction_bars_in_market": 0.5895909645909646,
+      "gross_pnl": 3.1060960331545955,
+      "fees_paid_total": 6.6628321736423874,
+      "slippage_paid_total": 2.938501789663669,
+      "net_pnl": -6.495237930151461,
+      "planned_actions_count": 43.0,
+      "limit_fill_attempts": 43.0,
+      "limit_fills": 18.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": -0.006495237930151498
+      }
+    },
+    "ema_trend": {
+      "final_equity": 1002.6612278251389,
+      "total_return": 0.002661227825139001,
+      "cagr": 0.003559646390006943,
+      "vol": 0.05457753244584135,
+      "sharpe": 0.09238693065051037,
+      "maxDD": -0.05255868586036827,
+      "trades_count": 9.0,
+      "turnover": 0.8962819186058082,
+      "time_in_market": 0.09049545416476266,
+      "mean_exposure": 0.09049545416476266,
+      "fraction_bars_in_market": 0.30753968253968256,
+      "gross_pnl": 4.083617077692789,
+      "fees_paid_total": 0.8962819186058082,
+      "slippage_paid_total": 0.5261073339480864,
+      "net_pnl": 2.6612278251388943,
+      "planned_actions_count": 10.0,
+      "limit_fill_attempts": 10.0,
+      "limit_fills": 3.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": 0.002661227825139001
+      }
+    },
+    "breakout": {
+      "final_equity": 1009.3863515308149,
+      "total_return": 0.009386351530814796,
+      "cagr": 0.012569324705763663,
+      "vol": 0.07058490707113932,
+      "sharpe": 0.21224286733258402,
+      "maxDD": -0.05347066170165112,
+      "trades_count": 26.0,
+      "turnover": 3.9287348483019393,
+      "time_in_market": 0.1247152563497807,
+      "mean_exposure": 0.1247152563497807,
+      "fraction_bars_in_market": 0.4210927960927961,
+      "gross_pnl": 14.749900940411974,
+      "fees_paid_total": 3.9287348483019393,
+      "slippage_paid_total": 1.434814561295171,
+      "net_pnl": 9.386351530814864,
+      "planned_actions_count": 26.0,
+      "limit_fill_attempts": 26.0,
+      "limit_fills": 12.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": 0.009386351530814796
+      }
+    },
+    "range_reversion": {
+      "final_equity": 980.2628828171785,
+      "total_return": -0.019737117182821562,
+      "cagr": -0.026300308164827535,
+      "vol": 0.01790411810226192,
+      "sharpe": -1.479660205844575,
+      "maxDD": -0.027886010257621215,
+      "trades_count": 3.0,
+      "turnover": 0.5822982999780217,
+      "time_in_market": 0.010761845531131535,
+      "mean_exposure": 0.010761845531131535,
+      "fraction_bars_in_market": 0.03663003663003663,
+      "gross_pnl": -18.8054466728175,
+      "fees_paid_total": 0.5822982999780217,
+      "slippage_paid_total": 0.3493722100259997,
+      "net_pnl": -19.73711718282152,
+      "planned_actions_count": 3.0,
+      "limit_fill_attempts": 3.0,
+      "limit_fills": 0.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": -0.019737117182821562
+      }
+    },
+    "ensemble_equal": {
+      "final_equity": 988.9308557032558,
+      "total_return": -0.011069144296744216,
+      "cagr": -0.014771734718248664,
+      "vol": 0.04471255507479637,
+      "sharpe": -0.31048082188334203,
+      "maxDD": -0.043133630080765935,
+      "trades_count": 121.0,
+      "turnover": 7.1775469400207355,
+      "time_in_market": 0.10086025006943498,
+      "mean_exposure": 0.10086025006943498,
+      "fraction_bars_in_market": 0.7727411477411478,
+      "gross_pnl": -0.6308473862079853,
+      "fees_paid_total": 7.177546940020736,
+      "slippage_paid_total": 3.260749970515463,
+      "net_pnl": -11.069144296744184,
+      "planned_actions_count": 121.0,
+      "limit_fill_attempts": 121.0,
+      "limit_fills": 30.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": -0.011069144296744216
+      }
+    },
+    "ensemble_regime": {
+      "final_equity": 989.2596630397832,
+      "total_return": -0.010740336960216812,
+      "cagr": -0.01433374190937542,
+      "vol": 0.049463350932162906,
+      "sharpe": -0.26715223398800786,
+      "maxDD": -0.044240289230560614,
+      "trades_count": 126.0,
+      "turnover": 7.67257190568823,
+      "time_in_market": 0.1113459027190722,
+      "mean_exposure": 0.1113459027190722,
+      "fraction_bars_in_market": 0.7727411477411478,
+      "gross_pnl": 0.38676112355651604,
+      "fees_paid_total": 7.67257190568823,
+      "slippage_paid_total": 3.454526178085123,
+      "net_pnl": -10.740336960216837,
+      "planned_actions_count": 126.0,
+      "limit_fill_attempts": 126.0,
+      "limit_fills": 33.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": -0.010740336960216812
+      }
+    },
+    "forecast_mean": {
+      "final_equity": 1015.9311079945537,
+      "total_return": 0.01593110799455366,
+      "cagr": 0.02135680952199248,
+      "vol": 0.03975972138501604,
+      "sharpe": 0.5513483960791576,
+      "maxDD": -0.034732047781885496,
+      "trades_count": 23.0,
+      "turnover": 4.566863280803928,
+      "time_in_market": 0.02723585512906985,
+      "mean_exposure": 0.02723585512906985,
+      "fraction_bars_in_market": 0.09142246642246642,
+      "gross_pnl": 22.685138949091336,
+      "fees_paid_total": 4.566863280803928,
+      "slippage_paid_total": 2.187167673733693,
+      "net_pnl": 15.931107994553713,
+      "planned_actions_count": 23.0,
+      "limit_fill_attempts": 23.0,
+      "limit_fills": 7.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": 0.01593110799455366
+      }
+    },
+    "kalman_fusion": {
+      "final_equity": 971.3642468043033,
+      "total_return": -0.028635753195696667,
+      "cagr": -0.03809998170188389,
+      "vol": 0.03943895708957776,
+      "sharpe": -0.9651997613268462,
+      "maxDD": -0.07090445680135826,
+      "trades_count": 6.0,
+      "turnover": 0.6424003775068422,
+      "time_in_market": 0.035465591427307895,
+      "mean_exposure": 0.035465591427307895,
+      "fraction_bars_in_market": 0.12103174603174603,
+      "gross_pnl": -27.632477789066225,
+      "fees_paid_total": 0.6424003775068423,
+      "slippage_paid_total": 0.3608750291236103,
+      "net_pnl": -28.63575319569668,
+      "planned_actions_count": 6.0,
+      "limit_fill_attempts": 6.0,
+      "limit_fills": 2.0,
+      "calendar_returns_continuous_portfolio": {
+        "2026": -0.028635753195696667
+      }
+    }
+  },
+  "independently_reset_validation_quarters": {
+    "kalman_fusion": [
+      {
+        "start": "2025-01-01 00:00:00+00:00",
+        "end_exclusive": "2025-04-01 00:00:00+00:00",
+        "final_equity": 964.2699499705391,
+        "total_return": -0.03573005002946095,
+        "cagr": -0.13718700473763334,
+        "vol": 0.16065123063421766,
+        "sharpe": -0.8381287920537359,
+        "maxDD": -0.08976492031690796,
+        "trades_count": 8.0,
+        "turnover": 0.36738781246634955,
+        "time_in_market": 0.28514089180868635,
+        "mean_exposure": 0.28514089180868635,
+        "fraction_bars_in_market": 1.0,
+        "gross_pnl": -35.17460576177684,
+        "fees_paid_total": 0.36738781246634955,
+        "slippage_paid_total": 0.18805645521773703,
+        "net_pnl": -35.73005002946093,
+        "planned_actions_count": 8.0,
+        "limit_fill_attempts": 8.0,
+        "limit_fills": 5.0
+      },
+      {
+        "start": "2025-04-01 00:00:00+00:00",
+        "end_exclusive": "2025-07-01 00:00:00+00:00",
+        "final_equity": 1081.4411201249761,
+        "total_return": 0.08144112012497606,
+        "cagr": 0.3689423959128322,
+        "vol": 0.12128176046979017,
+        "sharpe": 2.65000118810708,
+        "maxDD": -0.04284322897679673,
+        "trades_count": 12.0,
+        "turnover": 0.3679988832384733,
+        "time_in_market": 0.29393909699255316,
+        "mean_exposure": 0.29393909699255316,
+        "fraction_bars_in_market": 1.0,
+        "gross_pnl": 82.01838437949378,
+        "fees_paid_total": 0.3679988832384733,
+        "slippage_paid_total": 0.20926537127919043,
+        "net_pnl": 81.44112012497612,
+        "planned_actions_count": 12.0,
+        "limit_fill_attempts": 12.0,
+        "limit_fills": 3.0
+      },
+      {
+        "start": "2025-07-01 00:00:00+00:00",
+        "end_exclusive": "2025-10-01 00:00:00+00:00",
+        "final_equity": 1018.6634217193553,
+        "total_return": 0.01866342171935531,
+        "cagr": 0.07612067640418907,
+        "vol": 0.08802973898044619,
+        "sharpe": 0.8773930345069375,
+        "maxDD": -0.04013519788296166,
+        "trades_count": 6.0,
+        "turnover": 0.3300451568579596,
+        "time_in_market": 0.2886872893348124,
+        "mean_exposure": 0.2886872893348124,
+        "fraction_bars_in_market": 1.0,
+        "gross_pnl": 19.184266136981545,
+        "fees_paid_total": 0.3300451568579596,
+        "slippage_paid_total": 0.19079926076833087,
+        "net_pnl": 18.663421719355256,
+        "planned_actions_count": 6.0,
+        "limit_fill_attempts": 6.0,
+        "limit_fills": 2.0
+      },
+      {
+        "start": "2025-10-01 00:00:00+00:00",
+        "end_exclusive": "2026-01-01 00:00:00+00:00",
+        "final_equity": 931.8995321763907,
+        "total_return": -0.06810046782360923,
+        "cagr": -0.24408109173433745,
+        "vol": 0.13387333030260642,
+        "sharpe": -2.023200070544541,
+        "maxDD": -0.1126652455867109,
+        "trades_count": 15.0,
+        "turnover": 0.45521230160797643,
+        "time_in_market": 0.29212614053562863,
+        "mean_exposure": 0.29212614053562863,
+        "fraction_bars_in_market": 1.0,
+        "gross_pnl": -67.42438657977038,
+        "fees_paid_total": 0.45521230160797643,
+        "slippage_paid_total": 0.22086894223091708,
+        "net_pnl": -68.10046782360928,
+        "planned_actions_count": 15.0,
+        "limit_fill_attempts": 15.0,
+        "limit_fills": 6.0
+      }
+    ]
+  },
+  "benchmarks": {
+    "development": {
+      "cash_return": 0.0,
+      "initial_30pct_hold": {
+        "final_equity": 1306.4431038943144,
+        "net_pnl": 306.4431038943144,
+        "total_return": 0.3064431038943143
+      },
+      "full_hold_capital_reference": {
+        "final_equity": 2021.4770129810474,
+        "net_pnl": 1021.4770129810474,
+        "total_return": 1.0214770129810473
+      }
+    },
+    "validation_2025": {
+      "cash_return": 0.0,
+      "initial_30pct_hold": {
+        "final_equity": 980.5467890740913,
+        "net_pnl": -19.453210925908706,
+        "total_return": -0.01945321092590868
+      },
+      "full_hold_capital_reference": {
+        "final_equity": 935.1559635803044,
+        "net_pnl": -64.84403641969561,
+        "total_return": -0.0648440364196956
+      }
+    },
+    "diagnostic_2026": {
+      "cash_return": 0.0,
+      "initial_30pct_hold": {
+        "final_equity": 985.7672710959539,
+        "net_pnl": -14.232728904046098,
+        "total_return": -0.014232728904046144
+      },
+      "full_hold_capital_reference": {
+        "final_equity": 952.5575703198465,
+        "net_pnl": -47.44242968015351,
+        "total_return": -0.04744242968015355
+      }
+    }
+  },
+  "forecast_skill_2025": {
+    "fused_return": {
+      "observations": 365,
+      "mean_squared_error": 0.0004749064729762021,
+      "directional_accuracy": 0.5013698630136987
+    },
+    "mean_return": {
+      "observations": 365,
+      "mean_squared_error": 0.0004772113727262862,
+      "directional_accuracy": 0.5013698630136987
+    },
+    "forecast_theta": {
+      "observations": 365,
+      "mean_squared_error": 0.0004770556181532227,
+      "directional_accuracy": 0.5205479452054794
+    },
+    "forecast_momentum": {
+      "observations": 365,
+      "mean_squared_error": 0.000478677087133816,
+      "directional_accuracy": 0.5123287671232877
+    },
+    "forecast_ema_trend": {
+      "observations": 365,
+      "mean_squared_error": 0.0004793139554702308,
+      "directional_accuracy": 0.4876712328767123
+    },
+    "forecast_breakout": {
+      "observations": 365,
+      "mean_squared_error": 0.00047859843808618327,
+      "directional_accuracy": 0.4876712328767123
+    },
+    "forecast_range_reversion": {
+      "observations": 365,
+      "mean_squared_error": 0.0004772266210133769,
+      "directional_accuracy": 0.5013698630136987
+    },
+    "zero_return_forecast_mse": 0.00047483141617442825,
+    "mean_error_correlation": 0.4985829026757536
+  },
+  "gates": {
+    "development_candidate": true,
+    "validation_positive": false,
+    "validation_drawdown": true,
+    "doubled_costs_positive": false,
+    "all_quarters_positive": false,
+    "diagnostic_2026_positive": false,
+    "capital_return_beats_30pct_hold": true
+  },
+  "research_screen_passed": false,
+  "live_eligible": false,
+  "confirmatory_lockbox_passed": false,
+  "recommended_action": "cash; continue research",
+  "limitations": [
+    "2025 is shared historical validation; 2026 is previously inspected diagnostic replay. No fresh confirmatory lockbox.",
+    "Maximum means highest net P&L among this fixed BTC spot candidate set, within the stated exposure/drawdown constraints.",
+    "All candidates permit loss exits in this comparison. This differs from the original 0.82% run's sell guard.",
+    "One declared missing source hour is not filled; rolling windows count observed candles.",
+    "OHLC fills/close timeout omit queues, partial fills and live latency; terminal equity is not liquidated.",
+    "Fusion covariance and daily-return calibration are modeling assumptions, not proof of Gaussian independent forecast errors.",
+    "The 30% cap is enforced at decision prices, overriding hysteresis; market drift during execution or minimum notional can leave a residual deviation. Capital-return benchmarks are not risk matched."
+  ],
+  "as_of": "2026-10-06 09:45:00+00:00",
+  "provenance": [
+    {
+      "source": "binance_archive",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2022-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-01.zip",
+          "sha256": "e04068d0aee5e3571dc7e9a1d220475047f544e1cf1bad800b7cbbf190281c40",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-02.zip",
+          "sha256": "4e479b38278726cccb9257f5564c5c78477144d3ffe69df6afaf3b55ace617be",
+          "rows": 672,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-03.zip",
+          "sha256": "1cfb082f6bc9a2937b5b846073ddf65f71b18f2502778ac667aab3421ef80085",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-04.zip",
+          "sha256": "7157a267e70bcd9ae04a8898527fad00d7733e941df9b95a1d5e0ae6dcd61c3e",
+          "rows": 720,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-05.zip",
+          "sha256": "ff0744eceba5e6d2f7145ecfdc9d3fac84f4576c15221dbeb71c6d6e59484300",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-06.zip",
+          "sha256": "b18f6f8edbb41960f81aec100c7836fdc0de6d640ee4309a3d0fad999ae0a2c8",
+          "rows": 720,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-07.zip",
+          "sha256": "9f0ba9663f9fada7692b3cfe645df3832599f9e785056ddd77bd464475553e9e",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-08.zip",
+          "sha256": "3cc22044f94cb303d12013293ba6db6d44abdf1490d38d00f1389e98717a3891",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-09.zip",
+          "sha256": "a65dcd73017d92ea8d86e82ea1aee3dac55881f8672594d2e85d1cf392e1e78a",
+          "rows": 720,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-10.zip",
+          "sha256": "2591cbbe022ce9d4559aee1fa41ea0033324c2c4debc776cfedc9588167d413b",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-11.zip",
+          "sha256": "5608adf8602a8ac616ee03c2c4461a37f4646631d67edf3d2f1a94e82e5c5065",
+          "rows": 720,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2022-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2022-12.zip",
+          "sha256": "69c5e5f01df947bfea48ab3c8e2f462b7358effa9e2700489a4ad0dbd29b24aa",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-01.zip",
+          "sha256": "ea8caf7fd56c7f7143723f56f8d12a2fc0b643badbcdae5c660db2d11454a11d",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-02.zip",
+          "sha256": "53525b700548a19488fcb8754778acdf7941c9ba0b6e7eb548a51a376ef8d86b",
+          "rows": 672,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-03.zip",
+          "sha256": "7f2afb8e0179a57ac31eab5205660298ba5eb77039ac2e21aef9b715ff3d06ce",
+          "rows": 743,
+          "missing_timestamps": [
+            "2023-03-24 13:00:00+00:00"
+          ]
+        },
+        {
+          "month": "2023-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-04.zip",
+          "sha256": "1787dc83836deafaa77d4276cbe3b3ca1fe0083b3017079e3560605ff4f7a4ba",
+          "rows": 720,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-05.zip",
+          "sha256": "16b33557a4a4040fc56c711f4b1a750ebafb5a7f8dd46c060d9fc8c66cdc1982",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-06.zip",
+          "sha256": "05f87fb5f004ee0aff019adb7015afab8df0baaaf2b77154d75ae53e18d59b11",
+          "rows": 720,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-07.zip",
+          "sha256": "f49a738a793055a583784e78a54840a43861fd110118cbe1add14ef1afb63032",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-08.zip",
+          "sha256": "e983243d44536a06ff4707cf35df29f636fe788e6fb69c3b3feed2ef43d343d4",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-09.zip",
+          "sha256": "28e12ccaf15745bfe11f570b9079793750047fde3d340fe0231858b26bc0f9d9",
+          "rows": 720,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-10.zip",
+          "sha256": "165ec50601f914d6c41b776414096bc73974bf45fcd41aaddfedd1cf66cb6c6e",
+          "rows": 744,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-11.zip",
+          "sha256": "4f550d182d529839dd9cfc28ef0ecca8cd8003e991067e92a2af5b9e92762f49",
+          "rows": 720,
+          "missing_timestamps": []
+        },
+        {
+          "month": "2023-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2023-12.zip",
+          "sha256": "6117d93e3eb6574df6b0087a45cf12e171afe91789b523b0bfcce00d8f1b6e37",
+          "rows": 744,
+          "missing_timestamps": []
+        }
+      ],
+      "dataset_sha256": "5b280d47b06b5c4e549ba631bf6f8212af2204032d7bdbef52592d1bc068b8e1",
+      "rows": 17519,
+      "start": "2022-01-01 00:00:00+00:00",
+      "end": "2023-12-31 23:00:00+00:00",
+      "gap_policy": "preserve_and_report"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2024-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-01.zip",
+          "sha256": "cf873a185bd5b24b8e00034e49583fcb49928e0c3a45c6fc27a632a683655417",
+          "rows": 744
+        },
+        {
+          "month": "2024-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-02.zip",
+          "sha256": "b83aa7319ef1d4baa7b923c0fe802b88dfaf241c7456af295f1f656a24379b33",
+          "rows": 696
+        },
+        {
+          "month": "2024-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-03.zip",
+          "sha256": "b0851daf609d6ab82fdf8f1d1c4fbd974bc1b4e6530a832067516ac1c2be63a6",
+          "rows": 744
+        },
+        {
+          "month": "2024-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-04.zip",
+          "sha256": "e266707ad2ea3cd4680bf1ac5025f0c1bfeb38e703374a91f8dc193d1ec8d48f",
+          "rows": 720
+        },
+        {
+          "month": "2024-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-05.zip",
+          "sha256": "077c71eec71a8ecf2edb6e3a3927b600b8f358fd37066ce120c19fb5302a9ab8",
+          "rows": 744
+        },
+        {
+          "month": "2024-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-06.zip",
+          "sha256": "2e1f968fa34b9feabfb19cc6eec47a146e20d64a706f4b17d0babf4d2f475c39",
+          "rows": 720
+        },
+        {
+          "month": "2024-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-07.zip",
+          "sha256": "41fd58a70ae40bebb74682555cc5054709f8dde0f5c8193ae2103dac95274e5f",
+          "rows": 744
+        },
+        {
+          "month": "2024-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-08.zip",
+          "sha256": "88521a975ee7bfdd21f891d81f4243a01b90b977cf525d11747e27c66e3bad60",
+          "rows": 744
+        },
+        {
+          "month": "2024-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-09.zip",
+          "sha256": "123f402c6dbf19b9b72b4af7ad4d5325c73ba4833148cc398b803d7a34ac5c5f",
+          "rows": 720
+        },
+        {
+          "month": "2024-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-10.zip",
+          "sha256": "393b18ad2634f0cd3b2fd54321c8286ea143419cf3129b4cc44e089681912b03",
+          "rows": 744
+        },
+        {
+          "month": "2024-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-11.zip",
+          "sha256": "7a51fe8811c754ff43a2be0ba10e53a6d4218521e27ac765fbc9a1ca0fc15bac",
+          "rows": 720
+        },
+        {
+          "month": "2024-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2024-12.zip",
+          "sha256": "dfec812f73a84257b195cbdaed34d020fa77e845625c061c13bd6a60e7ef9372",
+          "rows": 744
+        },
+        {
+          "month": "2025-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-01.zip",
+          "sha256": "e7f2aaa5396a8062a57ab29ce9fab2d76b2c84ec58815d4ab7b3fe16f78c7118",
+          "rows": 744
+        },
+        {
+          "month": "2025-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-02.zip",
+          "sha256": "7420f55c93f61d7e734fc9d2507c7f2fcb5eaf48112277cecd241d4e1dbf3bd5",
+          "rows": 672
+        },
+        {
+          "month": "2025-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-03.zip",
+          "sha256": "b5ae8bb57e5e526c2050c9f8229b723871a5af47d80c53453abf61847a5f3aa6",
+          "rows": 744
+        },
+        {
+          "month": "2025-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-04.zip",
+          "sha256": "bbec48ed5f7b603bbceff943ad0dccd3c29cae6d14161bcd2eabc9f762ff0a35",
+          "rows": 720
+        },
+        {
+          "month": "2025-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-05.zip",
+          "sha256": "da6213bf4c57ea60faed3ef1f6a0ecb87f22ca7a3a67614604cf44d2d6b265fe",
+          "rows": 744
+        },
+        {
+          "month": "2025-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-06.zip",
+          "sha256": "d0760943538f48032dd066401e53f46bbf4868e6545929678e23bcdee032a5e8",
+          "rows": 720
+        },
+        {
+          "month": "2025-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-07.zip",
+          "sha256": "487738ee596380eaad32a2a93c75d17e1ebdd165a9b544c0e44be36079f5c02e",
+          "rows": 744
+        },
+        {
+          "month": "2025-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-08.zip",
+          "sha256": "a99ec5bac64333fb521b2ab1bac5e8387eede6413cc7841656a02be95613c64f",
+          "rows": 744
+        },
+        {
+          "month": "2025-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-09.zip",
+          "sha256": "b0ad5b54097f6adb440d07204fd215dae9b224fb73569fd4309a55c9234d46b3",
+          "rows": 720
+        },
+        {
+          "month": "2025-10",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-10.zip",
+          "sha256": "5426b1b48905963d50e11d1243910b5fa05a89c9a2003bcd5082561d352a2123",
+          "rows": 744
+        },
+        {
+          "month": "2025-11",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-11.zip",
+          "sha256": "1f28f02e33e1f19e5163cd45b67c07b3b75870e78dbbf9f861d1348ca372d942",
+          "rows": 720
+        },
+        {
+          "month": "2025-12",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2025-12.zip",
+          "sha256": "d546c6e44b443e34cef5122043c5cdd3b9c76980e23cc408dafd9f6f76d65c05",
+          "rows": 744
+        }
+      ],
+      "dataset_sha256": "cd0b7905feca38cf71c64ddea7f266ed43ac08478db04fc0ed946549cb637961",
+      "rows": 17544,
+      "start": "2024-01-01 00:00:00+00:00",
+      "end": "2025-12-31 23:00:00+00:00"
+    },
+    {
+      "source": "binance_archive",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "documentation": "https://github.com/binance/binance-public-data",
+      "archives": [
+        {
+          "month": "2026-01",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-01.zip",
+          "sha256": "a40e86beb4f1e6d4b19ca022c87b8b2f0e4e40874d349a5a75b27baa9634c858",
+          "rows": 744
+        },
+        {
+          "month": "2026-02",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-02.zip",
+          "sha256": "0be4e5c92892495c5da5b371fe8755f2d508b28a58414b4171284480806ed6c4",
+          "rows": 672
+        },
+        {
+          "month": "2026-03",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-03.zip",
+          "sha256": "44f383f9423f96cdc29e03b4ba8062296763dd740ab1d93f04b62c88bac30aa6",
+          "rows": 744
+        },
+        {
+          "month": "2026-04",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-04.zip",
+          "sha256": "9f8e49b70978177414a005a6e84b1cf891f97b0196526cbd579535449c14b6f6",
+          "rows": 720
+        },
+        {
+          "month": "2026-05",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-05.zip",
+          "sha256": "11b8537dc1769a7de9d6cb2e0354dd4a376018986a826c67d1078e25fbf8fb80",
+          "rows": 744
+        },
+        {
+          "month": "2026-06",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-06.zip",
+          "sha256": "7c446aee297f382ee92b8d9b3300a1d7c21bed8166118f3bb261275bed5e308e",
+          "rows": 720
+        },
+        {
+          "month": "2026-07",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-07.zip",
+          "sha256": "ec98553c10acdbf3f210c55045614e8d3daf616e407c36718269361b1e972b16",
+          "rows": 744
+        },
+        {
+          "month": "2026-08",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-08.zip",
+          "sha256": "1fa85817e358f73e0dd9509f6f31c79bf9b23d9470971a882c8f814871a3fccf",
+          "rows": 744
+        },
+        {
+          "month": "2026-09",
+          "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1h/BTCUSDT-1h-2026-09.zip",
+          "sha256": "39b31046d702bd7e482e03b125d6fbfd730147aa5d9ad03d8b04bf1961a8e9bd",
+          "rows": 720
+        }
+      ],
+      "dataset_sha256": "e1ad79ad87dec75a245586d42ddd73277f1afdac4b5f5d8d2d7ddcb210c2f03d",
+      "rows": 6552,
+      "start": "2026-01-01 00:00:00+00:00",
+      "end": "2026-09-30 23:00:00+00:00"
+    }
+  ],
+  "rows": 41615,
+  "missing_timestamps": [
+    "2023-03-24 13:00:00+00:00"
+  ],
+  "implementation_verification": {
+    "pytest_tests": 403,
+    "legacy_metric_tests": 8,
+    "github_ci": "pending at artifact creation"
+  }
+}

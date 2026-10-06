@@ -65,6 +65,8 @@ class EngineParams:
     min_profit_bps: float = 5.0  # Minimum profit buffer in basis points
     fill_margin_bps: float = 1.0  # Require breakout beyond limit for conservative fills
     limit_timeout_bars: int = 1  # <=1: market fallback at close; >1: skip (no pending-order persistence)
+    allow_loss_exits: bool = False  # Explicit risk exits may sell below cost basis
+    max_exposure: Optional[float] = None  # Optional risk cap enforced at the known decision price
 
 
 def run_step(
@@ -129,6 +131,13 @@ def run_step(
         # Fallback: assume intent is a number
         target_exposure_raw = float(intent)
         diagnostics_strategy = {}
+
+    exposure_cap_triggered = False
+    if params.max_exposure is not None:
+        if not np.isfinite(params.max_exposure) or not 0 < params.max_exposure <= 1:
+            raise ValueError("max_exposure must be a finite positive fraction")
+        target_exposure_raw = min(target_exposure_raw, params.max_exposure)
+        exposure_cap_triggered = portfolio.exposure > params.max_exposure + 1e-12
 
     # Step 2: Compute cost per turnover
     cost = compute_cost_per_turnover(
@@ -201,6 +210,10 @@ def run_step(
         current_zscore=current_zscore,
         target_zscore=target_zscore,
     )
+    if params.allow_loss_exits and target_exposure_raw <= 0 and portfolio.base > 0:
+        target_exposure_final, suppressed = 0.0, False
+    if exposure_cap_triggered:
+        target_exposure_final, suppressed = min(target_exposure_raw, params.max_exposure), False
     
     # Calculate delta_e for diagnostics
     delta_e = abs(target_exposure_raw - portfolio.exposure)
@@ -230,6 +243,7 @@ def run_step(
         max_notional_per_trade=params.max_notional_per_trade,
         allow_short=params.allow_short,
         return_threshold=return_threshold,
+        allow_loss_exits=params.allow_loss_exits or exposure_cap_triggered,
     )
     
     # Compute clamped value for diagnostics (always, regardless of allow_short)

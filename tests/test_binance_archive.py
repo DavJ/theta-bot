@@ -34,6 +34,12 @@ def test_missing_archive_candle_is_rejected():
         parse_archive(_archive("2026-04", "us", drop_last=True), "BTCUSDT", "1h", "2026-04")
 
 
+def test_explicit_research_gap_mode_preserves_gap_without_filling():
+    frame = parse_archive(_archive("2026-04", "us", drop_last=True), "BTCUSDT", "1h", "2026-04", allow_gaps=True)
+    assert len(frame) == 719
+    assert frame.timestamp.iloc[-1] == pd.Timestamp("2026-04-30T22:00Z")
+
+
 def test_mismatched_archive_checksum_is_rejected(monkeypatch):
     class Response:
         text = "0" * 64 + "  archive.zip"

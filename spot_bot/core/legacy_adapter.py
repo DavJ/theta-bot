@@ -79,7 +79,10 @@ class LegacyStrategyAdapter:
 
         # Compute target exposure with risk scaling
         # This mimics the logic from run_live.py and fast_backtest.py
-        if risk_state == "ON":
+        if getattr(self.strategy, "owns_regime", False):
+            target_exposure = max(0.0, min(desired_exposure, self.max_exposure))
+            risk_state, risk_budget = "SOURCE", 1.0
+        elif risk_state == "ON":
             target_exposure = desired_exposure * risk_budget
             target_exposure = min(target_exposure, self.max_exposure)
         else:
@@ -214,6 +217,8 @@ def compute_step_with_core(
         step_size=step_size,
         min_usdt_reserve=min_usdt_reserve,
         allow_short=False,
+        allow_loss_exits=bool(getattr(strategy, "allow_loss_exits", False)),
+        max_exposure=max_exposure if getattr(strategy, "owns_regime", False) else None,
     )
 
     # Run core engine step
@@ -333,6 +338,8 @@ def compute_step_with_core_full(
         step_size=step_size,
         min_usdt_reserve=min_usdt_reserve,
         allow_short=False,
+        allow_loss_exits=bool(getattr(strategy, "allow_loss_exits", False)),
+        max_exposure=max_exposure if getattr(strategy, "owns_regime", False) else None,
     )
     
     # Run core engine step

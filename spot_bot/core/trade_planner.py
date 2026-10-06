@@ -42,6 +42,7 @@ def plan_trade(
     max_notional_per_trade: Optional[float] = None,
     allow_short: bool = False,
     return_threshold: Optional[float] = None,
+    allow_loss_exits: bool = False,
 ) -> TradePlan:
     """
     Plan a trade given current portfolio and target exposure.
@@ -218,6 +219,7 @@ def plan_trade(
     min_sell_price = None
     if (
         action == "SELL"
+        and not allow_loss_exits
         and return_threshold is not None
         and portfolio.avg_entry_price is not None
         and portfolio.base > 0
