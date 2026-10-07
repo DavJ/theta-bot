@@ -6,6 +6,24 @@ A predictive trading engine grounded in Complex Consciousness Theory (CCT) and U
 
 **Offline execution and evaluation implemented; a profitable production strategy is not established.**
 
+**Binding constraint from 2026-10-07: owned spot funds only.** Leverage, borrowing,
+margin, shorts, derivatives, leveraged tokens and martingale loss-doubling are
+excluded. The planner rejects its legacy short switch; recorded fills cannot
+borrow cash or sell unowned inventory. Live orders require verified spot markets
+and sufficient free spot funds, including fees. Unknown information rejects the
+order. See [the spot-only policy](docs/evaluation/SPOT_ONLY_POLICY.md).
+
+The fixed 4h spot-flow comparison uses 171 checksum-verified BTC/ETH/BNB monthly
+archives and 31,212 bars, with prior-bar signals, shared cash and ordinary/doubled
+costs. **All six new momentum/breakout/reversion/flow-blend variants lose after
+costs; none improves the existing spot candidate.** The development-frozen
+control still returns +19.59% in 2025, +10.18% in January–September 2026 and
++103.91% on one continuous 2022–September 2026 account, with a −18.54%
+conservative drawdown bound. No variant doubles its continuous account in a
+rolling 7/30/90-day window. All 67 account paths reconcile every 4h close; no
+live/default strategy is enabled. See [all flow results, costs and doubling counts](docs/evaluation/THETABOT_SPOT_FLOW_2026-10-07.md)
+and [the fixed spot-flow protocol](docs/evaluation/SPOT_FLOW_RESEARCH_PLAN.md).
+
 The fixed external-signal experiment adds five-day Ridge/boosting forecasts,
 forex/equities/oil/rates, Alternative.me Fear & Greed and settled funding/taker
 flow. Each available external feature has past-only 0–2 /3–9 /10–20 calendar-day

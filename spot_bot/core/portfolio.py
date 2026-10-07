@@ -4,6 +4,8 @@ Portfolio math: equity, exposure, position sizing, and fill application.
 Single source of truth for all portfolio calculations.
 """
 
+import math
+
 from spot_bot.core.types import ExecutionResult, PortfolioState
 
 
@@ -90,6 +92,11 @@ def apply_fill(
     avg_price is the actual fill price, already including slippage/spread.
     slippage_paid is a diagnostic cost, not an additional cash debit.
     """
+    values = (portfolio.usdt, portfolio.base, execution.filled_base,
+              execution.avg_price, execution.fee_paid)
+    if (not all(math.isfinite(x) for x in values) or portfolio.usdt < -1e-9
+            or portfolio.base < -1e-12 or execution.fee_paid < 0):
+        raise ValueError("Invalid spot balance or fill")
     if execution.status == "SKIPPED" or execution.filled_base == 0.0:
         # No change to portfolio
         return portfolio
@@ -101,6 +108,14 @@ def apply_fill(
 
     notional = abs(execution.filled_base) * execution.avg_price
     total_cost = execution.fee_paid
+    if execution.avg_price <= 0:
+        raise ValueError("Positive spot fill price required")
+    if execution.filled_base < -portfolio.base - 1e-12 * max(1.0, portfolio.base):
+        raise ValueError("Spot fill cannot sell more than owned inventory")
+    next_cash = (usdt - notional - total_cost if execution.filled_base > 0
+                 else usdt + notional - total_cost)
+    if next_cash < -1e-10 * max(1.0, abs(usdt), notional):
+        raise ValueError("Spot fill cannot borrow cash, including fees")
 
     if execution.filled_base > 0:
         # BUY: spend USDT, gain base, update avg_entry_price
@@ -140,6 +155,7 @@ def apply_fill(
             base = 0.0  # Ensure it's exactly zero
 
     # Recompute equity and exposure
+    usdt = max(0.0, usdt)  # Only rounding residuals can reach this clamp.
     equity = compute_equity(usdt, base, execution.avg_price)
     exposure = compute_exposure(base, execution.avg_price, equity)
 

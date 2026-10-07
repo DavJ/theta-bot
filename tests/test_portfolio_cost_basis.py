@@ -17,9 +17,9 @@ class TestAvgEntryPriceTracking:
     def test_initial_buy_sets_avg_entry(self):
         """First BUY should set avg_entry_price to buy price."""
         portfolio = PortfolioState(
-            usdt=1000.0,
+            usdt=6000.0,
             base=0.0,
-            equity=1000.0,
+            equity=6000.0,
             exposure=0.0,
             avg_entry_price=None,
             realized_pnl_quote=0.0,
@@ -43,10 +43,10 @@ class TestAvgEntryPriceTracking:
     def test_buy_then_buy_weighted_average(self):
         """Multiple BUYs should compute weighted average entry price."""
         portfolio = PortfolioState(
-            usdt=900.0,
+            usdt=13000.0,
             base=0.1,
-            equity=5900.0,
-            exposure=0.847,
+            equity=18000.0,
+            exposure=5000 / 18000,
             avg_entry_price=50000.0,
             realized_pnl_quote=0.0,
         )
@@ -132,8 +132,8 @@ class TestAvgEntryPriceTracking:
         expected_pnl = (55000.0 - 50000.0) * 0.1 - 5.5
         assert abs(updated.realized_pnl_quote - expected_pnl) < 0.01
 
-    def test_sell_more_than_position_clamps_to_zero(self):
-        """Over-selling should clamp position to zero and reset avg_entry."""
+    def test_sell_more_than_position_is_rejected(self):
+        """An impossible sale must not mint proceeds or discard inventory debt."""
         portfolio = PortfolioState(
             usdt=500.0,
             base=0.1,
@@ -155,11 +155,10 @@ class TestAvgEntryPriceTracking:
             raw=None,
         )
         
-        updated = apply_fill(portfolio, execution)
-        
-        # Position should be clamped to 0
-        assert updated.base <= 0.0
-        assert updated.avg_entry_price is None
+        with pytest.raises(ValueError, match="owned inventory"):
+            apply_fill(portfolio, execution)
+        assert portfolio.usdt == 500
+        assert portfolio.base == .1
 
     def test_skipped_execution_preserves_state(self):
         """SKIPPED execution should not change portfolio."""

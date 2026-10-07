@@ -127,6 +127,10 @@ class TestSpreadGuard:
         mock_exchange.fetch_balance.return_value = {
             "free": {"USDT": 10000.0}
         }
+        mock_exchange.options = {"defaultType": "spot"}
+        mock_exchange.market.return_value = {"spot": True, "contract": False, "base": "BTC", "quote": "USDT"}
+        if not isinstance(mock_exchange.fetch_balance.return_value, dict):
+            mock_exchange.fetch_balance.return_value = {"free": {"USDT": 100000., "BTC": 1.}}
         executor.exchange = mock_exchange
         executor._current_day = None
         
@@ -163,6 +167,10 @@ class TestSpreadGuard:
             "status": "open",
             "filled": 0,
         }
+        mock_exchange.options = {"defaultType": "spot"}
+        mock_exchange.market.return_value = {"spot": True, "contract": False, "base": "BTC", "quote": "USDT"}
+        if not isinstance(mock_exchange.fetch_balance.return_value, dict):
+            mock_exchange.fetch_balance.return_value = {"free": {"USDT": 100000., "BTC": 1.}}
         executor.exchange = mock_exchange
         executor._current_day = None
         
@@ -198,6 +206,10 @@ class TestSpreadGuard:
         mock_exchange.fetch_balance.return_value = {
             "free": {"USDT": 10000.0}
         }
+        mock_exchange.options = {"defaultType": "spot"}
+        mock_exchange.market.return_value = {"spot": True, "contract": False, "base": "BTC", "quote": "USDT"}
+        if not isinstance(mock_exchange.fetch_balance.return_value, dict):
+            mock_exchange.fetch_balance.return_value = {"free": {"USDT": 100000., "BTC": 1.}}
         executor.exchange = mock_exchange
         executor._current_day = None
         
@@ -486,6 +498,10 @@ class TestLimitPriceDirection:
             }
         
         mock_exchange.create_order = capture_order
+        mock_exchange.options = {"defaultType": "spot"}
+        mock_exchange.market.return_value = {"spot": True, "contract": False, "base": "BTC", "quote": "USDT"}
+        if not isinstance(mock_exchange.fetch_balance.return_value, dict):
+            mock_exchange.fetch_balance.return_value = {"free": {"USDT": 100000., "BTC": 1.}}
         executor.exchange = mock_exchange
         executor._current_day = None
         executor._market_info = {
@@ -534,6 +550,10 @@ class TestLimitPriceDirection:
             }
         
         mock_exchange.create_order = capture_order
+        mock_exchange.options = {"defaultType": "spot"}
+        mock_exchange.market.return_value = {"spot": True, "contract": False, "base": "BTC", "quote": "USDT"}
+        if not isinstance(mock_exchange.fetch_balance.return_value, dict):
+            mock_exchange.fetch_balance.return_value = {"free": {"USDT": 100000., "BTC": 1.}}
         executor.exchange = mock_exchange
         executor._current_day = None
         executor._market_info = {
