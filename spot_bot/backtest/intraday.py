@@ -15,8 +15,13 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
                       initial_usdt=1000., fee_rate=.001, slippage_bps=5., spread_bps=2.,
                       max_exposure=.5, asset_cap=.25, rebalance_band=.01,
                       min_notional=10., daily_control=False, signal_delay_bars=0,
-                      completed_buy_mask=None):
-    """Lag completed targets and optional buy permissions; sells never need permission."""
+                      completed_buy_mask=None, quoted_mask=None):
+    """Lag signals; explicitly unquoted spot markets cannot execute any fill.
+
+    Missing quotes require zero sentinel OHLCV plus an aligned false quote flag.
+    Owned unquoted inventory retains its quantity and is conservatively marked
+    at zero. The audit counts are a research rejection gate, not observed prices.
+    """
     if not markets or not 0 < asset_cap <= max_exposure <= 1:
         raise ValueError("Owned spot capital and nonnegative spot target limits required")
     if (not np.isfinite([initial_usdt, fee_rate, slippage_bps, spread_bps, min_notional,
@@ -34,17 +39,27 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
             or not first.to_series().diff().dropna().eq(pd.Timedelta("4h")).all()):
         raise ValueError("Complete ordered unique UTC-aware 4h grid required")
     index = first.tz_convert("UTC").as_unit("ns")
+    if quoted_mask is None:
+        quoted = np.ones((len(first), len(symbols)), dtype=bool)
+    else:
+        if (list(quoted_mask.columns) != symbols or not quoted_mask.index.equals(first)
+                or not quoted_mask.dtypes.eq(bool).all() or quoted_mask.isna().any().any()):
+            raise ValueError("Quote mask must be aligned, nonnullable boolean data")
+        quoted = quoted_mask.to_numpy(dtype=bool)
     arrays = {}
     for name in ("open", "high", "low", "close"):
         arrays[name] = np.column_stack([f[name].to_numpy(dtype=float) for f in markets.values()])
-    for frame in markets.values():
+    for j, frame in enumerate(markets.values()):
         if not frame.index.equals(first):
             raise ValueError("All spot markets require identical dates; no gap filling")
+        present = frame.loc[quoted[:, j]]
+        absent = frame.loc[~quoted[:, j], ["open", "high", "low", "close", "volume"]]
         if (not np.isfinite(frame[["open", "high", "low", "close", "volume"]].to_numpy()).all()
-                or (frame[["open", "high", "low", "close"]] <= 0).any().any()
-                or (frame.volume < 0).any()
-                or (frame.low > frame[["open", "close"]].min(axis=1)).any()
-                or (frame.high < frame[["open", "close"]].max(axis=1)).any()):
+                or (present[["open", "high", "low", "close"]] <= 0).any().any()
+                or (present.volume < 0).any()
+                or (present.low > present[["open", "close"]].min(axis=1)).any()
+                or (present.high < present[["open", "close"]].max(axis=1)).any()
+                or not absent.eq(0.).all().all()):
             raise ValueError("Invalid spot OHLCV")
     if (list(completed_targets.columns) != symbols or not completed_targets.index.equals(first)
             or not np.isfinite(completed_targets.to_numpy()).all()
@@ -98,6 +113,8 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
             final = np.where(buy_allowed[i], final, np.minimum(final, current))
             cap_reduction = (current > asset_cap + 1e-12) | (current.sum() > max_exposure + 1e-12)
             for j in np.argsort(final - current, kind="stable"):
+                if not quoted[i, j]:
+                    continue
                 if not inactive[j] and not cap_reduction[j] and abs(final[j] - current[j]) < rebalance_band:
                     continue
                 state = replace(holdings[j], usdt=cash, equity=nav, exposure=float(current[j]))
@@ -129,6 +146,7 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
             "observed_drawdown": min(open_dd, post_drawdown, equity / observed_peak - 1),
             "intraday_drawdown_bound": bound_dd, "high_bound": high, "low_bound": low,
             "exposure": (equity - cash) / equity,
+            "held_unquoted_assets": int(((qty > 0) & ~quoted[i]).sum()),
             **{f"base_{s}": qty[j] for j, s in enumerate(symbols)}})
     equity = pd.DataFrame(equity_rows)
     trades = pd.DataFrame(trade_rows, columns=["timestamp", "symbol", "side", "qty", "price", "mid_price",
@@ -149,6 +167,11 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
         "mean_exposure": float(equity.exposure.mean()), "max_close_exposure": float(equity.exposure.max()),
         "minimum_cash": float(equity.usdt.min()),
         "minimum_inventory": float(equity[[f"base_{s}" for s in symbols]].min().min()),
+        "held_unquoted_bars": int(equity.held_unquoted_assets.gt(0).sum()),
+        "held_unquoted_asset_bars": int(equity.held_unquoted_assets.sum()),
+        "unquoted_asset_bars": int((~quoted[locations]).sum()),
+        "held_unquoted_by_asset": {s: int(((equity[f"base_{s}"].to_numpy() > 0) & ~quoted[locations, j]).sum())
+                                   for j, s in enumerate(symbols)},
         "sharpe": float(returns.mean() / vol * np.sqrt(365)) if vol > 0 else 0.,
         "rolling_gains": rolling_gains(daily, initial_usdt)}
     return equity, trades, summary
