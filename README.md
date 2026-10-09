@@ -13,7 +13,22 @@ borrow cash or sell unowned inventory. Live orders require verified spot markets
 and sufficient free spot funds, including fees. Unknown information rejects the
 order. See [the spot-only policy](docs/evaluation/SPOT_ONLY_POLICY.md).
 
-The next fixed eight-policy multiscale spot round adds 14/30/60-day agreement,
+The fixed broad-universe round expands to 15 assets from a dated December 2021
+cohort, with historical liquidity/ranks, token-identity separation and explicit
+missing-quote execution guards. **It does not establish a material improvement.**
+Development freezes `broad_top5_vol20` (+55.09%, -18.34% conservative DD), but its
+continuous 2025–September 2026 net is -0.92%, versus capped control's +35.45%.
+Full net/CAGR/DD are +54.54%/+9.60%/-22.01%, versus +110.26%/+16.95%/-18.62%
+for capped control. All six broader policies trail both controls on full nominal
+profit and exceed 20% full drawdown; the frozen choice also fails cost/time stress.
+The descriptive 99% paired block interval does not support a later excess return.
+All 104 paths reconcile every close; 853 checked monthly archives preserve old
+Terra's absence and documented MATIC/POL continuity. No policy doubles in a
+rolling 7/30/90-day window; live/default settings remain unchanged. See
+[all broad-universe results and source audits](docs/evaluation/THETABOT_BROAD_UNIVERSE_2026-10-09.md)
+and [the fixed protocol](docs/evaluation/BROAD_UNIVERSE_RESEARCH_PLAN.md).
+
+The preceding fixed eight-policy multiscale spot round adds 14/30/60-day agreement,
 dual 30/90-day agreement, weekly top-two relative-strength ranks and a lagged
 actual-buy restriction after sharp seven-day rises. **No new policy passes the
 fixed screen.** Development selects the previous capped control. Ranked 30-day
