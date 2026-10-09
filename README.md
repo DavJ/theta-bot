@@ -13,6 +13,20 @@ borrow cash or sell unowned inventory. Live orders require verified spot markets
 and sufficient free spot funds, including fees. Unknown information rejects the
 order. See [the spot-only policy](docs/evaluation/SPOT_ONLY_POLICY.md).
 
+The 2026-10-09 fixed momentum-refinement round tests six changes to the existing
+daily spot momentum control. Capped inverse-volatility redistribution improves
+the descriptive full-history net return from +103.91% to **+110.26%**, with the
+same 50%/25% target caps and a conservative drawdown bound of -18.62% (-19.32%
+under doubled fees/slippage). Fresh-account returns are +21.04% in 2025 and
++12.02% in January–September 2026; the continuous later return is +35.45%.
+It executes 448 fills over 57 months, versus 432 for control. **This is an
+exploratory comparison, not a passed development-frozen improvement screen:**
+development selects the BTC regime filter, which subsequently trails control
+and returns -0.04% in the 2026 fresh account. All 71 paths reconcile each 4h
+close; none doubles in a rolling 7/30/90-day window. Live/default settings stay
+unchanged. See [all refinements, costs and rejected variants](docs/evaluation/THETABOT_MOMENTUM_REFINEMENT_2026-10-09.md)
+and [the fixed protocol](docs/evaluation/MOMENTUM_REFINEMENT_RESEARCH_PLAN.md).
+
 The fixed 4h spot-flow comparison uses 171 checksum-verified BTC/ETH/BNB monthly
 archives and 31,212 bars, with prior-bar signals, shared cash and ordinary/doubled
 costs. **All six new momentum/breakout/reversion/flow-blend variants lose after
