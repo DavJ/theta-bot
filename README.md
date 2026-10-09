@@ -13,6 +13,21 @@ borrow cash or sell unowned inventory. Live orders require verified spot markets
 and sufficient free spot funds, including fees. Unknown information rejects the
 order. See [the spot-only policy](docs/evaluation/SPOT_ONLY_POLICY.md).
 
+The next fixed eight-policy multiscale spot round adds 14/30/60-day agreement,
+dual 30/90-day agreement, weekly top-two relative-strength ranks and a lagged
+actual-buy restriction after sharp seven-day rises. **No new policy passes the
+fixed screen.** Development selects the previous capped control. Ranked 30-day
+momentum improves descriptive full net return to +115.49%, but its -20.81%
+nominal/-21.40% doubled-cost drawdown exceeds the 20% budget; ranked consensus
+also exceeds it. Plain consensus returns +85.03% with nominal/cost/delayed
+bounds of -19.32%/-19.96%/-17.91%, but trails the capped control's profit.
+Every variant now receives the extra-4h timing test: even capped control's full
+bound becomes -20.37%, versus -18.62% at nominal timing. All 104 account paths
+reconcile every 4h close, both previous controls are reproduced, and none doubles
+in a rolling 7/30/90-day window. Live/default settings are unchanged. See
+[all multiscale, cost and timing results](docs/evaluation/THETABOT_MULTISCALE_SPOT_2026-10-09.md)
+and [the fixed protocol](docs/evaluation/MULTISCALE_SPOT_RESEARCH_PLAN.md).
+
 The 2026-10-09 fixed momentum-refinement round tests six changes to the existing
 daily spot momentum control. Capped inverse-volatility redistribution improves
 the descriptive full-history net return from +103.91% to **+110.26%**, with the
