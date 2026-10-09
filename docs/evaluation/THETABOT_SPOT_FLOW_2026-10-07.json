@@ -1,0 +1,4412 @@
+{
+  "protocol": "docs/evaluation/SPOT_FLOW_RESEARCH_PLAN.md",
+  "protocol_sha256": "ba4a800b23dc102f6ea23f2f03078f61bd9213c2a293ab8298040b02230d9aa7",
+  "source_manifest": {
+    "source": "binance_spot_archive",
+    "timeframe": "4h",
+    "retrieved_at": "2026-10-07 20:47:42.891241+00:00",
+    "gap_policy": "reject",
+    "documentation": "https://github.com/binance/binance-public-data",
+    "datasets": {
+      "BTCUSDT": {
+        "file": "BTCUSDT_4h.csv",
+        "rows": 10404,
+        "sha256": "d360b58eb3853201b862a6cd9c196355e249f9204c454b14cd975c61fa8acd0d",
+        "first": "2022-01-01 00:00:00+00:00",
+        "last": "2026-09-30 20:00:00+00:00",
+        "archives": [
+          {
+            "month": "2022-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-01.zip",
+            "sha256": "40577902c0d758f48663d67845996f5760ba6d96b9b7b8e22feafc015d540aca",
+            "rows": 186
+          },
+          {
+            "month": "2022-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-02.zip",
+            "sha256": "3e30d9656aadaac433a8ee24194d5ed942436de4cb55441a0e2def0edaf2c948",
+            "rows": 168
+          },
+          {
+            "month": "2022-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-03.zip",
+            "sha256": "af098485616a18b68008f8c104c4f2418cfa6ebbe2b5f087c101395e07eaba6c",
+            "rows": 186
+          },
+          {
+            "month": "2022-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-04.zip",
+            "sha256": "c902627fcebbf8a92ddb21bdc8fb01bb75e4877614737601f485e3eb3c93fca3",
+            "rows": 180
+          },
+          {
+            "month": "2022-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-05.zip",
+            "sha256": "6cee81ff92052815109fa3f4d670948acd67c76322c7b8031d7f060a1768509b",
+            "rows": 186
+          },
+          {
+            "month": "2022-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-06.zip",
+            "sha256": "eae4b3df5b95c8bd7dbdcf965cf66c80cd3d162777a7d35500b48cc7b231858e",
+            "rows": 180
+          },
+          {
+            "month": "2022-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-07.zip",
+            "sha256": "a63b64228ec1a9fcc7c0b90b9e736735f51a572aaa073f4d8ce6e6d190f319d8",
+            "rows": 186
+          },
+          {
+            "month": "2022-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-08.zip",
+            "sha256": "c6d5507737b9ac54a1983e7a7ab55ad6cfd3d33d64748146208f216ec0cd2af1",
+            "rows": 186
+          },
+          {
+            "month": "2022-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-09.zip",
+            "sha256": "ddf136ff881c76a52f973d2325e593e1c192309c59798f4b553bb44bf5e2eea3",
+            "rows": 180
+          },
+          {
+            "month": "2022-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-10.zip",
+            "sha256": "4877519eb232fc57b2b031ee5c433777b8462323088d8fad788e8839bd923c29",
+            "rows": 186
+          },
+          {
+            "month": "2022-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-11.zip",
+            "sha256": "1aa9cef40ae942df423b47ef2b6bc61ad3418fd30f3664e95013a124abba54f0",
+            "rows": 180
+          },
+          {
+            "month": "2022-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2022-12.zip",
+            "sha256": "e365e7bcb44d0d35790a8b7f1a80977ece878a64ab71e2a9deaaca5620207969",
+            "rows": 186
+          },
+          {
+            "month": "2023-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-01.zip",
+            "sha256": "9f995d87e5de9f26c5a2a2073943479388c5e3e2bdbaf57dc3b6e925564ab43e",
+            "rows": 186
+          },
+          {
+            "month": "2023-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-02.zip",
+            "sha256": "bef28416b5ecc05f7a0b8536ad1aa2b38f6a28fb6cf93de83bc079827c76a879",
+            "rows": 168
+          },
+          {
+            "month": "2023-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-03.zip",
+            "sha256": "717838cee19bf2448f8114430770e527e4f49b8448dab85dab81f30469fbfe48",
+            "rows": 186
+          },
+          {
+            "month": "2023-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-04.zip",
+            "sha256": "05af7d6318cfd578e7bbced1f3ac568f0fb281518f174365578b58fd27eb19d3",
+            "rows": 180
+          },
+          {
+            "month": "2023-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-05.zip",
+            "sha256": "4ffaf612de992ac4d43e8c1170c52192fb94f1fd0db227445b1d71c3d8345f18",
+            "rows": 186
+          },
+          {
+            "month": "2023-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-06.zip",
+            "sha256": "b12334aaac1aaa68fbc0ffd165cb04f56337644dc4e4ff5c44db61b5a6d30f49",
+            "rows": 180
+          },
+          {
+            "month": "2023-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-07.zip",
+            "sha256": "d5299a068d3bd76164447e7dde9378caa03435db200145934fccc3c69e82a3a9",
+            "rows": 186
+          },
+          {
+            "month": "2023-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-08.zip",
+            "sha256": "df3803780ba9cf57558e19b8f94eacf554ba0f45eb53ebe3edad8e0f7920b63e",
+            "rows": 186
+          },
+          {
+            "month": "2023-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-09.zip",
+            "sha256": "c8365cc2810efed9b00a666edbb61976f8e428f789b6763748a04f74954dcb8d",
+            "rows": 180
+          },
+          {
+            "month": "2023-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-10.zip",
+            "sha256": "db1623dbcdd6f1ae3920c9cfc0bcffbc2852e281bda744aa42c0960ef48c2db2",
+            "rows": 186
+          },
+          {
+            "month": "2023-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-11.zip",
+            "sha256": "6d4c95621fab4b82d8e3edce2e110257646ff9facd3f1f527302aa821e232243",
+            "rows": 180
+          },
+          {
+            "month": "2023-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2023-12.zip",
+            "sha256": "0bd4980aeef150995d746a768d99d590e92858fc0119ddb004c0b69329e6344c",
+            "rows": 186
+          },
+          {
+            "month": "2024-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-01.zip",
+            "sha256": "87e793786cacd14285fe8a54c2a96bdb7f618861e30c63ba962b09e5500bc937",
+            "rows": 186
+          },
+          {
+            "month": "2024-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-02.zip",
+            "sha256": "26a3131bf90b9697c8df77bca1ca4784cc33019cc9f01606951337c4f79d4651",
+            "rows": 174
+          },
+          {
+            "month": "2024-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-03.zip",
+            "sha256": "d5a4624e4242675bb269b347102f74b8b60097d48b1b1c004195072cbfc4b676",
+            "rows": 186
+          },
+          {
+            "month": "2024-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-04.zip",
+            "sha256": "63b2d48021d7f12fdaf8029237ac64346af23f7b95a49c471d881288a73ffee7",
+            "rows": 180
+          },
+          {
+            "month": "2024-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-05.zip",
+            "sha256": "b6d8088ebd2716ecdb04124a4af791de6a0e1fdf5c0b31c2391a1df9b5c8eada",
+            "rows": 186
+          },
+          {
+            "month": "2024-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-06.zip",
+            "sha256": "05996239fd3588ff8867b5386398b5576854d4dce6d3dc4ad0a9987951d38b2a",
+            "rows": 180
+          },
+          {
+            "month": "2024-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-07.zip",
+            "sha256": "dcd22aa66b00f95902b3c1f5a029726976623efea0cd58197d9b37df7e5be05b",
+            "rows": 186
+          },
+          {
+            "month": "2024-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-08.zip",
+            "sha256": "1d9601f4af9b0a8b3228e2fc993ac5f3b54343d7a8c12b5a9ad7896b3235f15c",
+            "rows": 186
+          },
+          {
+            "month": "2024-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-09.zip",
+            "sha256": "1bde0d4857164c91a8e36a0b2797927daae0220f86ea399b842fa3b96ff5ac08",
+            "rows": 180
+          },
+          {
+            "month": "2024-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-10.zip",
+            "sha256": "063ca82b5bd76f4aeb88b7b027a12dadcbb419f07e452da153fc329928c76e76",
+            "rows": 186
+          },
+          {
+            "month": "2024-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-11.zip",
+            "sha256": "1d4d448b72743a188008cd6d960e049268d0deeae13b2ea57c42b4ed7a9cadea",
+            "rows": 180
+          },
+          {
+            "month": "2024-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2024-12.zip",
+            "sha256": "d5c3eab8b58c5791f10836645e7992d6627119ec224fd7b2345fdec39527d3fd",
+            "rows": 186
+          },
+          {
+            "month": "2025-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-01.zip",
+            "sha256": "a410122c029a07931b639bcd96a304ea81904ab4dfcf2d88c016158190102520",
+            "rows": 186
+          },
+          {
+            "month": "2025-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-02.zip",
+            "sha256": "e6454bd1819f944bb05571ec8cc7bc92e8b6ff996c83f5642f3c8e044784f6a5",
+            "rows": 168
+          },
+          {
+            "month": "2025-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-03.zip",
+            "sha256": "3d6d47445370c9d502745795e71e6afffcfba828b7f86cf29124f35c53386b4d",
+            "rows": 186
+          },
+          {
+            "month": "2025-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-04.zip",
+            "sha256": "9f6e855ddc56c08ccac71d78013d0266bccac0fa90344390b14d0f39eb213c4d",
+            "rows": 180
+          },
+          {
+            "month": "2025-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-05.zip",
+            "sha256": "06fac0288f73445a2a4712d0e894faf9e8b4432c1cd78784cd0029d42ad9db1d",
+            "rows": 186
+          },
+          {
+            "month": "2025-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-06.zip",
+            "sha256": "5cab49faa1bac414ebecdd05b205f0a83e166232bef1f188f705922b5cce215b",
+            "rows": 180
+          },
+          {
+            "month": "2025-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-07.zip",
+            "sha256": "33a477526f329218c72970ddf962b2b003e9412f04d9d2721e750491672cf36e",
+            "rows": 186
+          },
+          {
+            "month": "2025-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-08.zip",
+            "sha256": "4b0ba1c3f774ae5ba147275f69df1ee6f81f8389072172a0b94e9a02d37f766f",
+            "rows": 186
+          },
+          {
+            "month": "2025-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-09.zip",
+            "sha256": "4f54ff411513e4592b96b96969df40a087a827f526dddb2df3a58fd30dd7d7a4",
+            "rows": 180
+          },
+          {
+            "month": "2025-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-10.zip",
+            "sha256": "52fa43b08d5a311b58b08392e6eae3f47307735d47f674c4adffa668d7435be6",
+            "rows": 186
+          },
+          {
+            "month": "2025-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-11.zip",
+            "sha256": "8849aa7650fd23404eca0e4c94c4b35f9ec0cfc021d57343894fa3278a3dd924",
+            "rows": 180
+          },
+          {
+            "month": "2025-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2025-12.zip",
+            "sha256": "82cee38a000ec6ef86f5f3bfda696ba5699f9872113dc2d38f387a266ab3b8fd",
+            "rows": 186
+          },
+          {
+            "month": "2026-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-01.zip",
+            "sha256": "c47144ee6a4480948998fafed8c93e65f6ee826725249da4c5ef595e563b803a",
+            "rows": 186
+          },
+          {
+            "month": "2026-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-02.zip",
+            "sha256": "e9586ece8bda27088cf065d7e31371a958aada0e7d607a40bc94149014534730",
+            "rows": 168
+          },
+          {
+            "month": "2026-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-03.zip",
+            "sha256": "961c94959dcba32999e17554e9c1ff30e6c9cded337d047c529ea6480f455e23",
+            "rows": 186
+          },
+          {
+            "month": "2026-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-04.zip",
+            "sha256": "e0e1df46cd895c85e73c3206313a32129182b383839cb80f7f20f9b60dc5c587",
+            "rows": 180
+          },
+          {
+            "month": "2026-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-05.zip",
+            "sha256": "d753d0afb14966cc871aed382750a043ab012ef05becfbf730668f28961b8403",
+            "rows": 186
+          },
+          {
+            "month": "2026-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-06.zip",
+            "sha256": "96057f68cb174c79a14d5bb142f8fb4a679698fabbfb861d89247b948493d292",
+            "rows": 180
+          },
+          {
+            "month": "2026-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-07.zip",
+            "sha256": "2c2f2e3eab14ff8b1d692119e824c3bb20496e87bd2625cfef25a93f7be50d0f",
+            "rows": 186
+          },
+          {
+            "month": "2026-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-08.zip",
+            "sha256": "5779f1b751af187bcdb69fc3e901137dc57c1d2b16ff0ce85bcb350a254fdfe6",
+            "rows": 186
+          },
+          {
+            "month": "2026-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/4h/BTCUSDT-4h-2026-09.zip",
+            "sha256": "4a34f62c260c90d2a77461c8b0adff6e7cd6e0b31dfe2397e5229c3f18e4f9af",
+            "rows": 180
+          }
+        ]
+      },
+      "ETHUSDT": {
+        "file": "ETHUSDT_4h.csv",
+        "rows": 10404,
+        "sha256": "540b929ce23c256bce550cfc07d268a1d98e8b1a50e2986cd5934df5bff39862",
+        "first": "2022-01-01 00:00:00+00:00",
+        "last": "2026-09-30 20:00:00+00:00",
+        "archives": [
+          {
+            "month": "2022-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-01.zip",
+            "sha256": "0cf9fce8e056f4f1aaa50c2fa5667478ea8abb0be86fc73966d6d3b9a3f8d3ac",
+            "rows": 186
+          },
+          {
+            "month": "2022-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-02.zip",
+            "sha256": "618742c7425e2a5556740919525bfd6229406c8208b7134f78c784e04415915f",
+            "rows": 168
+          },
+          {
+            "month": "2022-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-03.zip",
+            "sha256": "bd19ecee3a38db1ac1d0b9fe8ed36876b29a1deea032201dbbd4ee11482f65ca",
+            "rows": 186
+          },
+          {
+            "month": "2022-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-04.zip",
+            "sha256": "70ab5a849a9662fcc01a58e6698f7445ec7041a004406ddbdd1e500ed115232d",
+            "rows": 180
+          },
+          {
+            "month": "2022-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-05.zip",
+            "sha256": "88173bb4cac582941f140ed00945a7f87fc4ea5e29b8bf14a01ea29adf279b88",
+            "rows": 186
+          },
+          {
+            "month": "2022-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-06.zip",
+            "sha256": "42143bfec21e8e340ecc68acd0b5eb634a9b98f742cdfd1eaa578590e5c51e09",
+            "rows": 180
+          },
+          {
+            "month": "2022-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-07.zip",
+            "sha256": "3250db4783f1d7eeb4ee98b5debb116f1eb699dc0f03c3a01f5714eedd0f5599",
+            "rows": 186
+          },
+          {
+            "month": "2022-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-08.zip",
+            "sha256": "d3b1ecb34e97395cdedc7a83cd7fbd5ca3a00ca8de7f64299ad672cb2c5c1c50",
+            "rows": 186
+          },
+          {
+            "month": "2022-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-09.zip",
+            "sha256": "5ba49c2d33178ce453680a4d6bb9242839ee3ed548164bc9a81cb1ada5f73bba",
+            "rows": 180
+          },
+          {
+            "month": "2022-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-10.zip",
+            "sha256": "f873820ead280792750d5677b86d46dd2a3d24ab438e761a849dcdb2cf9d7004",
+            "rows": 186
+          },
+          {
+            "month": "2022-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-11.zip",
+            "sha256": "a743a520b25181852027b68599fb502601f30e8eebeb91ac0388a9b16bf1b974",
+            "rows": 180
+          },
+          {
+            "month": "2022-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2022-12.zip",
+            "sha256": "f7d3fcb499fb0e3e8bed4f635111bdd6f753a27caae72b1c21b2bdc07ad9225c",
+            "rows": 186
+          },
+          {
+            "month": "2023-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-01.zip",
+            "sha256": "5ef9f01e728f0cc9f154aeb8d9febfa8a72fd0817aca80d7358db5aef134ba6e",
+            "rows": 186
+          },
+          {
+            "month": "2023-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-02.zip",
+            "sha256": "af9283cb87d1a3215ca79baa2d7b98baffbdc78e44b803ac8d60503210a522d3",
+            "rows": 168
+          },
+          {
+            "month": "2023-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-03.zip",
+            "sha256": "7a7fe3e51c3784b736e9324e5e3925592e9a0f8321d7e9824b630678419ddd20",
+            "rows": 186
+          },
+          {
+            "month": "2023-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-04.zip",
+            "sha256": "73ad2403eeb91f2999c931282a65268df25dd83e3bfe6eac030fb7ef5ff62202",
+            "rows": 180
+          },
+          {
+            "month": "2023-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-05.zip",
+            "sha256": "f7186286f3a4dc80c5240ea835837ff8139e6f442e5c6df46506cabcd08ed3db",
+            "rows": 186
+          },
+          {
+            "month": "2023-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-06.zip",
+            "sha256": "f4f2ee06aed7a274ad007f356febdbad7435ec93cc1d8bc3ca322da35a8257e7",
+            "rows": 180
+          },
+          {
+            "month": "2023-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-07.zip",
+            "sha256": "8eca8ea11eac79a68cd0cf3946cc1df9e75ff9eb20b9804c7a39f337a3b7eeea",
+            "rows": 186
+          },
+          {
+            "month": "2023-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-08.zip",
+            "sha256": "99974a9843eb607cfa63fda32557d2818018f04f4860a72eae31c4209ab501f6",
+            "rows": 186
+          },
+          {
+            "month": "2023-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-09.zip",
+            "sha256": "a64811d681aa0b16b33874325a4e507d02674dccf822299e96f5c591f1089df9",
+            "rows": 180
+          },
+          {
+            "month": "2023-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-10.zip",
+            "sha256": "dd6688e1ef9c76f2de15bfeb84d9d7012ca65f5a5c61faa5b829df83a4e8407a",
+            "rows": 186
+          },
+          {
+            "month": "2023-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-11.zip",
+            "sha256": "9a3bc3235908e01c20d840f94c69da287a07bea1255e713c5d558e353e68be32",
+            "rows": 180
+          },
+          {
+            "month": "2023-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2023-12.zip",
+            "sha256": "5ee6e5ebf1c277e7b2556b09950be4fb63ace7280b3f5e2294a64813e08ba673",
+            "rows": 186
+          },
+          {
+            "month": "2024-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-01.zip",
+            "sha256": "d0d5b311b46ec14928ef51a828be71390d20d15ce50da2800b134ac4bbbd1cfe",
+            "rows": 186
+          },
+          {
+            "month": "2024-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-02.zip",
+            "sha256": "4c4e7fe03810454aa5bc4d7d6d207519c95eb6ec485349c2ef25456aedd35f34",
+            "rows": 174
+          },
+          {
+            "month": "2024-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-03.zip",
+            "sha256": "b3c10466f739b11910ea93c6d88cafc8e6c9f548576925a341e3892621f70391",
+            "rows": 186
+          },
+          {
+            "month": "2024-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-04.zip",
+            "sha256": "656722f3c86ea8b553512bc991492aea556a2f3e69dfaad74336221f37197a36",
+            "rows": 180
+          },
+          {
+            "month": "2024-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-05.zip",
+            "sha256": "6134ad1e4921d94b1986ef94eff4e2a40607c5cd26276d76a1eec14213b2cad1",
+            "rows": 186
+          },
+          {
+            "month": "2024-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-06.zip",
+            "sha256": "5c918814d062d8b4fcbbd9cbad34ee12576eee98a8fdd3d3ed9517a6ed4dfa4d",
+            "rows": 180
+          },
+          {
+            "month": "2024-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-07.zip",
+            "sha256": "6a94ee988a2d7475083dfc02c88728264e047b818c8a1d2b56103716e942d861",
+            "rows": 186
+          },
+          {
+            "month": "2024-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-08.zip",
+            "sha256": "ade905e3a5a46be8969b34ca309297e40c5f42224e3e2bb041160d5bb17fa6f5",
+            "rows": 186
+          },
+          {
+            "month": "2024-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-09.zip",
+            "sha256": "b0511b07ad782c697382ec9b1f26086f203d83e92e36bb98f7fc14babbd2ea85",
+            "rows": 180
+          },
+          {
+            "month": "2024-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-10.zip",
+            "sha256": "ac8ec6d113a8674630bd3978986eab32acb966336a8625936d1d41f3a5a55078",
+            "rows": 186
+          },
+          {
+            "month": "2024-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-11.zip",
+            "sha256": "c8a11e958751a9328aeac9c7b2f6ce8653c6cb44ed1a6c3b8cec7c53bddaace2",
+            "rows": 180
+          },
+          {
+            "month": "2024-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2024-12.zip",
+            "sha256": "94c77e4a8a55647ab98707fc05f037ec8ada0a01d9e5b958b1bb7b4b2bc20037",
+            "rows": 186
+          },
+          {
+            "month": "2025-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-01.zip",
+            "sha256": "15dc4c8e426e7cd57367cd66a14515d87a2e710a14f99471ef03a6c2206419a2",
+            "rows": 186
+          },
+          {
+            "month": "2025-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-02.zip",
+            "sha256": "11685fcda1efc3a49b65dcf025488c4c5324a0b6ebb10c5c9962b5a8d94fea75",
+            "rows": 168
+          },
+          {
+            "month": "2025-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-03.zip",
+            "sha256": "afec898d0161add484b3ac2ad4bc98405ff0d645ef361e84bd76001697d90319",
+            "rows": 186
+          },
+          {
+            "month": "2025-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-04.zip",
+            "sha256": "8ff172c8bcdd0f5ffef4d3d1ccf6abd54d78cd831eba6a2bfcd534d18a651d6d",
+            "rows": 180
+          },
+          {
+            "month": "2025-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-05.zip",
+            "sha256": "197445d5d2ffb52184b9d7732c46bd008dd69f10635f9ca9a7f5cc16913e121c",
+            "rows": 186
+          },
+          {
+            "month": "2025-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-06.zip",
+            "sha256": "726c2597e1ed06cbadb0b310540f5542c104cd15cf7b30b5a2a18c60e63eb0b1",
+            "rows": 180
+          },
+          {
+            "month": "2025-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-07.zip",
+            "sha256": "8a0b8d32bd0c31908a639ea56976d9c3e4db96567b658517acfaaf21b0bb388e",
+            "rows": 186
+          },
+          {
+            "month": "2025-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-08.zip",
+            "sha256": "cb56e207506e6db6018e40b0af8d17857d5eafb6fb2adb484bfa701bee8de211",
+            "rows": 186
+          },
+          {
+            "month": "2025-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-09.zip",
+            "sha256": "d3b105a3166a82f9f32236dafbcacd8ecee73e5aceb245ea568f8c6dcb923dca",
+            "rows": 180
+          },
+          {
+            "month": "2025-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-10.zip",
+            "sha256": "363ec30e786b469b69935f1d9ca1fd71a8412c05d2fce33d16ac15b837eb45c6",
+            "rows": 186
+          },
+          {
+            "month": "2025-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-11.zip",
+            "sha256": "17e5cb5472a07d500e0c5a39b44b87287b3704601377d0afe4f5804b19095028",
+            "rows": 180
+          },
+          {
+            "month": "2025-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2025-12.zip",
+            "sha256": "0f680482e711232f7e7dc291d5f309a94d784c48f25293d94cb59f7c147f9d0a",
+            "rows": 186
+          },
+          {
+            "month": "2026-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-01.zip",
+            "sha256": "c43846fc3c73d9c88f8f558cba7e4e507b00f38ce0624bfde28dbeac09e4d848",
+            "rows": 186
+          },
+          {
+            "month": "2026-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-02.zip",
+            "sha256": "85b02b49ca585bd9139e0c9896541cf122430794045a84a66ff9d370649dc110",
+            "rows": 168
+          },
+          {
+            "month": "2026-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-03.zip",
+            "sha256": "b44a834f429a208f250e2dd081ffad16b0bb8b01f9b54b407adc19c4cdcaacb9",
+            "rows": 186
+          },
+          {
+            "month": "2026-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-04.zip",
+            "sha256": "cb8b7537f03e5cedca3bfac521e8cc28691db7a2ce29d3fd10719509fe0fbbf1",
+            "rows": 180
+          },
+          {
+            "month": "2026-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-05.zip",
+            "sha256": "05b00c2d67d0da1610912e8582c90adceea3e4c153f6e9dadc1988905aa8f9a3",
+            "rows": 186
+          },
+          {
+            "month": "2026-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-06.zip",
+            "sha256": "1a1d75bc7fd93753ac8358fc6eb8dfbb09b9749562295ccfe3f439f6af118dee",
+            "rows": 180
+          },
+          {
+            "month": "2026-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-07.zip",
+            "sha256": "001073290be48adb7b7f03b407ea80b7e19103a1548d138747ee14c853c771a4",
+            "rows": 186
+          },
+          {
+            "month": "2026-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-08.zip",
+            "sha256": "4c49bb35de8168a08764dcbc95f411df91668e07e35aecc2c5838a0350b870de",
+            "rows": 186
+          },
+          {
+            "month": "2026-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/4h/ETHUSDT-4h-2026-09.zip",
+            "sha256": "00f0fbbfea608b4fb28a4b30c4921b755b49081ab47908988a30673e245dfe03",
+            "rows": 180
+          }
+        ]
+      },
+      "BNBUSDT": {
+        "file": "BNBUSDT_4h.csv",
+        "rows": 10404,
+        "sha256": "b3a7035e82e0a322b32d21672b3e6063e86fa38bbb3395af3bc4d489d226c059",
+        "first": "2022-01-01 00:00:00+00:00",
+        "last": "2026-09-30 20:00:00+00:00",
+        "archives": [
+          {
+            "month": "2022-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-01.zip",
+            "sha256": "e53ef7421e76c3b4eead2bab75e95df07a55535ab7522c6531f651594c0cc810",
+            "rows": 186
+          },
+          {
+            "month": "2022-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-02.zip",
+            "sha256": "597562ea68a41f6cb5d35b7d381987c7cb8ca0eed7b3def51571052ccbd2289c",
+            "rows": 168
+          },
+          {
+            "month": "2022-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-03.zip",
+            "sha256": "d973a7775caaad0521ed61a9dad56e0b37d98314b9fcb3cd1edac437b96a0eb9",
+            "rows": 186
+          },
+          {
+            "month": "2022-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-04.zip",
+            "sha256": "64013060bc0be9a3d65ec101a353f6a49efbc92c40669d57b5d74ccd7038d850",
+            "rows": 180
+          },
+          {
+            "month": "2022-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-05.zip",
+            "sha256": "e91fa2e6e0dde795785603cfe3e0697549ffa01a168e35f46ff34710b3a924fe",
+            "rows": 186
+          },
+          {
+            "month": "2022-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-06.zip",
+            "sha256": "2dac178ed9e9bc651906dca9e450f1580cd51b96e698ac64074f43a007a5a891",
+            "rows": 180
+          },
+          {
+            "month": "2022-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-07.zip",
+            "sha256": "fc80fb69681f7503ad002d74a5d875647bc1c9a4a7fd92636fccaf3b041aad43",
+            "rows": 186
+          },
+          {
+            "month": "2022-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-08.zip",
+            "sha256": "3832303c6a187ad0784186b132e9c4d4b505fc04b1cc0382f7e35983ffe3c01e",
+            "rows": 186
+          },
+          {
+            "month": "2022-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-09.zip",
+            "sha256": "624c24188b37b9b194e33ac5c35e55c0dd40a28e64d06572431d207a42f8ddbc",
+            "rows": 180
+          },
+          {
+            "month": "2022-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-10.zip",
+            "sha256": "12851d0dd529d6c21afc4f406d45a92a9a5ba157ef328d8fa07c7c5eeb4b7590",
+            "rows": 186
+          },
+          {
+            "month": "2022-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-11.zip",
+            "sha256": "e096356d87b9638ea913c96530b452384aded93894e2436c9cb783519528f893",
+            "rows": 180
+          },
+          {
+            "month": "2022-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2022-12.zip",
+            "sha256": "2222bc329e77e0bfdf1441408fb60b6224e8f7a0356d376fd097b6627b54e233",
+            "rows": 186
+          },
+          {
+            "month": "2023-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-01.zip",
+            "sha256": "48c7d9e8bb42c77104ed8597bc78cb8b66ed4b19c5328e3d07843cd8e0e9e594",
+            "rows": 186
+          },
+          {
+            "month": "2023-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-02.zip",
+            "sha256": "fc62a922fae310ecc89a47387d2f1ddbb419039df23aa736a8a0ea63e3207d30",
+            "rows": 168
+          },
+          {
+            "month": "2023-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-03.zip",
+            "sha256": "f552c582031f5ecc03e04848d3b21a38a7e4704b54a82c190cf308a3e8af399b",
+            "rows": 186
+          },
+          {
+            "month": "2023-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-04.zip",
+            "sha256": "5b3349dae5e84dfaa3768fcaebe82d55294c1846b31536ef9a39375911a0dd69",
+            "rows": 180
+          },
+          {
+            "month": "2023-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-05.zip",
+            "sha256": "c31ee1febf31c6fe693a92262c5cabeb13e199b0cdf0d1d822af393ceb1974eb",
+            "rows": 186
+          },
+          {
+            "month": "2023-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-06.zip",
+            "sha256": "2392f0858ec37e9327e92db955e65e142f1dac2d466eecd6cbce028c11079fee",
+            "rows": 180
+          },
+          {
+            "month": "2023-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-07.zip",
+            "sha256": "ffa7c72057d15154c264028fa0d7c27ff8546a03293bbb8ec5d9f6806454ac76",
+            "rows": 186
+          },
+          {
+            "month": "2023-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-08.zip",
+            "sha256": "00fd59a6362c4deaf65d6af30ba0ef6d1fe35cf40840dfd8b68328a5d53791cd",
+            "rows": 186
+          },
+          {
+            "month": "2023-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-09.zip",
+            "sha256": "88afc91a74f376c3b4a2c5ca29f30e8ebc4124a1c7645a6c7185f2258c09612d",
+            "rows": 180
+          },
+          {
+            "month": "2023-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-10.zip",
+            "sha256": "294834ada001859c27844124531a85e5adc0513eb90c1c1a94eeee30f9e43f9e",
+            "rows": 186
+          },
+          {
+            "month": "2023-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-11.zip",
+            "sha256": "f180ba7986b323cc3b251f7c3accf709a2420190961a8aeff98811ba0f723800",
+            "rows": 180
+          },
+          {
+            "month": "2023-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2023-12.zip",
+            "sha256": "6403b8d67a198b98e87d0092e576689d99b1d9244eeed208716165352fb301e6",
+            "rows": 186
+          },
+          {
+            "month": "2024-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-01.zip",
+            "sha256": "983274077e0e1a9fe92d021287361f79bde17f5eb8350e3de7fdf4b5f8e4bf6d",
+            "rows": 186
+          },
+          {
+            "month": "2024-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-02.zip",
+            "sha256": "707e7619ed79e26f06ce20fa6d6af6872e6fc681c6eca5912d7bfd801fc32ed8",
+            "rows": 174
+          },
+          {
+            "month": "2024-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-03.zip",
+            "sha256": "b96f33c52f20bb276219d07e6b9b28eb1b6e13d63bf0488a67f5f556a39f2048",
+            "rows": 186
+          },
+          {
+            "month": "2024-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-04.zip",
+            "sha256": "2eb04d54f03109fb5ef11cd4b36fc56309dfed190bc70e3bd8920ef75a4f1acf",
+            "rows": 180
+          },
+          {
+            "month": "2024-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-05.zip",
+            "sha256": "7d2622ea4a233d2ba5ab776a09840386f0bd3d5ec74f84575f78c62bff553c38",
+            "rows": 186
+          },
+          {
+            "month": "2024-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-06.zip",
+            "sha256": "9238f812b17f75b2d9016271902ee6383d6d9ca397c31918ca34b85ef8ac7334",
+            "rows": 180
+          },
+          {
+            "month": "2024-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-07.zip",
+            "sha256": "98233c7fe7f0cdaa3a8ec1c5543959791a2630f976b186af11690588251b60d3",
+            "rows": 186
+          },
+          {
+            "month": "2024-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-08.zip",
+            "sha256": "2463c6db5ff4fc83f533495a94de622b6d4d839f4e7399b0b5e02f1045a0367b",
+            "rows": 186
+          },
+          {
+            "month": "2024-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-09.zip",
+            "sha256": "e5c5f420c20baca913bca8cfde98054ea702688811d1a84a1c6cea5dbc030ed2",
+            "rows": 180
+          },
+          {
+            "month": "2024-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-10.zip",
+            "sha256": "d5f434d60d540fc48b5f4b918bb3924f79e7bd16909936ced8d71a757b6795f3",
+            "rows": 186
+          },
+          {
+            "month": "2024-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-11.zip",
+            "sha256": "247f82205a73ac746b244c0e84e3ddb16e90e802092ac5580e76ac92dc231706",
+            "rows": 180
+          },
+          {
+            "month": "2024-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2024-12.zip",
+            "sha256": "fbe3c7026b51e57c509ebc54c842363a5c128db95821d42919dcf9ae4b727064",
+            "rows": 186
+          },
+          {
+            "month": "2025-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-01.zip",
+            "sha256": "84eaa34d91f004f3388c65a5bd5494557d9c98be949e63071e3a31d04eb228d8",
+            "rows": 186
+          },
+          {
+            "month": "2025-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-02.zip",
+            "sha256": "e4437892fe8c8b518d6ef5132a7ade89c847927ff81c72b13dfb6d27c69753d2",
+            "rows": 168
+          },
+          {
+            "month": "2025-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-03.zip",
+            "sha256": "7749ff09797fd8b395665a7daf80d85a786d0b34ed3e7c273cf9d378356ec77d",
+            "rows": 186
+          },
+          {
+            "month": "2025-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-04.zip",
+            "sha256": "eda9c786b41d69d6ec8ac40a8c1a8a262f39b77a8f0f969c130f096df971b60a",
+            "rows": 180
+          },
+          {
+            "month": "2025-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-05.zip",
+            "sha256": "7009574ef5193e2f7b97a85f4447f3aa206c4efbd594696c948b18da47e0fcc5",
+            "rows": 186
+          },
+          {
+            "month": "2025-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-06.zip",
+            "sha256": "0a0e666f3fb1f8f785482e03b6401298dc412580ec2c5a4b0526bf106e8baa90",
+            "rows": 180
+          },
+          {
+            "month": "2025-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-07.zip",
+            "sha256": "b954bf2d99bb97b6a3f640b2df0ab098df1a14557c959407343cb036eb597dfc",
+            "rows": 186
+          },
+          {
+            "month": "2025-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-08.zip",
+            "sha256": "500a74b88560fc91cef1ee8eaaefae898266453e7efa3eb60803e1b67dbf1b63",
+            "rows": 186
+          },
+          {
+            "month": "2025-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-09.zip",
+            "sha256": "251eff80439940862846382bfe686e65e8e5e05bf7b2e35171bea607a3c68c6a",
+            "rows": 180
+          },
+          {
+            "month": "2025-10",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-10.zip",
+            "sha256": "dc666e4a98f91a59c5c8fa354e9d3b00b7c4f1e46290ce6a7a5dc92910fded18",
+            "rows": 186
+          },
+          {
+            "month": "2025-11",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-11.zip",
+            "sha256": "0bdde930cef70566ed6136517f01d0fb2507e351c47859f2fb69e36ffee57188",
+            "rows": 180
+          },
+          {
+            "month": "2025-12",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2025-12.zip",
+            "sha256": "e9dcedb4ee2b03782c40080acf2c368ebcacac697d47d7a5675af0c841056e80",
+            "rows": 186
+          },
+          {
+            "month": "2026-01",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-01.zip",
+            "sha256": "ba4071efa4a7285fc2269f9d711a544c482e0d7ae76e2f462e297e7098c73e0f",
+            "rows": 186
+          },
+          {
+            "month": "2026-02",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-02.zip",
+            "sha256": "d4f9119c6cb61cb29cf167a436d65a0ebc412f650a80706c1f56501ef5723449",
+            "rows": 168
+          },
+          {
+            "month": "2026-03",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-03.zip",
+            "sha256": "49471fe25d74a1af76066de586738f0d80c7f7d87b7f1737e8d8e787f54bf9d2",
+            "rows": 186
+          },
+          {
+            "month": "2026-04",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-04.zip",
+            "sha256": "a30e3062a9c3bbd3594ddccee0eb9d632071b936cdaca30f5d0b6281b79230f1",
+            "rows": 180
+          },
+          {
+            "month": "2026-05",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-05.zip",
+            "sha256": "1c400f6266f630b42c27dcfe706bc2f66e68c28bb7551ba22e24ee38dcc4f0a6",
+            "rows": 186
+          },
+          {
+            "month": "2026-06",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-06.zip",
+            "sha256": "95521a83a115d831e51defde1673a0e18ac40ff215cf8084c4807b67392dca47",
+            "rows": 180
+          },
+          {
+            "month": "2026-07",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-07.zip",
+            "sha256": "fbec66beab7dd6c652d6d82895ae9e926ade8179b47770c03c40e50a3960abf4",
+            "rows": 186
+          },
+          {
+            "month": "2026-08",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-08.zip",
+            "sha256": "9025b5970e239eaf81346c290b1ba1e21fd6a7850afb7e9a3608836d9d121f58",
+            "rows": 186
+          },
+          {
+            "month": "2026-09",
+            "url": "https://data.binance.vision/data/spot/monthly/klines/BNBUSDT/4h/BNBUSDT-4h-2026-09.zip",
+            "sha256": "70d0666556aa2237ca59d9b11e968ab046068be8c872499000879932567dbdfb",
+            "rows": 180
+          }
+        ]
+      }
+    }
+  },
+  "frozen_candidate": "spot_control",
+  "development": {
+    "spot_control": {
+      "final_equity": 1543.2520402477853,
+      "net_pnl": 543.2520402477853,
+      "total_return": 0.5432520402477853,
+      "cagr": 0.15557452462190313,
+      "fees_paid_total": 40.448094277079164,
+      "slippage_paid_total": 24.268939421103937,
+      "gross_pnl_cost_addback": 607.9690739459684,
+      "maxDD": -0.1701855283440541,
+      "max_observed_drawdown": -0.1701855283440541,
+      "max_intraday_drawdown_bound": -0.17860863332974175,
+      "trades_count": 268,
+      "turnover": 40.44809427707916,
+      "mean_exposure": 0.22813635254724804,
+      "max_close_exposure": 0.5311924602628524,
+      "minimum_cash": 502.0519528689379,
+      "minimum_inventory": 0.0,
+      "sharpe": 0.9427297827097437,
+      "rolling_gains": {
+        "7": {
+          "windows": 1090,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.09791765755113091,
+          "minimum_return": -0.11413210859628964
+        },
+        "30": {
+          "windows": 1067,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.27015065157654616,
+          "minimum_return": -0.1293004017181104
+        },
+        "90": {
+          "windows": 1007,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.29498800277634074,
+          "minimum_return": -0.12892955254186222
+        }
+      },
+      "accounting": {
+        "max_cash_error": 1.1368683772161603e-12,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 1.3642420526593924e-12,
+        "reconciled": true
+      }
+    },
+    "price_momentum": {
+      "final_equity": 459.9058970489262,
+      "net_pnl": -540.0941029510739,
+      "total_return": -0.5400941029510739,
+      "cagr": -0.22806279208111713,
+      "fees_paid_total": 393.64514823421666,
+      "slippage_paid_total": 236.1871212462657,
+      "gross_pnl_cost_addback": 89.73816652940849,
+      "maxDD": -0.5477711997414381,
+      "max_observed_drawdown": -0.5477711997414381,
+      "max_intraday_drawdown_bound": -0.5532521115600838,
+      "trades_count": 3509,
+      "turnover": 393.6451482342167,
+      "mean_exposure": 0.1846473079094861,
+      "max_close_exposure": 0.5247423364152509,
+      "minimum_cash": 231.61185981871537,
+      "minimum_inventory": 0.0,
+      "sharpe": -1.6680672888963293,
+      "rolling_gains": {
+        "7": {
+          "windows": 1090,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.08804392731905986,
+          "minimum_return": -0.05879181519382004
+        },
+        "30": {
+          "windows": 1067,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.12490142997527309,
+          "minimum_return": -0.12195590592068606
+        },
+        "90": {
+          "windows": 1007,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.13664194908956162,
+          "minimum_return": -0.18636090713318254
+        }
+      },
+      "accounting": {
+        "max_cash_error": 1.1368683772161603e-12,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 1.2505552149377763e-12,
+        "reconciled": true
+      }
+    },
+    "flow_momentum": {
+      "final_equity": 478.99707471326985,
+      "net_pnl": -521.0029252867301,
+      "total_return": -0.5210029252867302,
+      "cagr": -0.2175283838586637,
+      "fees_paid_total": 364.50511039558796,
+      "slippage_paid_total": 218.70308863124683,
+      "gross_pnl_cost_addback": 62.205273740104644,
+      "maxDD": -0.5320539356608018,
+      "max_observed_drawdown": -0.5320539356608018,
+      "max_intraday_drawdown_bound": -0.5352927122003122,
+      "trades_count": 2690,
+      "turnover": 364.50511039558796,
+      "mean_exposure": 0.0982684104316317,
+      "max_close_exposure": 0.5135014612406061,
+      "minimum_cash": 240.01894774019718,
+      "minimum_inventory": 0.0,
+      "sharpe": -2.325341956115383,
+      "rolling_gains": {
+        "7": {
+          "windows": 1090,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.0656844833030723,
+          "minimum_return": -0.05693594187938
+        },
+        "30": {
+          "windows": 1067,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.0927295936592003,
+          "minimum_return": -0.08670596421503762
+        },
+        "90": {
+          "windows": 1007,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.0745525846732511,
+          "minimum_return": -0.14520653237996473
+        }
+      },
+      "accounting": {
+        "max_cash_error": 1.3642420526593924e-12,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 1.3642420526593924e-12,
+        "reconciled": true
+      }
+    },
+    "price_breakout": {
+      "final_equity": 744.8874021769567,
+      "net_pnl": -255.1125978230433,
+      "total_return": -0.2551125978230433,
+      "cagr": -0.09348860296310135,
+      "fees_paid_total": 356.2355690375774,
+      "slippage_paid_total": 213.74138867947664,
+      "gross_pnl_cost_addback": 314.86435989401076,
+      "maxDD": -0.31845161087692364,
+      "max_observed_drawdown": -0.3187243324648311,
+      "max_intraday_drawdown_bound": -0.32084874565627597,
+      "trades_count": 2590,
+      "turnover": 356.2355690375775,
+      "mean_exposure": 0.153836558535076,
+      "max_close_exposure": 0.5172845937559734,
+      "minimum_cash": 346.01115574905947,
+      "minimum_inventory": 0.0,
+      "sharpe": -0.614070144525248,
+      "rolling_gains": {
+        "7": {
+          "windows": 1090,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.10406688261271957,
+          "minimum_return": -0.055939270099230165
+        },
+        "30": {
+          "windows": 1067,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.13812926848249196,
+          "minimum_return": -0.13774681700841063
+        },
+        "90": {
+          "windows": 1007,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.22418607899724385,
+          "minimum_return": -0.19863356434673607
+        }
+      },
+      "accounting": {
+        "max_cash_error": 2.0463630789890885e-12,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 2.1600499167107046e-12,
+        "reconciled": true
+      }
+    },
+    "flow_breakout": {
+      "final_equity": 851.611977842661,
+      "net_pnl": -148.38802215733904,
+      "total_return": -0.14838802215733904,
+      "cagr": -0.05212175078139103,
+      "fees_paid_total": 316.82232092267026,
+      "slippage_paid_total": 190.09344605962582,
+      "gross_pnl_cost_addback": 358.52774482495704,
+      "maxDD": -0.23850428112776978,
+      "max_observed_drawdown": -0.23859641957732225,
+      "max_intraday_drawdown_bound": -0.2393023391751148,
+      "trades_count": 2031,
+      "turnover": 316.8223209226702,
+      "mean_exposure": 0.1285190235447329,
+      "max_close_exposure": 0.517130486690786,
+      "minimum_cash": 381.75238902965685,
+      "minimum_inventory": 0.0,
+      "sharpe": -0.34381361892809953,
+      "rolling_gains": {
+        "7": {
+          "windows": 1090,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.09251335775657488,
+          "minimum_return": -0.05231389212927218
+        },
+        "30": {
+          "windows": 1067,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.15267657484949493,
+          "minimum_return": -0.11414698437917792
+        },
+        "90": {
+          "windows": 1007,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.2314440704309344,
+          "minimum_return": -0.16636393225361124
+        }
+      },
+      "accounting": {
+        "max_cash_error": 1.7053025658242404e-12,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 1.7053025658242404e-12,
+        "reconciled": true
+      }
+    },
+    "flow_reversion": {
+      "final_equity": 951.8496165142132,
+      "net_pnl": -48.15038348578685,
+      "total_return": -0.048150383485786846,
+      "cagr": -0.016311163845388332,
+      "fees_paid_total": 26.778317131104444,
+      "slippage_paid_total": 16.066988368834224,
+      "gross_pnl_cost_addback": -5.305077985848179,
+      "maxDD": -0.09490086463238612,
+      "max_observed_drawdown": -0.09490086463238612,
+      "max_intraday_drawdown_bound": -0.09904383813436868,
+      "trades_count": 108,
+      "turnover": 26.778317131104448,
+      "mean_exposure": 0.008733990549243488,
+      "max_close_exposure": 0.49333968613365453,
+      "minimum_cash": 511.3835706071485,
+      "minimum_inventory": 0.0,
+      "sharpe": -0.6119285566479802,
+      "rolling_gains": {
+        "7": {
+          "windows": 1090,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.017095460718479893,
+          "minimum_return": -0.02309012219855766
+        },
+        "30": {
+          "windows": 1067,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.022186046554784733,
+          "minimum_return": -0.035302022238303254
+        },
+        "90": {
+          "windows": 1007,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.02214108035027218,
+          "minimum_return": -0.03756562930766416
+        }
+      },
+      "accounting": {
+        "max_cash_error": 9.094947017729282e-13,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 9.094947017729282e-13,
+        "reconciled": true
+      }
+    },
+    "flow_blend": {
+      "final_equity": 748.6638665182619,
+      "net_pnl": -251.3361334817381,
+      "total_return": -0.2513361334817381,
+      "cagr": -0.09195957607731897,
+      "fees_paid_total": 254.22244529234328,
+      "slippage_paid_total": 152.5335010359541,
+      "gross_pnl_cost_addback": 155.41981284655927,
+      "maxDD": -0.25686280300212583,
+      "max_observed_drawdown": -0.25686280300212583,
+      "max_intraday_drawdown_bound": -0.2585351112175298,
+      "trades_count": 3798,
+      "turnover": 254.22244529234328,
+      "mean_exposure": 0.07846299532461695,
+      "max_close_exposure": 0.4089364581525234,
+      "minimum_cash": 479.63988584833044,
+      "minimum_inventory": 0.0,
+      "sharpe": -1.2974827559249786,
+      "rolling_gains": {
+        "7": {
+          "windows": 1090,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.048369277558939716,
+          "minimum_return": -0.03041196743037977
+        },
+        "30": {
+          "windows": 1067,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.08063741919775214,
+          "minimum_return": -0.05266666309432333
+        },
+        "90": {
+          "windows": 1007,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.09782670636736746,
+          "minimum_return": -0.08955928609492314
+        }
+      },
+      "accounting": {
+        "max_cash_error": 2.0463630789890885e-12,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 2.1600499167107046e-12,
+        "reconciled": true
+      }
+    }
+  },
+  "criterion": "largest positive 2022\u20132024 net return with conservative 4h DD >= -20%",
+  "later": {
+    "nominal": {
+      "2025": {
+        "spot_control": {
+          "final_equity": 1195.9277384487755,
+          "net_pnl": 195.92773844877547,
+          "total_return": 0.19592773844877548,
+          "cagr": 0.19607430774676504,
+          "fees_paid_total": 9.592803144430682,
+          "slippage_paid_total": 5.755757946126122,
+          "gross_pnl_cost_addback": 211.27629953933229,
+          "maxDD": -0.10733137014890215,
+          "max_observed_drawdown": -0.10733137014890215,
+          "max_intraday_drawdown_bound": -0.13557195947431044,
+          "trades_count": 68,
+          "turnover": 9.592803144430682,
+          "mean_exposure": 0.21950325626901973,
+          "max_close_exposure": 0.5221626834127238,
+          "minimum_cash": 522.5360685086947,
+          "minimum_inventory": 0.0,
+          "sharpe": 1.367107886412881,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0684014006267637,
+              "minimum_return": -0.06479613385958238
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.12062569365023612,
+              "minimum_return": -0.08998090669737546
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.2538674078323613,
+              "minimum_return": -0.06350621430172831
+            }
+          },
+          "accounting": {
+            "max_cash_error": 6.821210263296962e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 9.094947017729282e-13,
+            "reconciled": true
+          }
+        },
+        "price_momentum": {
+          "final_equity": 733.8770739088783,
+          "net_pnl": -266.1229260911217,
+          "total_return": -0.2661229260911217,
+          "cagr": -0.2662784381387261,
+          "fees_paid_total": 167.11518290376395,
+          "slippage_paid_total": 100.2690440532293,
+          "gross_pnl_cost_addback": 1.261300865871533,
+          "maxDD": -0.27266435486385954,
+          "max_observed_drawdown": -0.2732464415806619,
+          "max_intraday_drawdown_bound": -0.2775301428731539,
+          "trades_count": 1215,
+          "turnover": 167.11518290376395,
+          "mean_exposure": 0.18812502241260767,
+          "max_close_exposure": 0.5175261406550823,
+          "minimum_cash": 365.87138447346626,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.2332208674401417,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05847512619443629,
+              "minimum_return": -0.0703217018164668
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.07085820728275127,
+              "minimum_return": -0.11405782440565537
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.07240059184571357,
+              "minimum_return": -0.1544197947661886
+            }
+          },
+          "accounting": {
+            "max_cash_error": 3.296918293926865e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 3.410605131648481e-12,
+            "reconciled": true
+          }
+        },
+        "flow_momentum": {
+          "final_equity": 767.6356567017447,
+          "net_pnl": -232.36434329825533,
+          "total_return": -0.23236434329825534,
+          "cagr": -0.23250336743500466,
+          "fees_paid_total": 153.92100502361126,
+          "slippage_paid_total": 92.3526080215023,
+          "gross_pnl_cost_addback": 13.909269746858229,
+          "maxDD": -0.2332451111661903,
+          "max_observed_drawdown": -0.2332451111661903,
+          "max_intraday_drawdown_bound": -0.235010338302869,
+          "trades_count": 921,
+          "turnover": 153.92100502361126,
+          "mean_exposure": 0.1002139061830719,
+          "max_close_exposure": 0.5077179303494938,
+          "minimum_cash": 384.3625443453576,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.024183000802449,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04288388210294247,
+              "minimum_return": -0.04071411470588038
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04711851856237481,
+              "minimum_return": -0.0639137614493287
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.033793694022522525,
+              "minimum_return": -0.13198504981709192
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.5011104298755527e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.6147972675971687e-12,
+            "reconciled": true
+          }
+        },
+        "price_breakout": {
+          "final_equity": 781.3959710723229,
+          "net_pnl": -218.60402892767706,
+          "total_return": -0.21860402892767705,
+          "cagr": -0.21873603797123697,
+          "fees_paid_total": 145.58191111333616,
+          "slippage_paid_total": 87.34908151749585,
+          "gross_pnl_cost_addback": 14.326963703154945,
+          "maxDD": -0.2280362738777305,
+          "max_observed_drawdown": -0.2280362738777305,
+          "max_intraday_drawdown_bound": -0.23179095252562598,
+          "trades_count": 956,
+          "turnover": 145.58191111333616,
+          "mean_exposure": 0.1570992496892838,
+          "max_close_exposure": 0.5149226287018727,
+          "minimum_cash": 394.02244710876016,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.9122915204939464,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05953044447787059,
+              "minimum_return": -0.040386926627775654
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.06908515909406443,
+              "minimum_return": -0.08691837376673306
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.1033981750351427,
+              "minimum_return": -0.1641603739602071
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.4779288903810084e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.5916157281026244e-12,
+            "reconciled": true
+          }
+        },
+        "flow_breakout": {
+          "final_equity": 821.0073161218455,
+          "net_pnl": -178.99268387815448,
+          "total_return": -0.17899268387815448,
+          "cagr": -0.17910358168770524,
+          "fees_paid_total": 114.39554434380105,
+          "slippage_paid_total": 68.63725437638996,
+          "gross_pnl_cost_addback": 4.04011484203653,
+          "maxDD": -0.18809130083110293,
+          "max_observed_drawdown": -0.18809130083110293,
+          "max_intraday_drawdown_bound": -0.19142155462719013,
+          "trades_count": 687,
+          "turnover": 114.39554434380103,
+          "mean_exposure": 0.12451153158430132,
+          "max_close_exposure": 0.5143690524763236,
+          "minimum_cash": 412.9446393084752,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.7430533505756922,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.06013759217579562,
+              "minimum_return": -0.035286612695135555
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.059697501641103656,
+              "minimum_return": -0.08145099346255202
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09896030777135412,
+              "minimum_return": -0.12692408670624578
+            }
+          },
+          "accounting": {
+            "max_cash_error": 9.094947017729282e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 9.094947017729282e-13,
+            "reconciled": true
+          }
+        },
+        "flow_reversion": {
+          "final_equity": 966.6407297660157,
+          "net_pnl": -33.35927023398426,
+          "total_return": -0.03335927023398426,
+          "cagr": -0.03338173336832273,
+          "fees_paid_total": 8.48810294550635,
+          "slippage_paid_total": 5.092854647111287,
+          "gross_pnl_cost_addback": -19.778312641366625,
+          "maxDD": -0.038628526426302656,
+          "max_observed_drawdown": -0.038628526426302656,
+          "max_intraday_drawdown_bound": -0.042089424897351235,
+          "trades_count": 36,
+          "turnover": 8.488102945506348,
+          "mean_exposure": 0.0061995044171225715,
+          "max_close_exposure": 0.45514910271748904,
+          "minimum_cash": 541.1066565363668,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.4370182254078345,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.006049904090171587,
+              "minimum_return": -0.017197828511553603
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.006049904090171587,
+              "minimum_return": -0.022384979175030684
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.006831975595141593,
+              "minimum_return": -0.028949241047061536
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.1368683772161603e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.2737367544323206e-13,
+            "reconciled": true
+          }
+        },
+        "flow_blend": {
+          "final_equity": 852.6298879130627,
+          "net_pnl": -147.3701120869373,
+          "total_return": -0.1473701120869373,
+          "cagr": -0.1474632128560126,
+          "fees_paid_total": 92.44557088731602,
+          "slippage_paid_total": 55.46731714577623,
+          "gross_pnl_cost_addback": 0.5427759461549542,
+          "maxDD": -0.14791841887757207,
+          "max_observed_drawdown": -0.1479194294144628,
+          "max_intraday_drawdown_bound": -0.15097114591863114,
+          "trades_count": 1279,
+          "turnover": 92.44557088731604,
+          "mean_exposure": 0.07687238764239224,
+          "max_close_exposure": 0.3405755818481749,
+          "minimum_cash": 575.1923642820992,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.63424839703085,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.03254870823949507,
+              "minimum_return": -0.020837227701482552
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.03150050788855974,
+              "minimum_return": -0.04657170724367676
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.03469295386922555,
+              "minimum_return": -0.0841879902568653
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.1368683772161603e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.1368683772161603e-12,
+            "reconciled": true
+          }
+        }
+      },
+      "2026": {
+        "spot_control": {
+          "final_equity": 1101.7941451574309,
+          "net_pnl": 101.79414515743088,
+          "total_return": 0.10179414515743088,
+          "cagr": 0.13848343152052012,
+          "fees_paid_total": 9.767035222687625,
+          "slippage_paid_total": 5.860067543726521,
+          "gross_pnl_cost_addback": 117.42124792384502,
+          "maxDD": -0.09463699435226636,
+          "max_observed_drawdown": -0.09464158455807137,
+          "max_intraday_drawdown_bound": -0.10098790819234615,
+          "trades_count": 75,
+          "turnover": 9.767035222687625,
+          "mean_exposure": 0.28111792302507477,
+          "max_close_exposure": 0.5183642513793429,
+          "minimum_cash": 468.955857327848,
+          "minimum_inventory": 0.0,
+          "sharpe": 0.9537503954564072,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.10396530077361721,
+              "minimum_return": -0.04430733172895229
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.13148084187093012,
+              "minimum_return": -0.05040984461991438
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.17688920481940085,
+              "minimum_return": -0.0871195968961681
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.2737367544323206e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 4.547473508864641e-13,
+            "reconciled": true
+          }
+        },
+        "price_momentum": {
+          "final_equity": 887.6846505940431,
+          "net_pnl": -112.31534940595691,
+          "total_return": -0.1123153494059569,
+          "cagr": -0.14734232989695073,
+          "fees_paid_total": 141.52934023594432,
+          "slippage_paid_total": 84.91764522895413,
+          "gross_pnl_cost_addback": 114.13163605894154,
+          "maxDD": -0.17956839840610173,
+          "max_observed_drawdown": -0.17956843013760393,
+          "max_intraday_drawdown_bound": -0.18394962063514697,
+          "trades_count": 920,
+          "turnover": 141.52934023594432,
+          "mean_exposure": 0.1920856954228954,
+          "max_close_exposure": 0.5144925150979023,
+          "minimum_cash": 424.4966091267761,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.17111055120804,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09783323291991053,
+              "minimum_return": -0.04034792194328729
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.07108991601952441,
+              "minimum_return": -0.04987855126113272
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04467488719112889,
+              "minimum_return": -0.09400657633326404
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.1368683772161603e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.1368683772161603e-12,
+            "reconciled": true
+          }
+        },
+        "flow_momentum": {
+          "final_equity": 832.4597026637355,
+          "net_pnl": -167.54029733626453,
+          "total_return": -0.16754029733626452,
+          "cagr": -0.21755649690593137,
+          "fees_paid_total": 119.70970192579409,
+          "slippage_paid_total": 71.82582979375964,
+          "gross_pnl_cost_addback": 23.9952343832892,
+          "maxDD": -0.20429870935783567,
+          "max_observed_drawdown": -0.20431506272583533,
+          "max_intraday_drawdown_bound": -0.20711709109327792,
+          "trades_count": 687,
+          "turnover": 119.70970192579409,
+          "mean_exposure": 0.1021090577698899,
+          "max_close_exposure": 0.5076906169556449,
+          "minimum_cash": 409.7954535773206,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.535658279008027,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.06409573796319368,
+              "minimum_return": -0.035488019075261
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.052515144795594715,
+              "minimum_return": -0.06825708130906316
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.011603101061772758,
+              "minimum_return": -0.11770126203549414
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.0800249583553523e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.1368683772161603e-12,
+            "reconciled": true
+          }
+        },
+        "price_breakout": {
+          "final_equity": 847.938142386004,
+          "net_pnl": -152.06185761399604,
+          "total_return": -0.15206185761399604,
+          "cagr": -0.19803104077437106,
+          "fees_paid_total": 105.99468955886616,
+          "slippage_paid_total": 63.5967437552739,
+          "gross_pnl_cost_addback": 17.529575700144015,
+          "maxDD": -0.2149401332698606,
+          "max_observed_drawdown": -0.21525526181739574,
+          "max_intraday_drawdown_bound": -0.21750113135412852,
+          "trades_count": 678,
+          "turnover": 105.99468955886617,
+          "mean_exposure": 0.1502035277269406,
+          "max_close_exposure": 0.5138020428492043,
+          "minimum_cash": 405.6339903668214,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.9110994215707504,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.08295393267857865,
+              "minimum_return": -0.03756053247410185
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.06205609890943675,
+              "minimum_return": -0.09180876783358616
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.020398851719506395,
+              "minimum_return": -0.15048590611410773
+            }
+          },
+          "accounting": {
+            "max_cash_error": 7.958078640513122e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 9.094947017729282e-13,
+            "reconciled": true
+          }
+        },
+        "flow_breakout": {
+          "final_equity": 847.3989241388615,
+          "net_pnl": -152.6010758611385,
+          "total_return": -0.1526010758611385,
+          "cagr": -0.1987132834390153,
+          "fees_paid_total": 85.93811767215439,
+          "slippage_paid_total": 51.56286516725859,
+          "gross_pnl_cost_addback": -15.100093021725513,
+          "maxDD": -0.20890057934309314,
+          "max_observed_drawdown": -0.20921813221002195,
+          "max_intraday_drawdown_bound": -0.21167200091479565,
+          "trades_count": 528,
+          "turnover": 85.93811767215439,
+          "mean_exposure": 0.11904705636733486,
+          "max_close_exposure": 0.5076906169556449,
+          "minimum_cash": 406.12498907031477,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.1001848203057323,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.08618044371889333,
+              "minimum_return": -0.038323831944022224
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0749507630529811,
+              "minimum_return": -0.08931210388336874
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.03712175957947861,
+              "minimum_return": -0.1626280280247867
+            }
+          },
+          "accounting": {
+            "max_cash_error": 8.526512829121202e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 9.094947017729282e-13,
+            "reconciled": true
+          }
+        },
+        "flow_reversion": {
+          "final_equity": 978.6598518992713,
+          "net_pnl": -21.340148100728698,
+          "total_return": -0.021340148100728696,
+          "cagr": -0.028447810079523794,
+          "fees_paid_total": 5.433339413369771,
+          "slippage_paid_total": 3.259999095170334,
+          "gross_pnl_cost_addback": -12.64680959218859,
+          "maxDD": -0.021340148100728706,
+          "max_observed_drawdown": -0.021340148100728706,
+          "max_intraday_drawdown_bound": -0.0223857083392468,
+          "trades_count": 23,
+          "turnover": 5.433339413369771,
+          "mean_exposure": 0.00788355318274149,
+          "max_close_exposure": 0.4865416744398648,
+          "minimum_cash": 507.49417661892517,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.174209259564166,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0019288617879154035,
+              "minimum_return": -0.005488083630656337
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0012288611263000515,
+              "minimum_return": -0.010194036135081075
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0012288611263000515,
+              "minimum_return": -0.01523611941391012
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.1368683772161603e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.2737367544323206e-13,
+            "reconciled": true
+          }
+        },
+        "flow_blend": {
+          "final_equity": 888.6625630035497,
+          "net_pnl": -111.33743699645026,
+          "total_return": -0.11133743699645027,
+          "cagr": -0.1460853615672797,
+          "fees_paid_total": 70.6073490427968,
+          "slippage_paid_total": 42.36441001403343,
+          "gross_pnl_cost_addback": 1.634322060379965,
+          "maxDD": -0.14338260190739593,
+          "max_observed_drawdown": -0.14361111887529376,
+          "max_intraday_drawdown_bound": -0.14545615521852484,
+          "trades_count": 947,
+          "turnover": 70.60734904279683,
+          "mean_exposure": 0.07641853346237142,
+          "max_close_exposure": 0.3400089523873823,
+          "minimum_cash": 580.950588343871,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.525592700819872,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05014798465737513,
+              "minimum_return": -0.01923665855727219
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04022975293027464,
+              "minimum_return": -0.045756959066694414
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.011780461111787544,
+              "minimum_return": -0.08920709337189336
+            }
+          },
+          "accounting": {
+            "max_cash_error": 6.821210263296962e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 7.958078640513122e-13,
+            "reconciled": true
+          }
+        }
+      },
+      "later_continuous": {
+        "spot_control": {
+          "final_equity": 1317.5336237122137,
+          "net_pnl": 317.53362371221374,
+          "total_return": 0.3175336237122137,
+          "cagr": 0.1710154872348555,
+          "fees_paid_total": 21.273122195160663,
+          "slippage_paid_total": 12.763765669798428,
+          "gross_pnl_cost_addback": 351.57051157717285,
+          "maxDD": -0.17734286924138853,
+          "max_observed_drawdown": -0.17734704012700409,
+          "max_intraday_drawdown_bound": -0.18613413088688535,
+          "trades_count": 144,
+          "turnover": 21.273122195160663,
+          "mean_exposure": 0.24581694817888008,
+          "max_close_exposure": 0.5221626834127238,
+          "minimum_cash": 522.5360685086947,
+          "minimum_inventory": 0.0,
+          "sharpe": 1.1825152674003816,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.10391631366540377,
+              "minimum_return": -0.06479613385958238
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.13142252884305505,
+              "minimum_return": -0.08998090669737546
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.2538674078323613,
+              "minimum_return": -0.09437531761104256
+            }
+          },
+          "accounting": {
+            "max_cash_error": 6.821210263296962e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 9.094947017729282e-13,
+            "reconciled": true
+          }
+        },
+        "price_momentum": {
+          "final_equity": 651.8470595569128,
+          "net_pnl": -348.15294044308723,
+          "total_return": -0.34815294044308726,
+          "cagr": -0.21729181395043562,
+          "fees_paid_total": 270.76704656017824,
+          "slippage_paid_total": 162.46025856287554,
+          "gross_pnl_cost_addback": 85.07436467996655,
+          "maxDD": -0.3854850623558017,
+          "max_observed_drawdown": -0.38548508612314825,
+          "max_intraday_drawdown_bound": -0.38927127424935837,
+          "trades_count": 2125,
+          "turnover": 270.76704656017824,
+          "mean_exposure": 0.1898459980456601,
+          "max_close_exposure": 0.5175261406550823,
+          "minimum_cash": 311.54111154948856,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.7848090610652807,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09818369076694644,
+              "minimum_return": -0.0703217018164668
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.07143183668169306,
+              "minimum_return": -0.11405782440565537
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.07240059184571357,
+              "minimum_return": -0.15800770669638464
+            }
+          },
+          "accounting": {
+            "max_cash_error": 3.296918293926865e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 3.410605131648481e-12,
+            "reconciled": true
+          }
+        },
+        "flow_momentum": {
+          "final_equity": 639.3537510984103,
+          "net_pnl": -360.64624890158973,
+          "total_return": -0.36064624890158975,
+          "cagr": -0.22591550345721056,
+          "fees_paid_total": 245.80628873972026,
+          "slippage_paid_total": 147.4837849956066,
+          "gross_pnl_cost_addback": 32.64382483373714,
+          "maxDD": -0.37578767221419174,
+          "max_observed_drawdown": -0.3758005011162261,
+          "max_intraday_drawdown_bound": -0.3770882317817872,
+          "trades_count": 1605,
+          "turnover": 245.80628873972023,
+          "mean_exposure": 0.10101824285836564,
+          "max_close_exposure": 0.5077179303494938,
+          "minimum_cash": 314.7350671622464,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.797821489467033,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.06409573796319346,
+              "minimum_return": -0.04071411470588038
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.052712243480265375,
+              "minimum_return": -0.06825708130906294
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.033793694022522525,
+              "minimum_return": -0.13198504981709192
+            }
+          },
+          "accounting": {
+            "max_cash_error": 3.069544618483633e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 3.183231456205249e-12,
+            "reconciled": true
+          }
+        },
+        "price_breakout": {
+          "final_equity": 662.9565153089901,
+          "net_pnl": -337.0434846910099,
+          "total_return": -0.3370434846910099,
+          "cagr": -0.20968252266310405,
+          "fees_paid_total": 228.19467522030448,
+          "slippage_paid_total": 136.91675558911612,
+          "gross_pnl_cost_addback": 28.067946118410703,
+          "maxDD": -0.3807783753802163,
+          "max_observed_drawdown": -0.381026156913308,
+          "max_intraday_drawdown_bound": -0.38268063549919384,
+          "trades_count": 1627,
+          "turnover": 228.19467522030448,
+          "mean_exposure": 0.15413581290394743,
+          "max_close_exposure": 0.5149226287018727,
+          "minimum_cash": 317.1256626772597,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.9068891368950778,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.08295393267857887,
+              "minimum_return": -0.040386926627775654
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.06908515909406443,
+              "minimum_return": -0.09185013334032777
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.1033981750351427,
+              "minimum_return": -0.17819601257451367
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.4779288903810084e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.5916157281026244e-12,
+            "reconciled": true
+          }
+        },
+        "flow_breakout": {
+          "final_equity": 696.0867007822025,
+          "net_pnl": -303.91329921779754,
+          "total_return": -0.30391329921779753,
+          "cagr": -0.18730798418972294,
+          "fees_paid_total": 184.77076700670244,
+          "slippage_paid_total": 110.8624572231929,
+          "gross_pnl_cost_addback": -8.280074987902196,
+          "maxDD": -0.34639052555371863,
+          "max_observed_drawdown": -0.3466520673849184,
+          "max_intraday_drawdown_bound": -0.3485560317993771,
+          "trades_count": 1212,
+          "turnover": 184.7707670067024,
+          "mean_exposure": 0.12217483973341502,
+          "max_close_exposure": 0.5143690524763236,
+          "minimum_cash": 333.5756085439723,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.8850083105439488,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.08668788637480396,
+              "minimum_return": -0.03832383194402311
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0755104323987601,
+              "minimum_return": -0.08931210388337041
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09896030777135412,
+              "minimum_return": -0.16262802802478848
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.2737367544323206e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.3874235921539366e-12,
+            "reconciled": true
+          }
+        },
+        "flow_reversion": {
+          "final_equity": 946.0124734326123,
+          "net_pnl": -53.987526567387704,
+          "total_return": -0.05398752656738771,
+          "cagr": -0.031273583498410695,
+          "fees_paid_total": 13.74019012111256,
+          "slippage_paid_total": 8.244102551503293,
+          "gross_pnl_cost_addback": -32.00323389477185,
+          "maxDD": -0.0539875265673877,
+          "max_observed_drawdown": -0.0539875265673877,
+          "max_intraday_drawdown_bound": -0.05706029757271336,
+          "trades_count": 59,
+          "turnover": 13.740190121112558,
+          "mean_exposure": 0.006920108356015933,
+          "max_close_exposure": 0.48654167443986485,
+          "minimum_cash": 490.56454123892104,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.6902393887861116,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.006049904090171587,
+              "minimum_return": -0.017197828511553603
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.006049904090171587,
+              "minimum_return": -0.022384979175030684
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.006831975595141593,
+              "minimum_return": -0.028949241047061536
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.2737367544323206e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.2737367544323206e-13,
+            "reconciled": true
+          }
+        },
+        "flow_blend": {
+          "final_equity": 758.2328868590354,
+          "net_pnl": -241.76711314096463,
+          "total_return": -0.24176711314096463,
+          "cagr": -0.14653062823979124,
+          "fees_paid_total": 152.58206277805692,
+          "slippage_paid_total": 91.5492385179405,
+          "gross_pnl_cost_addback": 2.3641881550327923,
+          "maxDD": -0.2610170816797126,
+          "max_observed_drawdown": -0.2612150938618667,
+          "max_intraday_drawdown_bound": -0.26315785546161985,
+          "trades_count": 2221,
+          "turnover": 152.5820627780569,
+          "mean_exposure": 0.07667813982997954,
+          "max_close_exposure": 0.34208166113598826,
+          "minimum_cash": 495.5842972908506,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.5791725478525107,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05014798465737491,
+              "minimum_return": -0.020837227701482552
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.040229752930274865,
+              "minimum_return": -0.04657170724367676
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.03469295386922555,
+              "minimum_return": -0.08920709337189248
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.1368683772161603e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.1368683772161603e-12,
+            "reconciled": true
+          }
+        }
+      },
+      "full_continuous": {
+        "spot_control": {
+          "final_equity": 2039.098148149017,
+          "net_pnl": 1039.098148149017,
+          "total_return": 1.0390981481490171,
+          "cagr": 0.1619303361212734,
+          "fees_paid_total": 73.8534057220484,
+          "slippage_paid_total": 44.31209633748675,
+          "gross_pnl_cost_addback": 1157.2636502085522,
+          "maxDD": -0.17663790803494828,
+          "max_observed_drawdown": -0.17664208249472924,
+          "max_intraday_drawdown_bound": -0.18541292644465768,
+          "trades_count": 432,
+          "turnover": 73.8534057220484,
+          "mean_exposure": 0.23464577905396822,
+          "max_close_exposure": 0.5311924602628524,
+          "minimum_cash": 502.0519528689379,
+          "minimum_inventory": 0.0,
+          "sharpe": 1.0226871127461648,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.10391635301084401,
+              "minimum_return": -0.11413210859628964
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.27015065157654616,
+              "minimum_return": -0.1293004017181104
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.29498800277634074,
+              "minimum_return": -0.12892955254186222
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.3642420526593924e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.5916157281026244e-12,
+            "reconciled": true
+          }
+        },
+        "price_momentum": {
+          "final_equity": 300.8554011165355,
+          "net_pnl": -699.1445988834645,
+          "total_return": -0.6991445988834645,
+          "cagr": -0.22353619210001296,
+          "fees_paid_total": 517.7817534880157,
+          "slippage_paid_total": 310.6690986430551,
+          "gross_pnl_cost_addback": 129.30625324760638,
+          "maxDD": -0.7197937774627599,
+          "max_observed_drawdown": -0.7197937883001829,
+          "max_intraday_drawdown_bound": -0.7223778947470091,
+          "trades_count": 5546,
+          "turnover": 517.7817534880157,
+          "mean_exposure": 0.18675153436767508,
+          "max_close_exposure": 0.5389612864045682,
+          "minimum_cash": 138.32566901004537,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.6958819281158335,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.10164144191530089,
+              "minimum_return": -0.07033567688389142
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.12490142997527309,
+              "minimum_return": -0.12195590592068606
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.13664194908956162,
+              "minimum_return": -0.18636090713318254
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.1937117960769683e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.2505552149377763e-12,
+            "reconciled": true
+          }
+        },
+        "flow_momentum": {
+          "final_equity": 307.40773653223795,
+          "net_pnl": -692.592263467762,
+          "total_return": -0.692592263467762,
+          "cagr": -0.2200043635116693,
+          "fees_paid_total": 482.002298802056,
+          "slippage_paid_total": 289.2014075813473,
+          "gross_pnl_cost_addback": 78.6114429156413,
+          "maxDD": -0.7066355811721593,
+          "max_observed_drawdown": -0.7066416104401215,
+          "max_intraday_drawdown_bound": -0.7088368485902943,
+          "trades_count": 4243,
+          "turnover": 482.002298802056,
+          "mean_exposure": 0.09929963907586044,
+          "max_close_exposure": 0.5302843481610757,
+          "minimum_cash": 143.12324905464828,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.4692538451742503,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0656844833030723,
+              "minimum_return": -0.05693594187938
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0927295936592003,
+              "minimum_return": -0.08670596421503762
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0745525846732511,
+              "minimum_return": -0.14948681992651225
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.2737367544323206e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.2737367544323206e-12,
+            "reconciled": true
+          }
+        },
+        "price_breakout": {
+          "final_equity": 494.05289015331385,
+          "net_pnl": -505.94710984668615,
+          "total_return": -0.5059471098466861,
+          "cagr": -0.13802157465599574,
+          "fees_paid_total": 525.9884503319107,
+          "slippage_paid_total": 315.5931465766285,
+          "gross_pnl_cost_addback": 335.63448706185306,
+          "maxDD": -0.5368718914735933,
+          "max_observed_drawdown": -0.53705721218622,
+          "max_intraday_drawdown_bound": -0.5378240616034674,
+          "trades_count": 4201,
+          "turnover": 525.9884503319106,
+          "mean_exposure": 0.15397837596410088,
+          "max_close_exposure": 0.539037756959688,
+          "minimum_cash": 235.66823774001222,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.0317933036046623,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.10406688261271957,
+              "minimum_return": -0.055939270099230165
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.13812926848249196,
+              "minimum_return": -0.13774681700841063
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.22418607899724385,
+              "minimum_return": -0.19863356434673607
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.0463630789890885e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.1600499167107046e-12,
+            "reconciled": true
+          }
+        },
+        "flow_breakout": {
+          "final_equity": 593.045300293712,
+          "net_pnl": -406.954699706288,
+          "total_return": -0.406954699706288,
+          "cagr": -0.10421621412754933,
+          "fees_paid_total": 474.28659520761914,
+          "slippage_paid_total": 284.57208380999924,
+          "gross_pnl_cost_addback": 351.9039793113304,
+          "maxDD": -0.44166913717584466,
+          "max_observed_drawdown": -0.4419044318746037,
+          "max_intraday_drawdown_bound": -0.4444191062738716,
+          "trades_count": 3235,
+          "turnover": 474.2865952076192,
+          "mean_exposure": 0.12619703477494465,
+          "max_close_exposure": 0.517130486690786,
+          "minimum_cash": 283.29173875173836,
+          "minimum_inventory": 0.0,
+          "sharpe": -0.8360114910658839,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09251335775657488,
+              "minimum_return": -0.05231389212927218
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.15267657484949493,
+              "minimum_return": -0.11414698437917792
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.2314440704309344,
+              "minimum_return": -0.16636393225361124
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.2168933355715126e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.2737367544323206e-12,
+            "reconciled": true
+          }
+        },
+        "flow_reversion": {
+          "final_equity": 900.4616100544947,
+          "net_pnl": -99.53838994550529,
+          "total_return": -0.09953838994550529,
+          "cagr": -0.021843052648406802,
+          "fees_paid_total": 39.85691182871781,
+          "slippage_paid_total": 23.91413422098648,
+          "gross_pnl_cost_addback": -35.76734389580099,
+          "maxDD": -0.1392849137616009,
+          "max_observed_drawdown": -0.1392849137616009,
+          "max_intraday_drawdown_bound": -0.1415330808929668,
+          "trades_count": 167,
+          "turnover": 39.85691182871781,
+          "mean_exposure": 0.008066599061769911,
+          "max_close_exposure": 0.49333968613365453,
+          "minimum_cash": 466.94367045373804,
+          "minimum_inventory": 0.0,
+          "sharpe": -0.9161949649051343,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.017095460718479893,
+              "minimum_return": -0.02309012219855766
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.022186046554784733,
+              "minimum_return": -0.035302022238303254
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.02214108035027218,
+              "minimum_return": -0.04534989132909473
+            }
+          },
+          "accounting": {
+            "max_cash_error": 9.094947017729282e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 9.094947017729282e-13,
+            "reconciled": true
+          }
+        },
+        "flow_blend": {
+          "final_equity": 567.916361096383,
+          "net_pnl": -432.08363890361704,
+          "total_return": -0.43208363890361706,
+          "cagr": -0.11234862961276815,
+          "fees_paid_total": 368.00290539827984,
+          "slippage_paid_total": 220.80179965854768,
+          "gross_pnl_cost_addback": 156.72106615321047,
+          "maxDD": -0.4502539128577655,
+          "max_observed_drawdown": -0.45040056678894547,
+          "max_intraday_drawdown_bound": -0.45138063252875793,
+          "trades_count": 5969,
+          "turnover": 368.0029053982798,
+          "mean_exposure": 0.07777146274914877,
+          "max_close_exposure": 0.4089364581525234,
+          "minimum_cash": 371.2018852360192,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.7108208683936763,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05018354268834413,
+              "minimum_return": -0.03041196743037977
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.08063741919775214,
+              "minimum_return": -0.05266666309432333
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09782670636736746,
+              "minimum_return": -0.09433572446184135
+            }
+          },
+          "accounting": {
+            "max_cash_error": 3.240074875066057e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 3.296918293926865e-12,
+            "reconciled": true
+          }
+        }
+      }
+    },
+    "doubled": {
+      "2025": {
+        "spot_control": {
+          "final_equity": 1178.0013025485953,
+          "net_pnl": 178.00130254859528,
+          "total_return": 0.17800130254859528,
+          "cagr": 0.17813348751253022,
+          "fees_paid_total": 19.00169914503235,
+          "slippage_paid_total": 10.45118554933482,
+          "gross_pnl_cost_addback": 207.45418724296243,
+          "maxDD": -0.10999029739750832,
+          "max_observed_drawdown": -0.10999029739750832,
+          "max_intraday_drawdown_bound": -0.13560781129183375,
+          "trades_count": 67,
+          "turnover": 9.500849572516175,
+          "mean_exposure": 0.2193959737183215,
+          "max_close_exposure": 0.5204032925014195,
+          "minimum_cash": 520.2029398776053,
+          "minimum_inventory": 0.0,
+          "sharpe": 1.2584755621275003,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.067936361306288,
+              "minimum_return": -0.06539114329593076
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.11701283446470234,
+              "minimum_return": -0.09199984827743857
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.2481369390642516,
+              "minimum_return": -0.06723136228531035
+            }
+          },
+          "accounting": {
+            "max_cash_error": 3.410605131648481e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 4.547473508864641e-13,
+            "reconciled": true
+          }
+        },
+        "price_momentum": {
+          "final_equity": 544.9495640427281,
+          "net_pnl": -455.05043595727193,
+          "total_return": -0.4550504359572719,
+          "cagr": -0.4552769766576803,
+          "fees_paid_total": 290.32693000752,
+          "slippage_paid_total": 159.6796402326341,
+          "gross_pnl_cost_addback": -5.043865717117825,
+          "maxDD": -0.45551956161736884,
+          "max_observed_drawdown": -0.4563372288418591,
+          "max_intraday_drawdown_bound": -0.45831097808063903,
+          "trades_count": 1204,
+          "turnover": 145.16346500376,
+          "mean_exposure": 0.18829833532019583,
+          "max_close_exposure": 0.5197600984812053,
+          "minimum_cash": 271.6189723209657,
+          "minimum_inventory": 0.0,
+          "sharpe": -4.2721193823730115,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05214491309496183,
+              "minimum_return": -0.08188543664608638
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.042575018056345115,
+              "minimum_return": -0.1419218483980177
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.0049040047088917404,
+              "minimum_return": -0.207462448590772
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.3642420526593924e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.3642420526593924e-12,
+            "reconciled": true
+          }
+        },
+        "flow_momentum": {
+          "final_equity": 587.1538088952706,
+          "net_pnl": -412.8461911047294,
+          "total_return": -0.4128461911047294,
+          "cagr": -0.4130602896563279,
+          "fees_paid_total": 271.1322621301794,
+          "slippage_paid_total": 149.122753136282,
+          "gross_pnl_cost_addback": 7.408824161731985,
+          "maxDD": -0.4132998836473598,
+          "max_observed_drawdown": -0.4132998836473598,
+          "max_intraday_drawdown_bound": -0.41443268679613987,
+          "trades_count": 915,
+          "turnover": 135.56613106508968,
+          "mean_exposure": 0.10028032763651903,
+          "max_close_exposure": 0.5122803377468603,
+          "minimum_cash": 294.41711596781926,
+          "minimum_inventory": 0.0,
+          "sharpe": -5.912445384567163,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.036001729715471775,
+              "minimum_return": -0.04828458667205138
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0194517836035224,
+              "minimum_return": -0.08842189047805804
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.0427057554910939,
+              "minimum_return": -0.17689370950205685
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.5916157281026244e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.7053025658242404e-12,
+            "reconciled": true
+          }
+        },
+        "price_breakout": {
+          "final_equity": 613.9061966918314,
+          "net_pnl": -386.0938033081686,
+          "total_return": -0.3860938033081686,
+          "cagr": -0.386298928550349,
+          "fees_paid_total": 259.3473087119472,
+          "slippage_paid_total": 142.64085318866097,
+          "gross_pnl_cost_addback": 15.894358592439573,
+          "maxDD": -0.38858190045463015,
+          "max_observed_drawdown": -0.38858191634190054,
+          "max_intraday_drawdown_bound": -0.3913042291624269,
+          "trades_count": 952,
+          "turnover": 129.6736543559736,
+          "mean_exposure": 0.15715660326465206,
+          "max_close_exposure": 0.5150880866757122,
+          "minimum_cash": 310.0302651177964,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.778020316775937,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.054868411518229854,
+              "minimum_return": -0.04558880467456594
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.045714113834935954,
+              "minimum_return": -0.10602716948442592
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.03755284182684315,
+              "minimum_return": -0.21103860154047072
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.3642420526593924e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.4779288903810084e-12,
+            "reconciled": true
+          }
+        },
+        "flow_breakout": {
+          "final_equity": 681.0677290637635,
+          "net_pnl": -318.9322709362365,
+          "total_return": -0.3189322709362365,
+          "cagr": -0.31911142113923174,
+          "fees_paid_total": 208.92643197667587,
+          "slippage_paid_total": 114.90933799544034,
+          "gross_pnl_cost_addback": 4.903499035879733,
+          "maxDD": -0.32179009529377156,
+          "max_observed_drawdown": -0.32179009529377156,
+          "max_intraday_drawdown_bound": -0.3237141920717902,
+          "trades_count": 683,
+          "turnover": 104.46321598833794,
+          "mean_exposure": 0.12457349544390735,
+          "max_close_exposure": 0.514649964740314,
+          "minimum_cash": 342.8819358058287,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.4036695160576267,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05678099044855145,
+              "minimum_return": -0.03816301213367379
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.043173721426648104,
+              "minimum_return": -0.0973292946619908
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04897350550695845,
+              "minimum_return": -0.16526529106910393
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.3642420526593924e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.4779288903810084e-12,
+            "reconciled": true
+          }
+        },
+        "flow_reversion": {
+          "final_equity": 954.1715561111234,
+          "net_pnl": -45.82844388887656,
+          "total_return": -0.045828443888876566,
+          "cagr": -0.04585910223256284,
+          "fees_paid_total": 16.8749077803786,
+          "slippage_paid_total": 9.281175475652326,
+          "gross_pnl_cost_addback": -19.67236063284564,
+          "maxDD": -0.04924252358484971,
+          "max_observed_drawdown": -0.04924252358484971,
+          "max_intraday_drawdown_bound": -0.052014957067199497,
+          "trades_count": 36,
+          "turnover": 8.437453890189301,
+          "mean_exposure": 0.006202383186141891,
+          "max_close_exposure": 0.4554646183495775,
+          "minimum_cash": 540.4186834615252,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.8956605187870883,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0056745040901715615,
+              "minimum_return": -0.0186610104897188
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0056745040901715615,
+              "minimum_return": -0.02421646946516043
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0033403783198289183,
+              "minimum_return": -0.033450156724254
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.2737367544323206e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.2737367544323206e-13,
+            "reconciled": true
+          }
+        },
+        "flow_blend": {
+          "final_equity": 733.1380053061171,
+          "net_pnl": -266.86199469388293,
+          "total_return": -0.26686199469388294,
+          "cagr": -0.26701785597833083,
+          "fees_paid_total": 171.7394509969662,
+          "slippage_paid_total": 94.45662329962974,
+          "gross_pnl_cost_addback": -0.6659203972869818,
+          "maxDD": -0.2670509234276035,
+          "max_observed_drawdown": -0.2670509234276035,
+          "max_intraday_drawdown_bound": -0.2682093644085989,
+          "trades_count": 1272,
+          "turnover": 85.8697254984831,
+          "mean_exposure": 0.07686865648435402,
+          "max_close_exposure": 0.34063344872241813,
+          "minimum_cash": 495.6002668971799,
+          "minimum_inventory": 0.0,
+          "sharpe": -5.077563666829524,
+          "rolling_gains": {
+            "7": {
+              "windows": 359,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.02932111467559717,
+              "minimum_return": -0.024334988648897604
+            },
+            "30": {
+              "windows": 336,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.016805439006577272,
+              "minimum_return": -0.05920787610232625
+            },
+            "90": {
+              "windows": 276,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.006990399330423225,
+              "minimum_return": -0.11310832613049637
+            }
+          },
+          "accounting": {
+            "max_cash_error": 7.958078640513122e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 9.094947017729282e-13,
+            "reconciled": true
+          }
+        }
+      },
+      "2026": {
+        "spot_control": {
+          "final_equity": 1086.8446541539818,
+          "net_pnl": 86.84465415398176,
+          "total_return": 0.08684465415398177,
+          "cagr": 0.11786381936514156,
+          "fees_paid_total": 19.401180536688106,
+          "slippage_paid_total": 10.670134065337221,
+          "gross_pnl_cost_addback": 116.91596875600709,
+          "maxDD": -0.09836918596896116,
+          "max_observed_drawdown": -0.09947308500753804,
+          "max_intraday_drawdown_bound": -0.10469766366017008,
+          "trades_count": 74,
+          "turnover": 9.700590268344051,
+          "mean_exposure": 0.28118015420322456,
+          "max_close_exposure": 0.5344819344462797,
+          "minimum_cash": 462.4383918291851,
+          "minimum_inventory": 0.0,
+          "sharpe": 0.8294494707386663,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.10355428033621972,
+              "minimum_return": -0.04497441167155891
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.12997105704473855,
+              "minimum_return": -0.05313946942679182
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.17351457531812775,
+              "minimum_return": -0.0934290862875683
+            }
+          },
+          "accounting": {
+            "max_cash_error": 3.410605131648481e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 6.821210263296962e-13,
+            "reconciled": true
+          }
+        },
+        "price_momentum": {
+          "final_equity": 705.7704904667401,
+          "net_pnl": -294.22950953325994,
+          "total_return": -0.29422950953325994,
+          "cagr": -0.37262810157453785,
+          "fees_paid_total": 253.6307821088565,
+          "slippage_paid_total": 139.4970498268468,
+          "gross_pnl_cost_addback": 98.89832240244334,
+          "maxDD": -0.31148141957037634,
+          "max_observed_drawdown": -0.3114814462181472,
+          "max_intraday_drawdown_bound": -0.31516031937673383,
+          "trades_count": 916,
+          "turnover": 126.81539105442825,
+          "mean_exposure": 0.19221792673955676,
+          "max_close_exposure": 0.5147989323248467,
+          "minimum_cash": 353.89990816234956,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.4120550989920697,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09294978068688153,
+              "minimum_return": -0.0534664274997767
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.040800718334345065,
+              "minimum_return": -0.0774158497640387
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.03279369920951036,
+              "minimum_return": -0.15944900809161322
+            }
+          },
+          "accounting": {
+            "max_cash_error": 5.684341886080801e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 5.684341886080801e-13,
+            "reconciled": true
+          }
+        },
+        "flow_momentum": {
+          "final_equity": 680.0521377228715,
+          "net_pnl": -319.9478622771285,
+          "total_return": -0.31994786227712846,
+          "cagr": -0.40302492505284304,
+          "fees_paid_total": 217.64747764982303,
+          "slippage_paid_total": 119.70613376836388,
+          "gross_pnl_cost_addback": 17.405749141058436,
+          "maxDD": -0.3336021946502534,
+          "max_observed_drawdown": -0.3345108439667459,
+          "max_intraday_drawdown_bound": -0.3365753801676348,
+          "trades_count": 686,
+          "turnover": 108.82373882491153,
+          "mean_exposure": 0.10215848038041293,
+          "max_close_exposure": 0.5081014325268334,
+          "minimum_cash": 338.32011983941305,
+          "minimum_inventory": 0.0,
+          "sharpe": -5.179930288536507,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05834255182101655,
+              "minimum_return": -0.04502102549666909
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.027094287044609144,
+              "minimum_return": -0.09704180824834396
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.05243558353781075,
+              "minimum_return": -0.17862761190828103
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.8189894035458565e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.9326762412674725e-12,
+            "reconciled": true
+          }
+        },
+        "price_breakout": {
+          "final_equity": 710.9462621172065,
+          "net_pnl": -289.0537378827935,
+          "total_return": -0.2890537378827935,
+          "cagr": -0.3664649739813042,
+          "fees_paid_total": 195.08544306253043,
+          "slippage_paid_total": 107.2967947367489,
+          "gross_pnl_cost_addback": 13.328499916485839,
+          "maxDD": -0.31605194467507514,
+          "max_observed_drawdown": -0.31658324005854055,
+          "max_intraday_drawdown_bound": -0.31856384819325256,
+          "trades_count": 676,
+          "turnover": 97.54272153126522,
+          "mean_exposure": 0.15023858778579613,
+          "max_close_exposure": 0.514132659602974,
+          "minimum_cash": 350.79862268020054,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.932286293650751,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.07721061602685042,
+              "minimum_return": -0.045741575873962326
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04155105657143743,
+              "minimum_return": -0.11637408865622723
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.042546823174769766,
+              "minimum_return": -0.20317217303196267
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.3642420526593924e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.3642420526593924e-12,
+            "reconciled": true
+          }
+        },
+        "flow_breakout": {
+          "final_equity": 734.5005527564243,
+          "net_pnl": -265.4994472435757,
+          "total_return": -0.26549944724357566,
+          "cagr": -0.33822669129380334,
+          "fees_paid_total": 160.70271803824335,
+          "slippage_paid_total": 88.3864750646301,
+          "gross_pnl_cost_addback": -16.41025414070222,
+          "maxDD": -0.29324893799409946,
+          "max_observed_drawdown": -0.2937970587802382,
+          "max_intraday_drawdown_bound": -0.2966238192420457,
+          "trades_count": 528,
+          "turnover": 80.35135901912167,
+          "mean_exposure": 0.11913987050450908,
+          "max_close_exposure": 0.5141326596029739,
+          "minimum_cash": 361.6768322478946,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.8582465368122296,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.08378670144801204,
+              "minimum_return": -0.04480680010319105
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.059699938302617994,
+              "minimum_return": -0.10892094939187069
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.011581078634562703,
+              "minimum_return": -0.20766798369567296
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.2505552149377763e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.3642420526593924e-12,
+            "reconciled": true
+          }
+        },
+        "flow_reversion": {
+          "final_equity": 970.6159131954124,
+          "net_pnl": -29.384086804587582,
+          "total_return": -0.02938408680458758,
+          "cagr": -0.03911686784123347,
+          "fees_paid_total": 10.826200733149141,
+          "slippage_paid_total": 5.9543951530082415,
+          "gross_pnl_cost_addback": -12.603490918430197,
+          "maxDD": -0.029384086804587595,
+          "max_observed_drawdown": -0.029384086804587595,
+          "max_intraday_drawdown_bound": -0.030048339935925483,
+          "trades_count": 23,
+          "turnover": 5.413100366574571,
+          "mean_exposure": 0.00788672663503343,
+          "max_close_exposure": 0.4868084271241627,
+          "minimum_cash": 505.34269282548036,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.856558308304291,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.001151677344753299,
+              "minimum_return": -0.0062310477529614605
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0004758162107505459,
+              "minimum_return": -0.013157257593595983
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0004758162107505459,
+              "minimum_return": -0.02002666554788224
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.1368683772161603e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.2737367544323206e-13,
+            "reconciled": true
+          }
+        },
+        "flow_blend": {
+          "final_equity": 793.0937219471147,
+          "net_pnl": -206.90627805288534,
+          "total_return": -0.20690627805288533,
+          "cagr": -0.2666605513033362,
+          "fees_paid_total": 133.67583965752334,
+          "slippage_paid_total": 73.52171216408207,
+          "gross_pnl_cost_addback": 0.2912737687200746,
+          "maxDD": -0.21656552971267085,
+          "max_observed_drawdown": -0.21697059144829178,
+          "max_intraday_drawdown_bound": -0.21856817327811118,
+          "trades_count": 945,
+          "turnover": 66.83791982876167,
+          "mean_exposure": 0.07643865047566147,
+          "max_close_exposure": 0.3422095731596778,
+          "minimum_cash": 527.2809725210587,
+          "minimum_inventory": 0.0,
+          "sharpe": -4.90036718050359,
+          "rolling_gains": {
+            "7": {
+              "windows": 267,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.047324238836052857,
+              "minimum_return": -0.02366903923267849
+            },
+            "30": {
+              "windows": 244,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.026248126258673787,
+              "minimum_return": -0.06285795511967196
+            },
+            "90": {
+              "windows": 184,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.030526785991163985,
+              "minimum_return": -0.12284949493134412
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.5916157281026244e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.7053025658242404e-12,
+            "reconciled": true
+          }
+        }
+      },
+      "later_continuous": {
+        "spot_control": {
+          "final_equity": 1278.1805398172728,
+          "net_pnl": 278.1805398172728,
+          "total_return": 0.2781805398172728,
+          "cagr": 0.15086186580222782,
+          "fees_paid_total": 41.848853071875276,
+          "slippage_paid_total": 23.01652053344975,
+          "gross_pnl_cost_addback": 343.04591342259783,
+          "maxDD": -0.18438549665619763,
+          "max_observed_drawdown": -0.18538408283146968,
+          "max_intraday_drawdown_bound": -0.19310445598486725,
+          "trades_count": 143,
+          "turnover": 20.924426535937638,
+          "mean_exposure": 0.24581499731047887,
+          "max_close_exposure": 0.5204032925014195,
+          "minimum_cash": 520.2029398776053,
+          "minimum_inventory": 0.0,
+          "sharpe": 1.061385560628825,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.10351175338215102,
+              "minimum_return": -0.06539114329593076
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.12991183486106483,
+              "minimum_return": -0.09199984827743857
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.2481369390642516,
+              "minimum_return": -0.0977412112132805
+            }
+          },
+          "accounting": {
+            "max_cash_error": 6.821210263296962e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 9.094947017729282e-13,
+            "reconciled": true
+          }
+        },
+        "price_momentum": {
+          "final_equity": 386.38668689873276,
+          "net_pnl": -613.6133131012673,
+          "total_return": -0.6136133131012673,
+          "cagr": -0.41980575084192706,
+          "fees_paid_total": 428.16992741889214,
+          "slippage_paid_total": 235.49352064106336,
+          "gross_pnl_cost_addback": 50.050134958688204,
+          "maxDD": -0.6162858608119963,
+          "max_observed_drawdown": -0.6162858756629048,
+          "max_intraday_drawdown_bound": -0.6177816524437719,
+          "trades_count": 2101,
+          "turnover": 214.08496370944601,
+          "mean_exposure": 0.19011501697483651,
+          "max_close_exposure": 0.5392980009022423,
+          "minimum_cash": 193.42340174929424,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.8814159407184072,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09652309587156571,
+              "minimum_return": -0.08188543664608638
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0442035361735309,
+              "minimum_return": -0.1419218483980177
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.0049040047088917404,
+              "minimum_return": -0.21237245740692745
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.8758328224066645e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.8758328224066645e-12,
+            "reconciled": true
+          }
+        },
+        "flow_momentum": {
+          "final_equity": 400.3711925879011,
+          "net_pnl": -599.6288074120989,
+          "total_return": -0.5996288074120989,
+          "cagr": -0.4078754319712192,
+          "fees_paid_total": 398.87173453672347,
+          "slippage_paid_total": 219.37947652831522,
+          "gross_pnl_cost_addback": 18.622403652939767,
+          "maxDD": -0.6015873584909237,
+          "max_observed_drawdown": -0.6021306036389165,
+          "max_intraday_drawdown_bound": -0.602920253329917,
+          "trades_count": 1586,
+          "turnover": 199.43586726836173,
+          "mean_exposure": 0.10108284921730161,
+          "max_close_exposure": 0.5122803377468603,
+          "minimum_cash": 199.18124264728976,
+          "minimum_inventory": 0.0,
+          "sharpe": -5.550286668227868,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05845918149936935,
+              "minimum_return": -0.04828458667205138
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.027393489428893858,
+              "minimum_return": -0.09698478162238622
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.0427057554910939,
+              "minimum_return": -0.17719927146764713
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.5916157281026244e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.7053025658242404e-12,
+            "reconciled": true
+          }
+        },
+        "price_breakout": {
+          "final_equity": 437.9267171556891,
+          "net_pnl": -562.0732828443108,
+          "total_return": -0.5620732828443108,
+          "cagr": -0.37668850574804646,
+          "fees_paid_total": 378.69706050772595,
+          "slippage_paid_total": 208.28328093541205,
+          "gross_pnl_cost_addback": 24.907058598827177,
+          "maxDD": -0.5774652860588798,
+          "max_observed_drawdown": -0.5777929938270299,
+          "max_intraday_drawdown_bound": -0.5788648278784833,
+          "trades_count": 1614,
+          "turnover": 189.34853025386298,
+          "mean_exposure": 0.15428245921164876,
+          "max_close_exposure": 0.539446143867606,
+          "minimum_cash": 215.70608422640686,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.8105340841449005,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.07967603640920484,
+              "minimum_return": -0.04574157587396266
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.045714113834935954,
+              "minimum_return": -0.11641461366732475
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.03755284182684315,
+              "minimum_return": -0.22339823457543306
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.3642420526593924e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.4779288903810084e-12,
+            "reconciled": true
+          }
+        },
+        "flow_breakout": {
+          "final_equity": 501.64198181244825,
+          "net_pnl": -498.35801818755175,
+          "total_return": -0.49835801818755177,
+          "cagr": -0.32628247985578784,
+          "fees_paid_total": 318.1378319713457,
+          "slippage_paid_total": 174.9758012385414,
+          "gross_pnl_cost_addback": -5.244384977664652,
+          "maxDD": -0.5161899317192176,
+          "max_observed_drawdown": -0.5165651506176727,
+          "max_intraday_drawdown_bound": -0.5172447863960992,
+          "trades_count": 1201,
+          "turnover": 159.06891598567285,
+          "mean_exposure": 0.12226792727360546,
+          "max_close_exposure": 0.5196191144428164,
+          "minimum_cash": 245.5060863761925,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.5776106655685824,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.08378670144801204,
+              "minimum_return": -0.04480680010319127
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.05966532095752375,
+              "minimum_return": -0.10892094939187091
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04897350550695845,
+              "minimum_return": -0.20766798369567296
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.3642420526593924e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.4779288903810084e-12,
+            "reconciled": true
+          }
+        },
+        "flow_reversion": {
+          "final_equity": 926.1340962798859,
+          "net_pnl": -73.86590372011415,
+          "total_return": -0.07386590372011415,
+          "cagr": -0.04297991224123843,
+          "fees_paid_total": 27.2049605806989,
+          "slippage_paid_total": 14.96268996449873,
+          "gross_pnl_cost_addback": -31.698253174916523,
+          "maxDD": -0.07386590372011415,
+          "max_observed_drawdown": -0.07386590372011415,
+          "max_intraday_drawdown_bound": -0.07589456868635192,
+          "trades_count": 59,
+          "turnover": 13.602480290349451,
+          "mean_exposure": 0.00692311321991523,
+          "max_close_exposure": 0.4868084271241627,
+          "minimum_cash": 482.18362358267404,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.2088329761084626,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0056745040901715615,
+              "minimum_return": -0.0186610104897188
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0056745040901715615,
+              "minimum_return": -0.02421646946516043
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0033403783198289183,
+              "minimum_return": -0.033450156724254
+            }
+          },
+          "accounting": {
+            "max_cash_error": 4.547473508864641e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 4.547473508864641e-13,
+            "reconciled": true
+          }
+        },
+        "flow_blend": {
+          "final_equity": 581.9283890183998,
+          "net_pnl": -418.0716109816002,
+          "total_return": -0.41807161098160023,
+          "cagr": -0.26651766825549195,
+          "fees_paid_total": 269.3552951340903,
+          "slippage_paid_total": 148.14541163296155,
+          "gross_pnl_cost_addback": -0.5709042145483636,
+          "maxDD": -0.4208539214992908,
+          "max_observed_drawdown": -0.4211533593267449,
+          "max_intraday_drawdown_bound": -0.42155258999437906,
+          "trades_count": 2199,
+          "turnover": 134.6776475670451,
+          "mean_exposure": 0.07669433886923226,
+          "max_close_exposure": 0.342209573159678,
+          "minimum_cash": 387.0347635102769,
+          "minimum_inventory": 0.0,
+          "sharpe": -4.9945960165407035,
+          "rolling_gains": {
+            "7": {
+              "windows": 632,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.047402763200165676,
+              "minimum_return": -0.024334988648897604
+            },
+            "30": {
+              "windows": 609,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.026233888602951838,
+              "minimum_return": -0.06256668548137956
+            },
+            "90": {
+              "windows": 549,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.006990399330423225,
+              "minimum_return": -0.12234814064380417
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.1368683772161603e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.1368683772161603e-12,
+            "reconciled": true
+          }
+        }
+      },
+      "full_continuous": {
+        "spot_control": {
+          "final_equity": 1882.4019190201816,
+          "net_pnl": 882.4019190201816,
+          "total_return": 0.8824019190201816,
+          "cagr": 0.1425243083277652,
+          "fees_paid_total": 141.23346274127437,
+          "slippage_paid_total": 77.6786085343691,
+          "gross_pnl_cost_addback": 1101.313990295825,
+          "maxDD": -0.18367949189330823,
+          "max_observed_drawdown": -0.18467894245560745,
+          "max_intraday_drawdown_bound": -0.19238246187061714,
+          "trades_count": 428,
+          "turnover": 70.61673137063718,
+          "mean_exposure": 0.23469613452840776,
+          "max_close_exposure": 0.5313863107619023,
+          "minimum_cash": 494.56275691007596,
+          "minimum_inventory": 0.0,
+          "sharpe": 0.9173955567595806,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.10351184340684116,
+              "minimum_return": -0.11504839969977976
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.2693600598752901,
+              "minimum_return": -0.13149598973240073
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.28921057784292614,
+              "minimum_return": -0.13292852159418
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.4779288903810084e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.8189894035458565e-12,
+            "reconciled": true
+          }
+        },
+        "price_momentum": {
+          "final_equity": 83.37993665585151,
+          "net_pnl": -916.6200633441485,
+          "total_return": -0.9166200633441486,
+          "cagr": -0.4074401006929934,
+          "fees_paid_total": 625.9595934771722,
+          "slippage_paid_total": 344.27784128947894,
+          "gross_pnl_cost_addback": 53.61737142250263,
+          "maxDD": -0.9210951539995166,
+          "max_observed_drawdown": -0.921095157053375,
+          "max_intraday_drawdown_bound": -0.9213773990842214,
+          "trades_count": 5065,
+          "turnover": 312.9797967385862,
+          "mean_exposure": 0.18936359381963797,
+          "max_close_exposure": 0.7182638725824724,
+          "minimum_cash": 23.70809916321823,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.3890501330678102,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.11545885711464576,
+              "minimum_return": -0.08298388778910593
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.0837474640024658,
+              "minimum_return": -0.14214574022169746
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.027035910606030278,
+              "minimum_return": -0.2414419921606864
+            }
+          },
+          "accounting": {
+            "max_cash_error": 4.234834705130197e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 4.234834705130197e-12,
+            "reconciled": true
+          }
+        },
+        "flow_momentum": {
+          "final_equity": 87.06299078575643,
+          "net_pnl": -912.9370092142435,
+          "total_return": -0.9129370092142435,
+          "cagr": -0.40202035782874956,
+          "fees_paid_total": 606.4085961910379,
+          "slippage_paid_total": 333.5247605706652,
+          "gross_pnl_cost_addback": 26.99634754745955,
+          "maxDD": -0.9132470329157879,
+          "max_observed_drawdown": -0.9133653226574586,
+          "max_intraday_drawdown_bound": -0.9137279418660423,
+          "trades_count": 4044,
+          "turnover": 303.20429809551894,
+          "mean_exposure": 0.09946000545013856,
+          "max_close_exposure": 0.6690088870671986,
+          "minimum_cash": 30.961185485717213,
+          "minimum_inventory": 0.0,
+          "sharpe": -4.9827788039488325,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.060604221767379896,
+              "minimum_return": -0.06730139836055293
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.054553660464235154,
+              "minimum_return": -0.10938790053707947
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": -0.018317828799729985,
+              "minimum_return": -0.1999527705124332
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.4210854715202004e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.4779288903810084e-12,
+            "reconciled": true
+          }
+        },
+        "price_breakout": {
+          "final_equity": 167.897890160754,
+          "net_pnl": -832.1021098392459,
+          "total_return": -0.8321021098392459,
+          "cagr": -0.3133057326679376,
+          "fees_paid_total": 665.62977470293,
+          "slippage_paid_total": 366.0965668395553,
+          "gross_pnl_cost_addback": 199.6242317032394,
+          "maxDD": -0.8381998301120012,
+          "max_observed_drawdown": -0.8383253142337579,
+          "max_intraday_drawdown_bound": -0.8384809775728992,
+          "trades_count": 4082,
+          "turnover": 332.81488735146496,
+          "mean_exposure": 0.1541619751465221,
+          "max_close_exposure": 0.5592269711120514,
+          "minimum_cash": 73.46279723170917,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.663743650037762,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.09835260319611971,
+              "minimum_return": -0.06030245631925768
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.11096479221152467,
+              "minimum_return": -0.1515637389358836
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.1547707416719737,
+              "minimum_return": -0.24144825040529005
+            }
+          },
+          "accounting": {
+            "max_cash_error": 2.4158453015843406e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 2.4442670110147446e-12,
+            "reconciled": true
+          }
+        },
+        "flow_breakout": {
+          "final_equity": 248.67233976386342,
+          "net_pnl": -751.3276602361366,
+          "total_return": -0.7513276602361366,
+          "cagr": -0.2540754707601952,
+          "fees_paid_total": 644.6188572443712,
+          "slippage_paid_total": 354.5406713609794,
+          "gross_pnl_cost_addback": 247.83186836921396,
+          "maxDD": -0.7598367219761273,
+          "max_observed_drawdown": -0.7600229806063987,
+          "max_intraday_drawdown_bound": -0.7600545143223,
+          "trades_count": 3148,
+          "turnover": 322.3094286221856,
+          "mean_exposure": 0.12639370311872072,
+          "max_close_exposure": 0.5394461438676061,
+          "minimum_cash": 116.74884644239935,
+          "minimum_inventory": 0.0,
+          "sharpe": -2.289427655970794,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.08778603933092155,
+              "minimum_return": -0.05633940470742704
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.13331983720773355,
+              "minimum_return": -0.1263402988149961
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.17255469033817938,
+              "minimum_return": -0.20802380012399935
+            }
+          },
+          "accounting": {
+            "max_cash_error": 1.8189894035458565e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 1.8189894035458565e-12,
+            "reconciled": true
+          }
+        },
+        "flow_reversion": {
+          "final_equity": 847.5004640984788,
+          "net_pnl": -152.4995359015212,
+          "total_return": -0.1524995359015212,
+          "cagr": -0.03425295490244107,
+          "fees_paid_total": 77.39626695161837,
+          "slippage_paid_total": 42.5679074556045,
+          "gross_pnl_cost_addback": -32.53536149429833,
+          "maxDD": -0.17694868679133002,
+          "max_observed_drawdown": -0.17694868679133002,
+          "max_intraday_drawdown_bound": -0.1787919992512682,
+          "trades_count": 166,
+          "turnover": 38.698133475809186,
+          "mean_exposure": 0.008069085493148038,
+          "max_close_exposure": 0.4937025989109977,
+          "minimum_cash": 441.24371018028535,
+          "minimum_inventory": 0.0,
+          "sharpe": -1.4209741220577041,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.016318603204231286,
+              "minimum_return": -0.02442927851255483
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.019867468487215767,
+              "minimum_return": -0.03803176080483617
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.017005757738397742,
+              "minimum_return": -0.05007291279880366
+            }
+          },
+          "accounting": {
+            "max_cash_error": 4.547473508864641e-13,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 4.547473508864641e-13,
+            "reconciled": true
+          }
+        },
+        "flow_blend": {
+          "final_equity": 280.73778476896916,
+          "net_pnl": -719.2622152310308,
+          "total_return": -0.7192622152310308,
+          "cagr": -0.23477346957276868,
+          "fees_paid_total": 539.1159760588831,
+          "slippage_paid_total": 296.51392763730087,
+          "gross_pnl_cost_addback": 116.36768846515315,
+          "maxDD": -0.7204752614169441,
+          "max_observed_drawdown": -0.7206197850242828,
+          "max_intraday_drawdown_bound": -0.7206442529717181,
+          "trades_count": 5760,
+          "turnover": 269.55798802944156,
+          "mean_exposure": 0.07784712788152795,
+          "max_close_exposure": 0.40906326873348253,
+          "minimum_cash": 172.14223549784725,
+          "minimum_inventory": 0.0,
+          "sharpe": -3.825290885906147,
+          "rolling_gains": {
+            "7": {
+              "windows": 1728,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04803705862434904,
+              "minimum_return": -0.03440169473911692
+            },
+            "30": {
+              "windows": 1705,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.06167322477154924,
+              "minimum_return": -0.06242135795749859
+            },
+            "90": {
+              "windows": 1645,
+              "doublings": 0,
+              "doubling_frequency": 0.0,
+              "maximum_return": 0.04573362327817643,
+              "minimum_return": -0.12475944816616003
+            }
+          },
+          "accounting": {
+            "max_cash_error": 6.0254023992456496e-12,
+            "max_inventory_error": 0.0,
+            "max_equity_error": 6.0254023992456496e-12,
+            "reconciled": true
+          }
+        }
+      }
+    }
+  },
+  "extra_one_bar_delay_frozen": {
+    "2025": {
+      "final_equity": 1158.2923353906267,
+      "net_pnl": 158.2923353906267,
+      "total_return": 0.1582923353906267,
+      "cagr": 0.15840892163250775,
+      "fees_paid_total": 9.37339308401873,
+      "slippage_paid_total": 5.624098234748832,
+      "gross_pnl_cost_addback": 173.28982670939428,
+      "maxDD": -0.11199023475231418,
+      "max_observed_drawdown": -0.11199023475231418,
+      "max_intraday_drawdown_bound": -0.13498038852272687,
+      "trades_count": 70,
+      "turnover": 9.37339308401873,
+      "mean_exposure": 0.2192600010756138,
+      "max_close_exposure": 0.525481864605111,
+      "minimum_cash": 501.1474666025721,
+      "minimum_inventory": 0.0,
+      "sharpe": 1.1261780801944021,
+      "rolling_gains": {
+        "7": {
+          "windows": 359,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.06941677611566122,
+          "minimum_return": -0.0662585687301035
+        },
+        "30": {
+          "windows": 336,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.11852451339297732,
+          "minimum_return": -0.09422192805222263
+        },
+        "90": {
+          "windows": 276,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.2528670841218059,
+          "minimum_return": -0.0683824118194043
+        }
+      },
+      "accounting": {
+        "max_cash_error": 3.410605131648481e-13,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 4.547473508864641e-13,
+        "reconciled": true
+      }
+    },
+    "2026": {
+      "final_equity": 1081.8637342493869,
+      "net_pnl": 81.86373424938688,
+      "total_return": 0.08186373424938688,
+      "cagr": 0.11101490380869561,
+      "fees_paid_total": 9.625239164460663,
+      "slippage_paid_total": 5.7749847921992385,
+      "gross_pnl_cost_addback": 97.26395820604678,
+      "maxDD": -0.10381119072103684,
+      "max_observed_drawdown": -0.10381119072103684,
+      "max_intraday_drawdown_bound": -0.10992144233600121,
+      "trades_count": 73,
+      "turnover": 9.625239164460663,
+      "mean_exposure": 0.28112632377051505,
+      "max_close_exposure": 0.5227218420771008,
+      "minimum_cash": 459.90073615379595,
+      "minimum_inventory": 0.0,
+      "sharpe": 0.7935112783389966,
+      "rolling_gains": {
+        "7": {
+          "windows": 267,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.10254715229444789,
+          "minimum_return": -0.0404667001416682
+        },
+        "30": {
+          "windows": 244,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.12865992880503452,
+          "minimum_return": -0.05621339298879546
+        },
+        "90": {
+          "windows": 184,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.1804948220988063,
+          "minimum_return": -0.09899399073558646
+        }
+      },
+      "accounting": {
+        "max_cash_error": 2.2737367544323206e-13,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 4.547473508864641e-13,
+        "reconciled": true
+      }
+    },
+    "later_continuous": {
+      "final_equity": 1252.414028775855,
+      "net_pnl": 252.41402877585506,
+      "total_return": 0.25241402877585506,
+      "cagr": 0.13752230242765218,
+      "fees_paid_total": 20.531327340076125,
+      "slippage_paid_total": 12.31867243755135,
+      "gross_pnl_cost_addback": 285.26402855348255,
+      "maxDD": -0.19431867670675407,
+      "max_observed_drawdown": -0.19431867670675407,
+      "max_intraday_drawdown_bound": -0.20274921845567684,
+      "trades_count": 145,
+      "turnover": 20.531327340076125,
+      "mean_exposure": 0.2454728430492734,
+      "max_close_exposure": 0.525481864605111,
+      "minimum_cash": 501.1474666025721,
+      "minimum_inventory": 0.0,
+      "sharpe": 0.9782502631690694,
+      "rolling_gains": {
+        "7": {
+          "windows": 632,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.10254715229104217,
+          "minimum_return": -0.0662585687301035
+        },
+        "30": {
+          "windows": 609,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.12865989554039392,
+          "minimum_return": -0.09422192805222263
+        },
+        "90": {
+          "windows": 549,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.2528670841218059,
+          "minimum_return": -0.09914216640471496
+        }
+      },
+      "accounting": {
+        "max_cash_error": 4.547473508864641e-13,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 4.547473508864641e-13,
+        "reconciled": true
+      }
+    },
+    "full_continuous": {
+      "final_equity": 1942.9016905939084,
+      "net_pnl": 942.9016905939084,
+      "total_return": 0.9429016905939084,
+      "cagr": 0.15016281311972368,
+      "fees_paid_total": 72.80406269825986,
+      "slippage_paid_total": 43.682470664950166,
+      "gross_pnl_cost_addback": 1059.3882239571183,
+      "maxDD": -0.19361788566909743,
+      "max_observed_drawdown": -0.19361788566909743,
+      "max_intraday_drawdown_bound": -0.20203257806875208,
+      "trades_count": 435,
+      "turnover": 72.80406269825988,
+      "mean_exposure": 0.23462270632180526,
+      "max_close_exposure": 0.5341006145251225,
+      "minimum_cash": 506.4311943017109,
+      "minimum_inventory": 0.0,
+      "sharpe": 0.9654849874097123,
+      "rolling_gains": {
+        "7": {
+          "windows": 1728,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.1025471480970459,
+          "minimum_return": -0.10102025766671907
+        },
+        "30": {
+          "windows": 1705,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.27117812645182315,
+          "minimum_return": -0.10364766579377749
+        },
+        "90": {
+          "windows": 1645,
+          "doublings": 0,
+          "doubling_frequency": 0.0,
+          "maximum_return": 0.2979946748818987,
+          "minimum_return": -0.11468191843000908
+        }
+      },
+      "accounting": {
+        "max_cash_error": 1.7053025658242404e-12,
+        "max_inventory_error": 0.0,
+        "max_equity_error": 2.0463630789890885e-12,
+        "reconciled": true
+      }
+    }
+  },
+  "control_daily_equivalence": {
+    "2025_nominal": {
+      "daily_net_return": 0.19592773844877548,
+      "four_hour_net_return": 0.19592773844877548,
+      "daily_drawdown_bound": -0.13557195947431044,
+      "four_hour_drawdown_bound": -0.13557195947431044,
+      "same_close_equity_and_fills": true
+    },
+    "2026_nominal": {
+      "daily_net_return": 0.10179414515743088,
+      "four_hour_net_return": 0.10179414515743088,
+      "daily_drawdown_bound": -0.10098790819234615,
+      "four_hour_drawdown_bound": -0.10098790819234615,
+      "same_close_equity_and_fills": true
+    },
+    "later_continuous_nominal": {
+      "daily_net_return": 0.3175336237122135,
+      "four_hour_net_return": 0.3175336237122137,
+      "daily_drawdown_bound": -0.18613413088688535,
+      "four_hour_drawdown_bound": -0.18613413088688535,
+      "same_close_equity_and_fills": true
+    },
+    "full_continuous_nominal": {
+      "daily_net_return": 1.039098148149017,
+      "four_hour_net_return": 1.0390981481490171,
+      "daily_drawdown_bound": -0.18541292644465757,
+      "four_hour_drawdown_bound": -0.18541292644465768,
+      "same_close_equity_and_fills": true
+    },
+    "2025_doubled": {
+      "daily_net_return": 0.17800130254859528,
+      "four_hour_net_return": 0.17800130254859528,
+      "daily_drawdown_bound": -0.13560781129183375,
+      "four_hour_drawdown_bound": -0.13560781129183375,
+      "same_close_equity_and_fills": true
+    },
+    "2026_doubled": {
+      "daily_net_return": 0.08684465415398222,
+      "four_hour_net_return": 0.08684465415398177,
+      "daily_drawdown_bound": -0.10469766366017008,
+      "four_hour_drawdown_bound": -0.10469766366017008,
+      "same_close_equity_and_fills": true
+    },
+    "later_continuous_doubled": {
+      "daily_net_return": 0.2781805398172728,
+      "four_hour_net_return": 0.2781805398172728,
+      "daily_drawdown_bound": -0.19310445598486725,
+      "four_hour_drawdown_bound": -0.19310445598486725,
+      "same_close_equity_and_fills": true
+    },
+    "full_continuous_doubled": {
+      "daily_net_return": 0.8824019190201788,
+      "four_hour_net_return": 0.8824019190201816,
+      "daily_drawdown_bound": -0.19238246187061736,
+      "four_hour_drawdown_bound": -0.19238246187061714,
+      "same_close_equity_and_fills": true
+    }
+  },
+  "gates": {
+    "development_eligible": true,
+    "beats_control_2025": false,
+    "beats_control_2026": false,
+    "beats_control_later_continuous": false,
+    "full_nominal_drawdown": true,
+    "full_doubled_drawdown": true,
+    "later_doubled_positive": true,
+    "accounting": true
+  },
+  "historical_improvement_screen_passed": false,
+  "live_eligible": false,
+  "costs": {
+    "nominal": {
+      "fee_rate": 0.001,
+      "slippage_bps": 5.0,
+      "spread_bps": 2.0
+    },
+    "doubled": {
+      "fee_rate": 0.002,
+      "slippage_bps": 10.0,
+      "spread_bps": 2.0
+    }
+  },
+  "initial_usdt": 1000.0,
+  "constraints": {
+    "spot_only": true,
+    "leverage": false,
+    "borrowing": false,
+    "shorts": false,
+    "derivatives": false,
+    "martingale": false,
+    "target_cap": 0.5,
+    "asset_cap": 0.25
+  },
+  "limitations": [
+    "Previously studied historical periods; not a fresh holdout",
+    "Three surviving assets; universe survivorship not controlled",
+    "Aggregated taker-flow bars, not historical order-book depth",
+    "Modeled costs, not measured live fills or account-specific fee tier",
+    "Overlapping doubling windows are not independent future probabilities",
+    "Conservative within-bar high/low bound, not exact tick drawdown",
+    "20% historical budget is not a future loss guarantee"
+  ]
+}

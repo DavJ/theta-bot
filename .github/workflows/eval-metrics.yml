@@ -19,6 +19,8 @@ on:
       - 'download_binance_data.py'
       - 'scripts/download_binance_archive.py'
       - 'scripts/download_external_signals.py'
+      - 'scripts/download_spot_flow.py'
+      - 'scripts/download_spot_universe.py'
       - 'scripts/research_*.py'
       - 'scripts/write_*_report.py'
       - 'requirements.txt'
@@ -44,7 +46,7 @@ jobs:
       - name: Run regression suite
         run: python -m pytest -q tests
       - name: Check research entry-point syntax
-        run: python -m py_compile scripts/research_*.py scripts/write_*_report.py scripts/download_external_signals.py
+        run: python -m py_compile scripts/research_*.py scripts/write_*_report.py scripts/download_external_signals.py scripts/download_spot_flow.py scripts/download_spot_universe.py
       - name: Run legacy metrics unit tests
         run: python test_eval_metrics.py
       - name: Download public history (optional)

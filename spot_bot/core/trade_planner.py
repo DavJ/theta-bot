@@ -56,7 +56,7 @@ def plan_trade(
         step_size: Exchange quantity step size for rounding
         min_usdt_reserve: Minimum USDT balance to maintain (spot only)
         max_notional_per_trade: Maximum notional per trade (optional cap)
-        allow_short: Allow negative positions (False for spot)
+        allow_short: Legacy argument; True is forbidden by the spot-only policy
         return_threshold: Return threshold for limit pricing and sell guard (optional)
 
     Returns:
@@ -72,9 +72,12 @@ def plan_trade(
     7. Determine action (HOLD, BUY, SELL)
     8. Compute limit_price based on return_threshold
     """
-    # Clamp target exposure for spot (no shorting)
-    if not allow_short:
-        target_exposure = max(0.0, min(1.0, target_exposure))
+    if allow_short:
+        raise ValueError("Spot-only policy forbids shorting and borrowed exposure")
+    if (not all(math.isfinite(x) for x in (target_exposure, portfolio.usdt, portfolio.base))
+            or portfolio.usdt < -1e-9 or portfolio.base < -1e-12):
+        raise ValueError("Finite owned spot balances and target required")
+    target_exposure = max(0.0, min(1.0, target_exposure))
 
     # Compute target base position from target exposure
     if price <= 0.0:

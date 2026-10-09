@@ -69,6 +69,10 @@ class EngineParams:
     max_exposure: Optional[float] = None  # Optional risk cap enforced at the known decision price
     execution_policy: str = "limit_then_market"  # or "market" at the known decision price
 
+    def __post_init__(self):
+        if self.allow_short:
+            raise ValueError("Spot-only policy forbids shorting and borrowed exposure")
+
 
 def run_step(
     bar: MarketBar,
@@ -108,6 +112,8 @@ def run_step(
     5. Call trade_planner to get TradePlan (with rounding, guards)
     6. Return plan (no execution here)
     """
+    if params.allow_short:
+        raise ValueError("Spot-only policy forbids shorting and borrowed exposure")
     if params.execution_policy not in {"limit_then_market", "market"}:
         raise ValueError("execution_policy must be limit_then_market or market")
     # Planning occurs at bar.open. Mark existing balances at that known price
@@ -343,6 +349,8 @@ def simulate_execution(
     Fee model:
         fee = notional * fee_rate
     """
+    if params.allow_short:
+        raise ValueError("Spot-only policy forbids shorting and borrowed exposure")
     if plan.action == "HOLD" or plan.delta_base == 0.0:
         return ExecutionResult(
             filled_base=0.0,
@@ -454,7 +462,7 @@ def simulate_execution(
 
 def _cap_spot_execution(execution: ExecutionResult, portfolio: PortfolioState, params: EngineParams) -> ExecutionResult:
     """Fit a simulated spot fill to actual cash/holdings, including fees."""
-    if execution.status != "filled" or params.allow_short:
+    if execution.status != "filled":
         return execution
     requested_qty = abs(execution.filled_base)
     if execution.filled_base > 0:

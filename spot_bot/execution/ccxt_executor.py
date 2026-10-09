@@ -75,7 +75,7 @@ class CCXTExecutor:
         if not hasattr(ccxt, self.config.exchange_id):
             raise ValueError(f"Exchange '{self.config.exchange_id}' not found in ccxt.")
         cls = getattr(ccxt, self.config.exchange_id)
-        self.exchange = cls({"enableRateLimit": True})
+        self.exchange = cls({"enableRateLimit": True, "options": {"defaultType": "spot"}})
         if self.config.api_key and self.config.api_secret:
             self.exchange.apiKey = self.config.api_key
             self.exchange.secret = self.config.api_secret
@@ -136,6 +136,44 @@ class CCXTExecutor:
                 "precision": {"price": 2, "amount": 8},
                 "limits": {"cost": {"min": self.config.min_notional}},
             }
+
+    def _spot_order_guard(self, side: str, qty: float, price: float) -> Optional[str]:
+        """Fail closed unless the order uses owned, free spot funds."""
+        if (side not in {"buy", "sell"} or not all(map(math.isfinite, (qty, price)))
+                or qty <= 0 or price <= 0):
+            return "invalid_spot_order"
+        base = self.config.symbol.split("/")[0]
+        if ":" in self.config.symbol or base.endswith(("UP", "DOWN", "BULL", "BEAR")):
+            return "forbidden_instrument"
+        try:
+            options = self.exchange.options
+            if not isinstance(options, dict) or options.get("defaultType") != "spot":
+                return "spot_account_unverified"
+            self.exchange.load_markets()
+            market = self.exchange.market(self.config.symbol)
+            if not isinstance(market, dict) or market.get("spot") is not True or market.get("contract"):
+                return "spot_market_unverified"
+            base, quote = market["base"], market["quote"]
+            balances = self.exchange.fetch_balance(params={"type": "spot"})
+            currency = quote if side == "buy" else base
+            free = balances.get("free", {}).get(currency)
+            if free is None:
+                free = balances.get(currency, {}).get("free")
+            if free is None or not math.isfinite(float(free)) or float(free) < 0:
+                return "spot_balance_unverified"
+            rates = (self.config.fee_rate, self.config.taker_fee_rate, self.config.maker_fee_rate)
+            if not all(math.isfinite(rate) and 0 <= rate < 1 for rate in rates):
+                return "invalid_spot_cost_config"
+            fee = max(rates)
+            reserve = self.config.min_balance_reserve_usdt if quote == "USDT" else 0.0
+            if not math.isfinite(reserve) or reserve < 0:
+                return "invalid_spot_cost_config"
+            required = qty * price * (1 + fee) + reserve if side == "buy" else qty
+            if float(free) + 1e-10 < required:
+                return "insufficient_owned_spot_balance"
+        except Exception:
+            return "spot_balance_unverified"
+        return None
 
     def quantize_price(self, price: float) -> float:
         """Round price to exchange precision."""
@@ -332,7 +370,7 @@ class CCXTExecutor:
             return {"status": "rejected", "reason": "max_trades_per_day"}
         if (self.turnover_today + notional) > self.config.max_turnover_per_day:
             return {"status": "rejected", "reason": "max_turnover_per_day"}
-        if not self._has_reserve():
+        if side == "buy" and not self._has_reserve():
             return {"status": "rejected", "reason": "reserve_guard"}
 
         try:
@@ -401,6 +439,10 @@ class CCXTExecutor:
             notional_quantized = qty_quantized * limit_price
             if notional_quantized < self.config.min_notional:
                 return {"status": "rejected", "reason": "min_notional_after_quantize"}
+
+            guard = self._spot_order_guard(side, qty_quantized, limit_price)
+            if guard:
+                return {"status": "rejected", "reason": guard}
             
             # Create limit order with postOnly
             # Different exchanges support different parameters for post-only orders:
@@ -499,9 +541,12 @@ class CCXTExecutor:
             return {"status": "rejected", "reason": "max_turnover_per_day"}
         if not self._slippage_guard(last_close):
             return {"status": "rejected", "reason": "slippage_guard"}
-        if not self._has_reserve():
+        if side == "buy" and not self._has_reserve():
             return {"status": "rejected", "reason": "reserve_guard"}
 
+        guard = self._spot_order_guard(side, qty, last_close * (1 + self.config.slippage_bps_limit / 10000))
+        if guard:
+            return {"status": "rejected", "reason": guard}
         try:
             order = self.exchange.create_order(
                 symbol=self.config.symbol, type="market", side=side, amount=qty
