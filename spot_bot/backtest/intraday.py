@@ -14,8 +14,9 @@ from spot_bot.core.types import PortfolioState
 def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
                       initial_usdt=1000., fee_rate=.001, slippage_bps=5., spread_bps=2.,
                       max_exposure=.5, asset_cap=.25, rebalance_band=.01,
-                      min_notional=10., daily_control=False, signal_delay_bars=0):
-    """Use bar t-1's completed target at t open; extra delay is optional stress."""
+                      min_notional=10., daily_control=False, signal_delay_bars=0,
+                      completed_buy_mask=None):
+    """Lag completed targets and optional buy permissions; sells never need permission."""
     if not markets or not 0 < asset_cap <= max_exposure <= 1:
         raise ValueError("Owned spot capital and nonnegative spot target limits required")
     if (not np.isfinite([initial_usdt, fee_rate, slippage_bps, spread_bps, min_notional,
@@ -52,6 +53,13 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
             or (completed_targets.sum(axis=1) > max_exposure + 1e-12).any()):
         raise ValueError("Spot targets must align, be finite, nonnegative and within caps")
     targets = completed_targets.shift(1 + signal_delay_bars).fillna(0).to_numpy(dtype=float)
+    if completed_buy_mask is None:
+        buy_allowed = np.ones_like(targets, dtype=bool)
+    else:
+        if (list(completed_buy_mask.columns) != symbols or not completed_buy_mask.index.equals(first)
+                or not completed_buy_mask.dtypes.eq(bool).all() or completed_buy_mask.isna().any().any()):
+            raise ValueError("Completed buy mask must be aligned, nonnullable boolean data")
+        buy_allowed = completed_buy_mask.shift(1 + signal_delay_bars, fill_value=False).to_numpy(dtype=bool)
     begin = pd.Timestamp(start) if start is not None else index[0]
     finish = pd.Timestamp(end) if end is not None else index[-1] + pd.Timedelta("4h")
     locations = np.flatnonzero((index >= begin) & (index < finish))
@@ -85,12 +93,17 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
             final = np.minimum(final, asset_cap)
             if final.sum() > max_exposure:
                 final *= max_exposure / final.sum()
+            # Compare to actual owned positions, not a signal-state approximation.
+            # Block only increases; preserve inactivity exits and required cap sales.
+            final = np.where(buy_allowed[i], final, np.minimum(final, current))
             cap_reduction = (current > asset_cap + 1e-12) | (current.sum() > max_exposure + 1e-12)
             for j in np.argsort(final - current, kind="stable"):
                 if not inactive[j] and not cap_reduction[j] and abs(final[j] - current[j]) < rebalance_band:
                     continue
                 state = replace(holdings[j], usdt=cash, equity=nav, exposure=float(current[j]))
                 plan = plan_trade(state, prices[j], final[j], min_notional, allow_loss_exits=True)
+                if not buy_allowed[i, j] and plan.delta_base > 0:
+                    continue
                 plan = replace(plan, order_type="market", limit_price=None)
                 fill = simulate_execution(plan, prices[j], params, portfolio=state)
                 updated = apply_fill(state, fill)
