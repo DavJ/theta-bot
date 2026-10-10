@@ -11,7 +11,7 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest archived experiments: **2026-10-09**. These are historical simulations,
+Latest spot experiments: **2026-10-09**; optional long-option model: **2026-10-10**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
 Each account starts with 1,000 USDT. Full history is one continuous account from
@@ -56,11 +56,34 @@ windows do not estimate independent future doubling probabilities.
 - [Broad-universe results, source audits and all rejected variants](docs/evaluation/THETABOT_BROAD_UNIVERSE_2026-10-09.md) · [JSON evidence](docs/evaluation/THETABOT_BROAD_UNIVERSE_2026-10-09.json) · [Fixed protocol](docs/evaluation/BROAD_UNIVERSE_RESEARCH_PLAN.md)
 - [Multiscale, cost and timing results](docs/evaluation/THETABOT_MULTISCALE_SPOT_2026-10-09.md) · [Fixed protocol](docs/evaluation/MULTISCALE_SPOT_RESEARCH_PLAN.md)
 
+The optional paid-option model initially reserves 10% of the original account,
+with monthly purchases capped at 20% of that sleeve's current cash, including
+fees. It never replenishes option losses from spot. Four fixed signals on inverse
+and USDC contracts are compared with full-capital spot and idle-cash controls.
+For 1,000 quote units, options do not improve full-period profit; inverse minimum
+lots prevent every buy. For 10,000 units, the development-frozen inverse directional
+5%-OTM policy models **+314.31%** full-account net versus **+108.82%** spot, and
+**+53.44%** versus **+35.31%** on the separately funded 2025–2026 account.
+
+This model uses historical trades with premium markups, not executable asks;
+held-option marks and drawdowns are synthetic. Full profit falls to **+132.15%**
+with a 4h delay. Cost stress gives **+236.23%**, but modeled DD reaches **20.14%**
+and fails the 20% budget. Three options contribute 80.04% of net option P&L.
+Retained wins grow the sleeve to 54.62% of the final account, so its initial 10%
+funding is not a permanent exposure cap. This is an exploratory result with no
+live eligibility; it does not establish executable option profitability.
+
+- [All option models, stress results and limitations](docs/evaluation/THETABOT_LONG_OPTIONS_2026-10-10.md) · [JSON evidence](docs/evaluation/THETABOT_LONG_OPTIONS_2026-10-10.json) · [Closed-option audit](docs/evaluation/THETABOT_LONG_OPTIONS_2026-10-10_CLOSED_OPTIONS.csv) · [Fixed protocol](docs/evaluation/LONG_OPTIONS_RESEARCH_PLAN.md)
+
 ## Binding trading constraints
 
 Only owned spot cash and inventory may be traded. Leverage, loans, margin,
 financial shorts, futures/options, leveraged tokens and martingale loss-doubling
-are excluded. Cash and inventory must remain nonnegative, including fees. The
+are excluded from live execution. A 2026-10-10 user-authorized exception permits
+offline modeling of fully paid long calls/puts in an isolated cash sleeve; the
+research switch defaults off and has no order adapter. Long options still contain
+economic leverage. See the [fixed option protocol](docs/evaluation/LONG_OPTIONS_RESEARCH_PLAN.md).
+Cash and inventory must remain nonnegative, including fees. The
 planner rejects its legacy short switch; impossible fills are rejected. Exchange
 execution requires verified spot-market information and sufficient free funds.
 
@@ -132,6 +155,11 @@ python -m scripts.write_multiscale_spot_report
 python -m scripts.download_spot_universe
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_broad_universe
 python -m scripts.write_broad_universe_report
+
+# Optional paid-option MODEL: historical trade proxies, synthetic held marks
+python -m scripts.download_long_options
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_long_options --options-enabled
+python -m scripts.write_long_options_report
 ```
 
 Each fixed study persists its development selection before later economic replay.

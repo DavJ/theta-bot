@@ -1,10 +1,16 @@
 # Theta Bot constraints
 
-The user requires owned-funds **spot-only** trading. This constraint applies to
-new research, executable strategies, configuration and recommendations.
+The user requires owned-funds **spot-only** execution. On 2026-10-10 the user
+explicitly authorized offline profitability modeling of fully paid long options
+as an optional, disabled-by-default research sleeve. This narrow exception does
+not authorize live option trading or relax the remaining constraints.
 
-- Do not introduce leverage, loans, margin accounts, financial shorts, futures,
-  options, leveraged tokens or martingale loss-doubling.
+- Do not introduce loans, leveraged/margin-funded positions, financial shorts,
+  standalone futures, written options, leveraged tokens or martingale loss-doubling.
+- The long-option research exception must use owned cash, premium/fee budgets,
+  nonnegative positions, no replenishment from the spot sleeve, explicit data and
+  execution-model limitations, and an off switch. Long options contain economic
+  leverage; do not describe them as unleveraged or proven safe.
 - Historical derivative studies are archived rejected work; do not promote them
   to active strategies. Mathematical derivatives in features are unrelated.
 - Cash and asset inventory must remain nonnegative, including execution fees.
