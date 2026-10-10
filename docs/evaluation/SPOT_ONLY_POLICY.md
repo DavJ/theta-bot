@@ -6,6 +6,19 @@ loss-doubling are excluded from further development and strategy selection.
 Historical derivative reports remain records of rejected research, not permitted
 strategies. No live trading or deployment is authorized by an offline experiment.
 
+## Narrow research exception — 2026-10-10
+
+The user subsequently authorized profitability modeling of bought (long) options,
+with a future on/off control. Fully paid call/put research is now permitted in an
+isolated cash sleeve. It is disabled by default and has no order adapter. Written
+options, loans, leveraged/margin-funded positions and standalone futures remain
+excluded. An exchange's instantaneous expiry settlement intermediate is not an
+actively opened futures strategy. Economic leverage remains present in long options.
+Limit premium plus fees, reserve the option capital from the original funded
+account, and do not replenish option losses from spot. Historical trade prices
+without bid/ask depth are price proxies, not executable quotes. Model valuations
+are not actual historical option marks. This exception does not enable live trading.
+
 The spot planner rejects `allow_short=True`. Simulated and recorded fills must
 preserve nonnegative quote cash and base inventory, including fees. Live order
 submission must verify a spot market and sufficient free spot balances; unknown

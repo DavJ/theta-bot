@@ -82,6 +82,7 @@ test_cache_int/
 !data/README.md
 !docs/evaluation/*.json
 !docs/evaluation/*.md
+!docs/evaluation/*_CLOSED_OPTIONS.csv
 # Exclude: synthetic test data
 data/*_synthetic*.csv.gz
 # Exclude: raw data directories (users should download their own)
