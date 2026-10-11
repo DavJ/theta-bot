@@ -11,7 +11,8 @@ import pytest
 from scripts.download_long_options import select_contract
 from spot_bot.backtest.intraday import run_intraday_spot
 from spot_bot.research.long_options import (LongOptionsConfig, option_value, entry_cost,
-    expiry_receipt, replay_option_sleeve, run_optional_long_options, reconcile_option_sleeve)
+    expiry_receipt, replay_option_sleeve, run_optional_long_options, reconcile_option_sleeve,
+    owned_spot_open_equity, reconcile_purchase_budgets)
 
 
 def market(days=60):
@@ -202,4 +203,95 @@ def test_unverified_or_noncausal_entry_is_rejected(kind):
     {'options_enabled': 1}, {'family': 'future'}, {'policy': 'written_call'}, {'delay_bars': True},
     {'option_fee_rate': -.1}, {'conversion_fee': -.1}, {'iv_mark_multiplier': 0.}])
 def test_invalid_optional_risk_or_product_config_fails_closed(kwargs):
+    with pytest.raises(ValueError): LongOptionsConfig(**kwargs)
+
+
+@pytest.mark.parametrize('family', ['inverse', 'linear'])
+def test_account_purchase_limit_includes_all_costs_and_respects_owned_cash(family):
+    markets, target = market(31)
+    config = LongOptionsConfig(options_enabled=True, family=family, monthly_account_budget=.01)
+    _, fills, summary = run_optional_long_options(markets, target, [observation(family)],
+        config=config, start='2024-01-01T00:00:00Z', end='2024-02-01T00:00:00Z', initial_usdt=1000.)
+    paid = -fills['options'].loc[fills['options'].event == 'buy', 'cash_flow'].sum()
+    assert 0 < paid <= 10. + 1e-10
+    assert summary['options']['final_cash'] == pytest.approx(100 - paid)
+    assert summary['options']['maximum_monthly_debit_account_fraction'] <= .01
+    assert summary['options']['accounting']['monthly_budgets_reconciled']
+
+
+@pytest.mark.parametrize('basis', ['current', 'initial'])
+def test_account_budget_cannot_expand_with_only_the_option_sleeves_wins(basis):
+    markets, _ = market(60)
+    first = observation(delivery=500.)
+    second = observation(entry='2024-02-05', expiry='2024-02-23 08:00')
+    second['contract']['instrument_name'] = 'BTC-23FEB24-100-C'
+    config = LongOptionsConfig(options_enabled=True, monthly_account_budget=.02, account_budget_basis=basis)
+    opening = pd.Series(900., index=markets['BTCUSDT'].index)
+    _, trades, stats = replay_option_sleeve(markets, [first, second], config,
+        start='2024-01-01T00:00:00Z', end='2024-03-01T00:00:00Z', initial_cash=100.,
+        initial_account_equity=1000., spot_open_values=opening)
+    first_budget, later = stats['purchase_budgets']
+    assert first_budget['allowed_debit'] == 20.
+    assert later['cash_before'] > 100.
+    expected = .02 * (later['cash_before'] + 900. if basis == 'current' else 1000.)
+    assert later['allowed_debit'] == pytest.approx(expected)
+    assert later['spent'] <= expected + 1e-10
+    assert later['spent'] < .2 * later['cash_before']
+    assert trades.qty.gt(0).all()
+
+
+@pytest.mark.parametrize('problem', ['missing', 'wrong_capital', 'wrong_funding', 'negative', 'shifted'])
+def test_account_cap_rejects_inconsistent_or_unfunded_context(problem):
+    markets, _ = market(31)
+    opening = pd.Series(900., index=markets['BTCUSDT'].index)
+    capital = 1000.
+    if problem == 'missing': opening = None
+    elif problem == 'wrong_capital': capital = 2000.
+    elif problem == 'wrong_funding': opening.iloc[0] = 1900.
+    elif problem == 'negative': opening.iloc[-1] = -1.
+    elif problem == 'shifted': opening.index += pd.Timedelta(hours=4)
+    with pytest.raises(ValueError, match='funded'):
+        replay_option_sleeve(markets, [observation()], LongOptionsConfig(options_enabled=True, monthly_account_budget=.02),
+            start='2024-01-01T00:00:00Z', end='2024-02-01T00:00:00Z', initial_cash=100.,
+            initial_account_equity=capital, spot_open_values=opening)
+
+
+def test_opening_budget_uses_previous_owned_inventory_and_current_open_only():
+    markets, _ = market(1)
+    dates = markets['BTCUSDT'].index
+    spot = pd.DataFrame({'timestamp': dates, 'usdt': 500.,
+        'base_BTCUSDT': 1., 'base_ETHUSDT': 0., 'base_BNBUSDT': 0.})
+    a = owned_spot_open_equity(markets, spot, 1000.)
+    changed = spot.copy()
+    changed.loc[2:, ['usdt', 'base_BTCUSDT']] = 999999.
+    markets['BTCUSDT'].loc[dates[2:], 'close'] = 999999.
+    b = owned_spot_open_equity(markets, changed, 1000.)
+    np.testing.assert_array_equal(a.iloc[:3], b.iloc[:3])
+    assert a.iloc[0] == 1000. and a.iloc[1] == 600.
+
+
+def test_independent_budget_audit_detects_added_cash_debit():
+    markets, _ = market(31)
+    config = LongOptionsConfig(options_enabled=True, monthly_account_budget=.01)
+    _, trades, stats = replay_option_sleeve(markets, [observation()], config,
+        start='2024-01-01T00:00:00Z', end='2024-02-01T00:00:00Z', initial_cash=100.,
+        initial_account_equity=1000., spot_open_values=pd.Series(900., index=markets['BTCUSDT'].index))
+    trades.loc[trades.event == 'buy', 'cash_flow'] -= 1.
+    with pytest.raises(ValueError, match='Monthly purchase'):
+        reconcile_purchase_budgets(trades, stats['purchase_budgets'], config)
+
+
+def test_counterfactual_unfilled_entry_is_separate_from_missing_source_quotes():
+    markets, _ = market(31)
+    row = observation()
+    _, trades, stats = replay_option_sleeve(markets, [row], LongOptionsConfig(options_enabled=True),
+        start='2024-01-01T00:00:00Z', end='2024-02-01T00:00:00Z', initial_cash=100.,
+        unfilled_entries={(row['contract']['instrument_name'], row['execution_time'])})
+    assert trades.empty and stats['counterfactual_unfilled'] == 1
+    assert stats['no_recent_trade'] == 0 and stats['final_cash'] == 100.
+
+
+@pytest.mark.parametrize('kwargs', [{'monthly_account_budget': -.01}, {'monthly_account_budget': np.nan},
+    {'monthly_account_budget': .3}, {'account_budget_basis': 'future'}])
+def test_invalid_account_purchase_limits_are_rejected(kwargs):
     with pytest.raises(ValueError): LongOptionsConfig(**kwargs)

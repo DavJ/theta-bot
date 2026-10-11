@@ -11,7 +11,7 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest spot experiments: **2026-10-09**; optional long-option model: **2026-10-10**. These are historical simulations,
+Latest spot experiments: **2026-10-09**; optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
 Each account starts with 1,000 USDT. Full history is one continuous account from
@@ -74,6 +74,27 @@ funding is not a permanent exposure cap. This is an exploratory result with no
 live eligibility; it does not establish executable option profitability.
 
 - [All option models, stress results and limitations](docs/evaluation/THETABOT_LONG_OPTIONS_2026-10-10.md) · [JSON evidence](docs/evaluation/THETABOT_LONG_OPTIONS_2026-10-10.json) · [Closed-option audit](docs/evaluation/THETABOT_LONG_OPTIONS_2026-10-10_CLOSED_OPTIONS.csv) · [Fixed protocol](docs/evaluation/LONG_OPTIONS_RESEARCH_PLAN.md)
+
+The bounded-purchase follow-up adds an optional limit on monthly premium plus
+purchase costs using current funded account opening equity or initial capital.
+The old 20%-of-option-cash limit also applies. A 2%-of-current-account directional
+variant models **+176.13%** full profit for 10,000 units. Joint cost-plus-delay
+stress improves from **+85.09%** in the old directional model to **+100.74%**;
+the new variant's worst modeled DD across four scenarios is **19.89%**.
+Actual nominal monthly purchase debits fall from a maximum 5.98% to 1.89% of
+contemporaneous funded equity. This bounds purchase spending, not held market
+values or future drawdown.
+
+Development's four-scenario choice is the more conservative `call_current1`,
+with +110.80% nominal full profit and 19.18% worst modeled DD. It does not beat
+spot in every profit scenario. The directional 2% model is a descriptive candidate,
+not a replacement selected on an unseen period. Excluding its three largest
+positive option fills reduces full profit to **+98.73%**, below **+108.82%** spot;
+profit concentration remains material. No new inverse variant buys an option
+for the 1,000-unit account. The study reconciles 448 paths and reproduces 96
+archived control comparisons; the execution-price limitations remain.
+
+- [Bounded purchase results and all stresses](docs/evaluation/THETABOT_OPTION_BUDGETS_2026-10-12.md) · [JSON evidence](docs/evaluation/THETABOT_OPTION_BUDGETS_2026-10-12.json) · [Monthly purchase audit](docs/evaluation/THETABOT_OPTION_BUDGETS_2026-10-12_PURCHASE_BUDGETS.csv) · [Fixed protocol](docs/evaluation/OPTION_BUDGET_RESEARCH_PLAN.md)
 
 ## Binding trading constraints
 
@@ -160,6 +181,10 @@ python -m scripts.write_broad_universe_report
 python -m scripts.download_long_options
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_long_options --options-enabled
 python -m scripts.write_long_options_report
+
+# Optional funded-account purchase limits; joint cost/time and missed-fill stresses
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_option_budgets --options-enabled
+python -m scripts.write_option_budgets_report
 ```
 
 Each fixed study persists its development selection before later economic replay.

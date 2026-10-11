@@ -30,11 +30,14 @@ class LongOptionsConfig:
     conversion_impact: float = .0006
     delay_bars: int = 0
     iv_mark_multiplier: float = 1.
+    monthly_account_budget: float | None = None
+    account_budget_basis: str = 'current'
 
     def __post_init__(self):
         if (type(self.options_enabled) is not bool or self.family not in ('inverse', 'linear')
                 or self.policy not in ('call_atm', 'call_otm', 'direction_atm', 'direction_otm')
-                or type(self.delay_bars) is not int or self.delay_bars not in (0, 1)):
+                or type(self.delay_bars) is not int or self.delay_bars not in (0, 1)
+                or self.account_budget_basis not in ('current', 'initial')):
             raise ValueError('Invalid long-option research switch/policy/delay')
         values = [self.sleeve_fraction, self.monthly_cash_budget, self.premium_markup,
                   self.option_fee_rate, self.delivery_fee_rate, self.fee_cap,
@@ -45,6 +48,9 @@ class LongOptionsConfig:
                 or not 0 <= self.fee_cap <= 1 or not 0 <= self.conversion_fee < .1
                 or not 0 <= self.conversion_impact < .1 or self.iv_mark_multiplier <= 0):
             raise ValueError('Invalid owned-cash option budget/cost/valuation inputs')
+        if self.monthly_account_budget is not None and (not np.isfinite(self.monthly_account_budget)
+                or not 0 < self.monthly_account_budget <= .2):
+            raise ValueError('Invalid total-account option purchase budget')
 
 
 def option_value(spot, strike, years, iv, side):
@@ -114,7 +120,8 @@ def expiry_receipt(row, spot, config):
         'conversion_fee': conversion_fee}
 
 
-def replay_option_sleeve(markets, observations, config, *, start, end, initial_cash):
+def replay_option_sleeve(markets, observations, config, *, start, end, initial_cash,
+                         initial_account_equity=None, spot_open_values=None, unfilled_entries=frozenset()):
     """Hold paid options to official delivery; mark held positions with entry IV."""
     if not config.options_enabled:
         raise ValueError('Paid-option replay requires explicit offline opt-in')
@@ -123,6 +130,17 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
     index = full[(full >= begin) & (full < finish)]
     if index.empty or not np.isfinite(initial_cash) or initial_cash <= 0:
         raise ValueError('Invalid option cash or evaluation dates')
+    funded_open = None
+    if config.monthly_account_budget is not None:
+        if (initial_account_equity is None or not np.isfinite(initial_account_equity)
+                or initial_account_equity <= 0 or not np.isclose(initial_cash,
+                    initial_account_equity * config.sleeve_fraction, rtol=1e-10, atol=1e-8)
+                or not isinstance(spot_open_values, pd.Series) or not spot_open_values.index.equals(index)):
+            raise ValueError('Account purchase cap requires matching funded opening equity')
+        funded_open = spot_open_values.to_numpy(dtype=float)
+        if (not np.isfinite(funded_open).all() or (funded_open <= 0).any()
+                or not np.isclose(funded_open[0], initial_account_equity - initial_cash, rtol=1e-10, atol=1e-8)):
+            raise ValueError('Invalid funded spot opening equity')
     schedule = {}
     for r in observations:
         if r['family'] != config.family or r['policy'] != config.policy or r['status'] == 'inactive_signal':
@@ -142,6 +160,9 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
         invalid_trade_model_inputs=0, minimum_lot_skips=0, buys=0, settlements=0,
         maximum_monthly_budget_fraction=0., maximum_trade_age_seconds=0.)
     buy_positions = []
+    purchase_budgets = []
+    if unfilled_entries:
+        diagnostics['counterfactual_unfilled'] = 0
     for i, ts in enumerate(index):
         open_nav = cash
         for pos in positions:
@@ -170,6 +191,11 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
             if positions:
                 raise ValueError('Monthly expiry schedule unexpectedly overlaps')
             budget = cash * config.monthly_cash_budget
+            before_cash, account_open = cash, None
+            if funded_open is not None:
+                account_open = float(funded_open[i] + cash)
+                basis = account_open if config.account_budget_basis == 'current' else initial_account_equity
+                budget = min(budget, config.monthly_account_budget * basis)
             allocation, spent = budget / len(entries), 0.
             for r in entries:
                 diagnostics['eligible_signals'] += 1
@@ -181,6 +207,9 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
                         or trade['timestamp'] < (ts - pd.Timedelta(hours=4)).value // 1_000_000
                         or r['contract']['creation_timestamp'] > pd.Timestamp(r['entry']).value // 1_000_000):
                     raise ValueError('Future or stale option trade/contract in entry')
+                if (r['contract']['instrument_name'], str(ts)) in unfilled_entries:
+                    diagnostics['counterfactual_unfilled'] += 1
+                    continue
                 spot = arrays[r['asset'] + 'USDT'][i, 0]
                 unit, lot, costs = entry_cost(r, spot, config)
                 qty = math.floor(allocation / (unit * lot) + 1e-12) * lot
@@ -214,7 +243,11 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
                 diagnostics['buys'] += 1
                 diagnostics['maximum_trade_age_seconds'] = max(diagnostics['maximum_trade_age_seconds'], r['trade_age_seconds'])
             if budget > 0:
-                diagnostics['maximum_monthly_budget_fraction'] = max(diagnostics['maximum_monthly_budget_fraction'], spent / (budget / config.monthly_cash_budget))
+                diagnostics['maximum_monthly_budget_fraction'] = max(diagnostics['maximum_monthly_budget_fraction'], spent / before_cash)
+            if funded_open is not None:
+                purchase_budgets.append({'timestamp': str(ts), 'cash_before': float(before_cash),
+                    'account_open_equity': account_open, 'budget_basis_equity': float(basis),
+                    'allowed_debit': float(budget), 'spent': float(spent)})
         mark = high = low = 0.
         for pos in positions:
             qty, offset = pos['qty'], i - pos['offset']
@@ -233,6 +266,8 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
     eq = pd.DataFrame(values)
     trades = pd.DataFrame(ledger)
     accounting = reconcile_option_sleeve(markets, eq, trades, buy_positions, config, initial_cash)
+    if purchase_budgets:
+        accounting['monthly_budgets_reconciled'] = reconcile_purchase_budgets(trades, purchase_budgets, config)
     summaries = []
     for pos in buy_positions:
         r = pos['row']
@@ -263,7 +298,37 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
         'costs': {c: float(trades[c].fillna(0).sum()) if c in trades else 0.
             for c in ('option_fee', 'conversion_fee', 'conversion_impact', 'premium_markup_cost')},
         'fees_are_modeled': True, 'held_marks_are_synthetic': True}
+    if funded_open is not None:
+        stats.update(purchase_budgets=purchase_budgets,
+            maximum_monthly_debit_account_fraction=max((r['spent'] / r['account_open_equity'] for r in purchase_budgets), default=0.),
+            maximum_monthly_debit_basis_fraction=max((r['spent'] / r['budget_basis_equity'] for r in purchase_budgets), default=0.))
     return eq, trades, stats
+
+
+def reconcile_purchase_budgets(trades, budgets, config):
+    """Independently sum buy cash flows and check both contemporaneous limits."""
+    bought = {} if trades.empty else trades.loc[trades.event == 'buy'].groupby('timestamp').cash_flow.sum().mul(-1).to_dict()
+    for row in budgets:
+        spent = float(bought.pop(pd.Timestamp(row['timestamp']), 0.))
+        limit = min(config.monthly_cash_budget * row['cash_before'],
+                    config.monthly_account_budget * row['budget_basis_equity'])
+        if (abs(spent - row['spent']) > 1e-7 or abs(limit - row['allowed_debit']) > 1e-7
+                or spent > limit + 1e-7 or spent < -1e-7):
+            raise ValueError('Monthly purchase debit does not reconcile with owned-account limits')
+    if bought:
+        raise ValueError('Option buy is missing its monthly purchase budget')
+    return True
+
+
+def owned_spot_open_equity(markets, spot, initial_spot):
+    """Previous owned inventory/cash valued at current open, before current fills."""
+    dates = pd.DatetimeIndex(spot.timestamp).as_unit('ns')
+    opening = spot.usdt.shift(1, fill_value=initial_spot).to_numpy(copy=True)
+    for symbol in markets:
+        opening += spot[f'base_{symbol}'].shift(1, fill_value=0.).to_numpy() * markets[symbol].open.reindex(dates).to_numpy()
+    if not np.isfinite(opening).all() or (opening < 0).any():
+        raise ValueError('Owned spot opening equity is invalid')
+    return pd.Series(opening, index=dates, name='owned_spot_open_equity')
 
 
 def reconcile_option_sleeve(markets, equity, trades, positions, config, initial_cash):
@@ -321,10 +386,7 @@ def combine_paths(spot, option, initial, markets=None, initial_spot=None):
     eq['drawdown'] = eq.equity / np.maximum(initial, eq.equity.cummax()) - 1
     opening = eq.equity.copy()
     if markets is not None:
-        spot_open = spot.usdt.shift(1, fill_value=initial_spot).to_numpy(copy=True)
-        dates = pd.DatetimeIndex(spot.timestamp)
-        for symbol in markets:
-            spot_open += spot[f'base_{symbol}'].shift(1, fill_value=0.).to_numpy() * markets[symbol].open.reindex(dates).to_numpy()
+        spot_open = owned_spot_open_equity(markets, spot, initial_spot).to_numpy()
         opening = spot_open + option.open_equity.to_numpy()
     highest = np.maximum(eq.high_bound.to_numpy(), np.asarray(opening))
     peaks = np.maximum(initial, np.maximum.accumulate(highest))
@@ -356,7 +418,9 @@ def run_optional_long_options(markets, completed_targets, observations, *, confi
         initial_usdt=initial_usdt * (1 - config.sleeve_fraction), daily_control=True,
         signal_delay_bars=config.delay_bars, **costs)
     option, trades, option_summary = replay_option_sleeve(markets, observations, config,
-        start=start, end=end, initial_cash=initial_usdt * config.sleeve_fraction)
+        start=start, end=end, initial_cash=initial_usdt * config.sleeve_fraction,
+        initial_account_equity=initial_usdt,
+        spot_open_values=owned_spot_open_equity(markets, spot, initial_usdt * (1 - config.sleeve_fraction)))
     eq, summary = combine_paths(spot, option, initial_usdt, markets, initial_usdt * (1 - config.sleeve_fraction))
     summary.update(spot=spot_summary, options=option_summary, live_eligible=False,
                    options_enabled=True, options_execution_is_modeled=True)
