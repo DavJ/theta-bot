@@ -1,5 +1,6 @@
 """Meaningful paid-option risk, expiry cash flow, causality and off-switch checks."""
 from dataclasses import replace
+from contextlib import nullcontext
 import copy
 import json
 
@@ -141,9 +142,11 @@ def test_losses_reduce_next_months_cash_budget_without_martingale():
 
 def test_enabled_account_reserves_option_capital_instead_of_adding_free_money():
     markets, target = market(31)
-    eq, _, s = run_optional_long_options(markets, target, [observation()],
-        config=LongOptionsConfig(options_enabled=True), start='2024-01-01T00:00:00Z',
-        end='2024-02-01T00:00:00Z', initial_usdt=1000.)
+    copy_mode = pd.option_context('mode.copy_on_write', True) if int(pd.__version__.split('.')[0]) < 3 else nullcontext()
+    with copy_mode:
+        eq, _, s = run_optional_long_options(markets, target, [observation()],
+            config=LongOptionsConfig(options_enabled=True), start='2024-01-01T00:00:00Z',
+            end='2024-02-01T00:00:00Z', initial_usdt=1000.)
     spot, _, _ = run_intraday_spot(markets, target, daily_control=True,
         start='2024-01-01T00:00:00Z', end='2024-02-01T00:00:00Z', initial_usdt=900.)
     pd.testing.assert_series_equal(eq.spot_equity, spot.equity, check_names=False)

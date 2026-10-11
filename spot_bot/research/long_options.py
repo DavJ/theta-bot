@@ -321,7 +321,7 @@ def combine_paths(spot, option, initial, markets=None, initial_spot=None):
     eq['drawdown'] = eq.equity / np.maximum(initial, eq.equity.cummax()) - 1
     opening = eq.equity.copy()
     if markets is not None:
-        spot_open = spot.usdt.shift(1, fill_value=initial_spot).to_numpy()
+        spot_open = spot.usdt.shift(1, fill_value=initial_spot).to_numpy(copy=True)
         dates = pd.DatetimeIndex(spot.timestamp)
         for symbol in markets:
             spot_open += spot[f'base_{symbol}'].shift(1, fill_value=0.).to_numpy() * markets[symbol].open.reindex(dates).to_numpy()
