@@ -84,6 +84,7 @@ test_cache_int/
 !docs/evaluation/*.md
 !docs/evaluation/*_CLOSED_OPTIONS.csv
 !docs/evaluation/*_PURCHASE_BUDGETS.csv
+!docs/evaluation/*_ENTRY_SELECTION.csv
 # Exclude: synthetic test data
 data/*_synthetic*.csv.gz
 # Exclude: raw data directories (users should download their own)

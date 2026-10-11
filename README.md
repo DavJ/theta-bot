@@ -96,6 +96,27 @@ archived control comparisons; the execution-price limitations remain.
 
 - [Bounded purchase results and all stresses](docs/evaluation/THETABOT_OPTION_BUDGETS_2026-10-12.md) · [JSON evidence](docs/evaluation/THETABOT_OPTION_BUDGETS_2026-10-12.json) · [Monthly purchase audit](docs/evaluation/THETABOT_OPTION_BUDGETS_2026-10-12_PURCHASE_BUDGETS.csv) · [Fixed protocol](docs/evaluation/OPTION_BUDGET_RESEARCH_PLAN.md)
 
+The causal payoff-selection follow-up compares six price filters, two warmup-only
+controls and the existing funded controls. Forecasts use only completed prior
+daily closes: trailing empirical holding-period returns or a 60-day-volatility
+lognormal model. A purchase needs estimated net delivery proceeds above the full
+premium debit by a fixed margin; a positive estimate is not calibrated market alpha.
+Entry-volatility scales of 0.75/1.25 join cost/time scenarios in the development
+choice. Current-account purchase caps and the default-off research switch remain.
+
+Development freezes `call_empirical10` for 10,000 units: **+168.61%** full modeled
+net, **+52.43%** on the separately funded 2025–2026 account, **+98.87%** with joint
+cost/time stress and **18.44%** worst modeled DD over six scenarios. A warmup-only
+call control earns **+170.88%** nominal, so the nominal improvement cannot be
+attributed solely to the forecast. The filter improves joint-stress net and modeled
+DD against that control. Its three largest positive fills account for **92.96%**
+of option P&L; missing them reduces full net to **+101.42%**, below **+108.82%** spot.
+Forecast-volatility uncertainty changes the chosen policy's net from +132.41%
+to +170.88%. Dates are reused and purchase quotes remain unverified. No inverse
+option policy buys for 1,000 units under these lot/budget assumptions.
+
+- [Payoff selection, warmup controls and forecast uncertainty](docs/evaluation/THETABOT_OPTION_SELECTION_2026-10-12.md) · [Compressed JSON evidence](docs/evaluation/THETABOT_OPTION_SELECTION_2026-10-12.json.gz) · [Decision audit](docs/evaluation/THETABOT_OPTION_SELECTION_2026-10-12_ENTRY_SELECTION.csv) · [Fixed protocol](docs/evaluation/OPTION_FORECAST_RESEARCH_PLAN.md)
+
 ## Binding trading constraints
 
 Only owned spot cash and inventory may be traded. Leverage, loans, margin,
@@ -185,6 +206,10 @@ python -m scripts.write_long_options_report
 # Optional funded-account purchase limits; joint cost/time and missed-fill stresses
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_option_budgets --options-enabled
 python -m scripts.write_option_budgets_report
+
+# Causal option payoff forecasts, warmup-only controls and forecast uncertainty
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_option_selection --options-enabled
+python -m scripts.write_option_selection_report
 ```
 
 Each fixed study persists its development selection before later economic replay.
