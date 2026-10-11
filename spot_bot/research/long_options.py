@@ -121,7 +121,7 @@ def expiry_receipt(row, spot, config):
 
 
 def replay_option_sleeve(markets, observations, config, *, start, end, initial_cash,
-                         initial_account_equity=None, spot_open_values=None, unfilled_entries=frozenset()):
+                         initial_account_equity=None, spot_open_values=None, unfilled_entries=frozenset(), entry_filter=None):
     """Hold paid options to official delivery; mark held positions with entry IV."""
     if not config.options_enabled:
         raise ValueError('Paid-option replay requires explicit offline opt-in')
@@ -161,6 +161,12 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
         maximum_monthly_budget_fraction=0., maximum_trade_age_seconds=0.)
     buy_positions = []
     purchase_budgets = []
+    entry_selection = []
+    if entry_filter is not None:
+        if not callable(entry_filter):
+            raise ValueError('Option entry filter must be a callable research decision')
+        diagnostics['forecast_rejections'] = 0
+        diagnostics['forecast_history_skips'] = 0
     if unfilled_entries:
         diagnostics['counterfactual_unfilled'] = 0
     for i, ts in enumerate(index):
@@ -212,6 +218,17 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
                     continue
                 spot = arrays[r['asset'] + 'USDT'][i, 0]
                 unit, lot, costs = entry_cost(r, spot, config)
+                decision = None
+                if entry_filter is not None:
+                    decision = entry_filter(r, float(spot), config, ts)
+                    if not isinstance(decision, dict) or type(decision.get('accepted')) is not bool:
+                        raise ValueError('Invalid option entry forecast decision')
+                    entry_selection.append({'timestamp': str(ts), 'instrument': r['contract']['instrument_name'], **decision})
+                    if not decision['accepted']:
+                        diagnostics['forecast_rejections'] += 1
+                        if decision.get('reason') in ('insufficient_history', 'invalid_history', 'insufficient_horizon_history'):
+                            diagnostics['forecast_history_skips'] += 1
+                        continue
                 qty = math.floor(allocation / (unit * lot) + 1e-12) * lot
                 if qty <= 0:
                     diagnostics['minimum_lot_skips'] += 1
@@ -226,6 +243,8 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
                     raise ValueError('Study ends with an unsettled monthly option')
                 pos = {'row': r, 'qty': qty, 'expiry': expiry, 'entry': ts,
                        'instrument': r['contract']['instrument_name'], 'debit': debit, 'offset': i}
+                if decision is not None:
+                    pos['entry_decision'] = decision
                 stop = index.searchsorted(expiry)
                 bars = arrays[r['asset'] + 'USDT'][i:stop]
                 t0 = np.maximum((expiry.value - index[i:stop].asi8) / 1e9, 0.) / (365.25 * 86400)
@@ -288,6 +307,8 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
             'trade_source_sha256': r.get('trade_source', {}).get('sha256'),
             **{'buy_' + k: pos['qty'] * v for k, v in purchase_costs.items()},
             **{'settlement_' + k: pos['qty'] * v for k, v in settlement_costs.items()}})
+        if 'entry_decision' in pos:
+            summaries[-1].update({'selection_' + k: v for k, v in pos['entry_decision'].items()})
     pnl = [r['net_pnl'] for r in summaries]
     stats = {**diagnostics, 'initial_cash': initial_cash, 'final_cash': cash,
         'net_pnl': cash - initial_cash, 'total_return': cash / initial_cash - 1,
@@ -302,6 +323,8 @@ def replay_option_sleeve(markets, observations, config, *, start, end, initial_c
         stats.update(purchase_budgets=purchase_budgets,
             maximum_monthly_debit_account_fraction=max((r['spent'] / r['account_open_equity'] for r in purchase_budgets), default=0.),
             maximum_monthly_debit_basis_fraction=max((r['spent'] / r['budget_basis_equity'] for r in purchase_budgets), default=0.))
+    if entry_filter is not None:
+        stats['entry_selection'] = entry_selection
     return eq, trades, stats
 
 
@@ -405,7 +428,7 @@ def combine_paths(spot, option, initial, markets=None, initial_spot=None):
 
 
 def run_optional_long_options(markets, completed_targets, observations, *, config=LongOptionsConfig(),
-                              start=None, end=None, initial_usdt=1000., spot_costs=None):
+                              start=None, end=None, initial_usdt=1000., spot_costs=None, entry_filter=None):
     """Research on/off switch. Disabled mode preserves the existing spot engine."""
     costs = {} if spot_costs is None else spot_costs
     if not config.options_enabled:
@@ -420,7 +443,8 @@ def run_optional_long_options(markets, completed_targets, observations, *, confi
     option, trades, option_summary = replay_option_sleeve(markets, observations, config,
         start=start, end=end, initial_cash=initial_usdt * config.sleeve_fraction,
         initial_account_equity=initial_usdt,
-        spot_open_values=owned_spot_open_equity(markets, spot, initial_usdt * (1 - config.sleeve_fraction)))
+        spot_open_values=owned_spot_open_equity(markets, spot, initial_usdt * (1 - config.sleeve_fraction)),
+        entry_filter=entry_filter)
     eq, summary = combine_paths(spot, option, initial_usdt, markets, initial_usdt * (1 - config.sleeve_fraction))
     summary.update(spot=spot_summary, options=option_summary, live_eligible=False,
                    options_enabled=True, options_execution_is_modeled=True)

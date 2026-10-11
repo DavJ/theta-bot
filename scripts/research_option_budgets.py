@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict, replace
 import hashlib
+import gzip
 import json
 from pathlib import Path
 
@@ -48,9 +49,15 @@ def compare_economic_fields(actual, archived, path=''):
         raise ValueError(f'Archived control changed: {path}')
 
 
-def research(spot_folder, option_path, out):
+def read_study(path):
+    return json.loads(gzip.decompress(path.read_bytes()) if path.suffix == '.gz' else path.read_text())
+
+
+def research(spot_folder, option_path, out, *, plan_path=PLAN, policy_factory=None,
+             entry_filter_factory=None, forecast_configs=None, scenarios=SCENARIOS,
+             reference_path=None, reference_names=None):
     out.mkdir(parents=True, exist_ok=True)
-    protocol_hash = hashlib.sha256(PLAN.read_bytes()).hexdigest()
+    protocol_hash = hashlib.sha256(plan_path.read_bytes()).hexdigest()
     if json.loads((out / 'frozen_protocol.json').read_text())['protocol_sha256'] != protocol_hash:
         raise ValueError('Follow-up protocol was not frozen before payoffs')
     markets, manifest = load_spot_flow(spot_folder)
@@ -62,9 +69,13 @@ def research(spot_folder, option_path, out):
     source_checks = verify_source_evidence(source, option_path.parent)
     targets, _ = momentum_refinement_targets(markets)
     target = targets['capped_allocation']
-    archived = json.loads((REPO / 'docs/evaluation/THETABOT_LONG_OPTIONS_2026-10-10.json').read_text())
-    policies = fixed_policies()
+    archived = read_study(reference_path or REPO / 'docs/evaluation/THETABOT_LONG_OPTIONS_2026-10-10.json')
+    policies = (policy_factory or fixed_policies)()
+    filters = {s: entry_filter_factory(markets, s) if entry_filter_factory else {} for s in scenarios}
+    old_names = reference_names or {'options_off': 'options_off', 'reserved_cash': 'reserved_cash',
+        'legacy_call_otm': 'inverse_call_otm', 'legacy_direction_otm': 'inverse_direction_otm'}
     paths, checks, summaries, closed, budget_rows, nominal_closures = {}, [], {}, [], [], {}
+    selection_rows = []
     control_checks = 0
 
     def replay(capital, policy, start, end, scenario, label, *, iv_factor=1., unfilled=frozenset()):
@@ -102,25 +113,23 @@ def research(spot_folder, option_path, out):
                         delivery_fee_rate=.0003, conversion_fee=.002, conversion_impact=.0012)
                 option, option_trades, option_stats = replay_option_sleeve(markets, source['records'], config,
                     start=start, end=end, initial_cash=capital * .1, initial_account_equity=capital,
-                    spot_open_values=opening, unfilled_entries=unfilled)
+                    spot_open_values=opening, unfilled_entries=unfilled,
+                    entry_filter=filters.get(scenario, {}).get(policy))
                 checks.append(option_stats['accounting'])
                 if label == 'full_continuous' and scenario == 'nominal' and iv_factor == 1.:
                     nominal_closures[capital, policy] = option_stats['closed_options']
                     closed.extend({'capital': capital, 'policy': policy, **x} for x in option_stats['closed_options'])
                     budget_rows.extend({'capital': capital, 'policy': policy, **x}
                         for x in option_stats.get('purchase_budgets', []))
+                    selection_rows.extend({'capital': capital, 'policy': policy, **x}
+                        for x in option_stats.get('entry_selection', []))
                     option.to_csv(out / f'{capital}_{policy}_option_equity.csv', index=False)
                     option_trades.to_csv(out / f'{capital}_{policy}_option_ledger.csv', index=False)
-                option_stats = {k: v for k, v in option_stats.items() if k not in ('closed_options', 'purchase_budgets')}
+                option_stats = {k: v for k, v in option_stats.items() if k not in ('closed_options', 'purchase_budgets', 'entry_selection')}
             eq, result = combine_paths(spot, option, capital, markets, capital * fraction)
             result.update(spot_net_pnl=spot_stats['net_pnl'], option_net_pnl=option_stats['net_pnl'],
                 options=option_stats, spot_fees=spot_stats['fees_paid_total'],
                 spot_impact=spot_stats['slippage_paid_total'], options_enabled=config is not None, live_eligible=False)
-        old_name = {'options_off': 'options_off', 'reserved_cash': 'reserved_cash',
-                    'legacy_call_otm': 'inverse_call_otm', 'legacy_direction_otm': 'inverse_direction_otm'}.get(policy)
-        if old_name and scenario != 'joint_stress' and label in ('2025', '2026', 'later_continuous', 'full_continuous'):
-            compare_economic_fields(result, archived['results'][str(capital)]['scenarios'][scenario][label][old_name])
-            control_checks += 1
         if label == 'full_continuous' and scenario == 'nominal' and iv_factor == 1.:
             eq.to_csv(out / f'{capital}_{policy}_combined_equity.csv', index=False)
         if config_for_stats := policies[policy]:
@@ -133,27 +142,33 @@ def research(spot_folder, option_path, out):
             result['maximum_monthly_debit_account_fraction'] = max(monthly_fractions, default=0.)
             result['account_purchase_cap'] = config_for_stats.monthly_account_budget
             result['account_purchase_cap_basis'] = config_for_stats.account_budget_basis
+        old_name = old_names.get(policy)
+        reference_scenario = 'nominal' if scenario in ('forecast_low', 'forecast_high') else scenario
+        if old_name and reference_scenario in archived['results'][str(capital)]['scenarios'] and label in ('2025', '2026', 'later_continuous', 'full_continuous'):
+            reference = archived['results'][str(capital)]['scenarios'][reference_scenario][label][old_name]
+            compare_economic_fields(result, {k: v for k, v in reference.items() if k != 'top_three_option_pnl_fraction_of_net'})
+            control_checks += 1
         if not np.isclose(result['spot_net_pnl'] + result['option_net_pnl'], result['net_pnl'], rtol=1e-10, atol=1e-8):
             raise ValueError('Funded account contributions do not reconcile')
         return result
 
     selection = {}
     for capital in (1000, 10000):
-        dev = {s: {p: replay(capital, p, BEGIN, VALIDATION, s, 'development') for p in policies} for s in SCENARIOS}
+        dev = {s: {p: replay(capital, p, BEGIN, VALIDATION, s, 'development') for p in policies} for s in scenarios}
         eligible = [p for p in policies if all(dev[s][p]['net_pnl'] > 0
-                    and dev[s][p]['max_intraday_drawdown_bound'] >= -.2 for s in SCENARIOS)]
-        scores = {p: min(dev[s][p]['net_pnl'] for s in SCENARIOS) for p in eligible}
+                    and dev[s][p]['max_intraday_drawdown_bound'] >= -.2 for s in scenarios)]
+        scores = {p: min(dev[s][p]['net_pnl'] for s in scenarios) for p in eligible}
         frozen = max(eligible, key=lambda p: (scores[p], dev['nominal'][p]['net_pnl'], p)) if eligible else 'cash'
         selection[str(capital)] = {'development': dev, 'eligible': eligible,
                                   'minimum_scenario_net_pnl': scores, 'frozen_candidate': frozen}
-        print(f'Frozen four-scenario development {capital}: {frozen}', flush=True)
+        print(f'Frozen {len(scenarios)}-scenario development {capital}: {frozen}', flush=True)
     (out / 'frozen_selection.json').write_text(json.dumps({'protocol_sha256': protocol_hash,
         **selection}, separators=(',', ':'), allow_nan=False) + '\n')
     periods = {'2025': (VALIDATION, TRANSFER), '2026': (TRANSFER, END),
                'later_continuous': (VALIDATION, END), 'full_continuous': (BEGIN, END)}
     for capital in (1000, 10000):
         record = summaries[str(capital)] = {'selection': selection[str(capital)], 'scenarios': {}}
-        for scenario in SCENARIOS:
+        for scenario in scenarios:
             record['scenarios'][scenario] = {}
             for label, (start, end) in periods.items():
                 result = {p: replay(capital, p, start, end, scenario, label) for p in policies}
@@ -176,6 +191,10 @@ def research(spot_folder, option_path, out):
                 'result': result, 'is_ex_post_diagnostic': True}
             nominal = record['scenarios']['nominal']['full_continuous'][policy]
             nominal['top_three_option_pnl_fraction_of_net'] = sum(x['net_pnl'] for x in top) / nominal['option_net_pnl'] if nominal['option_net_pnl'] > 0 else None
+            if old_names.get(policy):
+                prior = archived['results'][str(capital)]['scenarios']['nominal']['full_continuous'][old_names[policy]]
+                if 'top_three_option_pnl_fraction_of_net' in prior:
+                    compare_economic_fields(nominal['top_three_option_pnl_fraction_of_net'], prior['top_three_option_pnl_fraction_of_net'])
             for factor in (.5, 2.):
                 s = replay(capital, policy, BEGIN, END, 'nominal', 'marking', iv_factor=factor)
                 if not np.isclose(s['net_pnl'], nominal['net_pnl'], rtol=1e-10, atol=1e-8):
@@ -185,9 +204,11 @@ def research(spot_folder, option_path, out):
         frozen = record['selection']['frozen_candidate']
         record['frozen_full_risk_screen_passed'] = frozen != 'cash' and all(
             record['scenarios'][s]['full_continuous'][frozen]['net_pnl'] > 0
-            and record['scenarios'][s]['full_continuous'][frozen]['max_intraday_drawdown_bound'] >= -.2 for s in SCENARIOS)
+            and record['scenarios'][s]['full_continuous'][frozen]['max_intraday_drawdown_bound'] >= -.2 for s in scenarios)
     pd.DataFrame(closed).to_csv(out / 'closed_options.csv', index=False)
     pd.DataFrame(budget_rows).to_csv(out / 'purchase_budgets.csv', index=False)
+    if forecast_configs is not None:
+        pd.DataFrame(selection_rows).to_csv(out / 'entry_selection.csv', index=False)
     result = {'protocol_sha256': protocol_hash, 'original_observation_sha256': hashlib.sha256(option_path.read_bytes()).hexdigest(),
         'source_checks': source_checks, 'spot_dataset_hashes': source['spot_dataset_hashes'],
         'policies': {p: asdict(c) if c else None for p, c in policies.items()}, 'results': summaries,
@@ -199,7 +220,9 @@ def research(spot_folder, option_path, out):
         'limitations': archived['limitations'] + [
             'Entry debit limits do not guarantee a cap on held option market values or future drawdown',
             'Missed top-three fills are selected ex post as a fragility diagnostic, not an entry predictor']}
-    if hashlib.sha256(PLAN.read_bytes()).hexdigest() != protocol_hash:
+    if forecast_configs is not None:
+        result['forecast_configs'] = forecast_configs
+    if hashlib.sha256(plan_path.read_bytes()).hexdigest() != protocol_hash:
         raise ValueError('Frozen follow-up protocol changed during replay')
     (out / 'summary.json').write_text(json.dumps(result, separators=(',', ':'), allow_nan=False) + '\n')
     return result
