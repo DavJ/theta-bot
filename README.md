@@ -11,7 +11,7 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest spot experiments: **2026-10-09**; optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
+Latest spot signal models: **2026-10-12**; optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
 Each account starts with 1,000 USDT. Full history is one continuous account from
@@ -40,7 +40,7 @@ Consensus stays within the budget in these three historical scenarios but earns
 less than capped allocation and does not pass the fixed improvement screen.
 None of these comparisons establishes a production-ready strategy.
 
-The latest experiment expands to **15 assets from a dated December 2021 cohort**,
+The broad-universe experiment expands to **15 assets from a dated December 2021 cohort**,
 with historical liquidity selection, weekly ranks, old/new Terra separation and
 documented MATIC/POL continuity. Development freezes `broad_top5_vol20` before
 later economic replay. All six broader policies trail both controls on full
@@ -55,6 +55,32 @@ windows do not estimate independent future doubling probabilities.
 
 - [Broad-universe results, source audits and all rejected variants](docs/evaluation/THETABOT_BROAD_UNIVERSE_2026-10-09.md) · [JSON evidence](docs/evaluation/THETABOT_BROAD_UNIVERSE_2026-10-09.json) · [Fixed protocol](docs/evaluation/BROAD_UNIVERSE_RESEARCH_PLAN.md)
 - [Multiscale, cost and timing results](docs/evaluation/THETABOT_MULTISCALE_SPOT_2026-10-09.md) · [Fixed protocol](docs/evaluation/MULTISCALE_SPOT_RESEARCH_PLAN.md)
+
+The Bayesian/Monte Carlo follow-up adds two causal five-day log-return experts
+and a mixture weighted by already completed joint forecast errors. Bayesian
+regression separates predictive variance from uncertainty in its mean. Conditional
+Monte Carlo samples whole completed return blocks from similar historical price,
+volume and theta states; sampling does not add independent market information.
+Eight fixed policies compare buy filters and optional target blends against the
+existing capped spot strategy and a matching warmup-only control.
+
+For a separately funded 10,000-USDT account over January 2022–September 2026,
+spot earns **+108.82%**, warmup alone **+113.01%**, the Bayesian blend **+58.21%**,
+MC blend **+56.30%** and combined blend **+60.50%**, after modeled costs.
+The combined blend's worst full modeled DD is **12.89%**, versus **21.16%** spot,
+but reduced exposure earns less. All three experts have worse log-return MSE and
+gain-probability Brier loss than unconditional history on identical full/later
+rows. The frozen choice for both account sizes is the warmup-only control; its
+full joint-stress drawdown exceeds the 20% budget. No economic improvement passes.
+
+The MC buy filter changes full net profit from **+7.08% to +19.45%** solely with
+the three fixed seeds; thresholds can amplify numerical sampling differences.
+The study reconciles **368 paths**, reproduces **32 archived controls**, and audits
+**31,212 source decisions** plus all 16 full nominal exported ledgers. The
+integration defaults off, preserves the original target when disabled, and
+adds no live strategy choice or option exposure.
+
+- [Bayesian/Monte Carlo results and rejected variants](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.md) · [Compressed JSON evidence](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.json.gz) · [Complete CSV audit archive](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12_EVIDENCE.zip) · [Fixed protocol](docs/evaluation/BAYES_MONTE_CARLO_RESEARCH_PLAN.md)
 
 The optional paid-option model initially reserves 10% of the original account,
 with monthly purchases capped at 20% of that sleeve's current cash, including
@@ -210,6 +236,10 @@ python -m scripts.write_option_budgets_report
 # Causal option payoff forecasts, warmup-only controls and forecast uncertainty
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_option_selection --options-enabled
 python -m scripts.write_option_selection_report
+
+# Optional Bayesian/conditional-Monte-Carlo spot signal overlays
+python -m scripts.research_bayes_monte_carlo --probabilistic-enabled --jobs 4
+python -m scripts.write_bayes_monte_carlo_report
 ```
 
 Each fixed study persists its development selection before later economic replay.
@@ -273,6 +303,7 @@ These are research references, not production-profit certificates.
 | 20% historical risk-budget comparison | [Results](docs/evaluation/THETABOT_RISK_BUDGET_2026-10-06.md) |
 | Portfolio execution and sizing sensitivity | [Execution](docs/evaluation/THETABOT_EXECUTION_PORTFOLIO_2026-10-06.md) · [Sizing](docs/evaluation/THETABOT_EXPOSURE_2026-10-06.md) |
 | Multi-model forecasts and correlation-aware Kalman fusion | [Results](docs/evaluation/THETABOT_MULTI_2026-10-06.md) |
+| Bayesian/conditional-Monte-Carlo spot signal overlays | [Results](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.md) |
 | Single-asset chronological audit | [Results](docs/evaluation/THETABOT_2026-10-06.md) |
 
 Higher historical exposure and legacy execution metrics in earlier reports are
@@ -284,10 +315,13 @@ Greed; its joint oil/macro test does not isolate miners' electricity costs.
 
 ## Verification and remaining work
 
-The 2026-10-09 research code passed **590 regression tests and 8 legacy metrics
-tests**. Its [CI run](https://github.com/DavJ/theta-bot/actions/runs/37995546773)
-verified pandas 3.0.6 / NumPy 2.5.3, entry-point syntax, chronological evaluation
-and evidence upload. Tests cover future-prefix invariance, token identity,
+The 2026-10-12 Bayesian/Monte Carlo code passed **669 regression tests and 8
+legacy metrics tests locally**. Eighteen focused tests cover analytic posterior
+values, matured labels, future-prefix invariance, stable per-day random seeds,
+duplicate-expert uncertainty, bounded blends and the default-off switch.
+The [CI workflow](https://github.com/DavJ/theta-bot/actions/workflows/eval-metrics.yml)
+also checks entry-point syntax, chronological evaluation and evidence upload.
+The broader suite covers future-prefix invariance, token identity,
 publication clocks, sparse quotes, owned balances and independent accounting.
 CI success proves these checks passed; it does not prove future profit or replace
 a security review.
