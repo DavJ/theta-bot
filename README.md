@@ -11,7 +11,8 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest spot signal models: **2026-10-12**; optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
+Latest spot execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
+optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
 Each account starts with 1,000 USDT. Full history is one continuous account from
@@ -81,6 +82,32 @@ integration defaults off, preserves the original target when disabled, and
 adds no live strategy choice or option exposure.
 
 - [Bayesian/Monte Carlo results and rejected variants](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.md) · [Compressed JSON evidence](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.json.gz) · [Complete CSV audit archive](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12_EVIDENCE.zip) · [Fixed protocol](docs/evaluation/BAYES_MONTE_CARLO_RESEARCH_PLAN.md)
+
+The cost/risk follow-up changes execution rather than adding another forecast.
+Ordinary rebalances can trade to the nearest edge of the same 1pp band; mandatory
+inactivity/cap sales still bypass it. An optional 15% annualized volatility guard
+checks actual held weights at each 4h open using only completed, lagged daily
+covariance. It reduces the proposed exposure and never replenishes cash or adds
+leverage. Both options are disabled in the original replay defaults.
+
+The combined `guarded_edge` policy was fixed before development payoffs; the
+separate band/risk changes are diagnostic ablations, not later replacements.
+For **10,000 initial USDT**, over January 2022–September 2026, its modeled net
+profit is **+83.37%**, versus **+108.82%** control; joint cost/time stress gives
+**+70.47%**, versus **+84.20%**. Worst full-period conservative DD improves from
+**21.16% to 15.03%**. Full nominal fees/impact fall from **1,238.57 to 857.55 USDT**,
+but more frequent risk reductions increase fill count from 818 to 1,321.
+For both account sizes the risk screen passes and the profit-improvement screen
+fails. Lower exposure/risk must not be described as newly discovered alpha.
+Minimum-notional residuals are disclosed; requested volatility and historical
+drawdown limits are not future guarantees. No live selection is enabled.
+
+All **160 paths** reconcile; **40 archived controls** reproduce. The study
+rechecks **171 official archive checksums** and exports all 32 full accounts.
+A separate NumPy CSV audit verifies **332,928 bars and 23,041 fills**, including
+source-open prices, costs, drawdown and actual-holdings covariance mathematics.
+
+- [Cost/risk results and tradeoffs](docs/evaluation/THETABOT_COST_RISK_2026-10-13.md) · [Compressed JSON](docs/evaluation/THETABOT_COST_RISK_2026-10-13.json.gz) · [CSV evidence manifest](docs/evaluation/THETABOT_COST_RISK_2026-10-13_EVIDENCE.zip.manifest.json) · [Fixed protocol](docs/evaluation/COST_RISK_RESEARCH_PLAN.md)
 
 The optional paid-option model initially reserves 10% of the original account,
 with monthly purchases capped at 20% of that sleeve's current cash, including
@@ -240,6 +267,11 @@ python -m scripts.write_option_selection_report
 # Optional Bayesian/conditional-Monte-Carlo spot signal overlays
 python -m scripts.research_bayes_monte_carlo --probabilistic-enabled --jobs 4
 python -m scripts.write_bayes_monte_carlo_report
+
+# Fixed cost/risk execution study; freeze before any new candidate payoffs
+python -m scripts.research_cost_risk --freeze-only
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_cost_risk --jobs 4 --report-out docs/evaluation
+python -m scripts.audit_cost_risk
 ```
 
 Each fixed study persists its development selection before later economic replay.
@@ -304,6 +336,7 @@ These are research references, not production-profit certificates.
 | Portfolio execution and sizing sensitivity | [Execution](docs/evaluation/THETABOT_EXECUTION_PORTFOLIO_2026-10-06.md) · [Sizing](docs/evaluation/THETABOT_EXPOSURE_2026-10-06.md) |
 | Multi-model forecasts and correlation-aware Kalman fusion | [Results](docs/evaluation/THETABOT_MULTI_2026-10-06.md) |
 | Bayesian/conditional-Monte-Carlo spot signal overlays | [Results](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.md) |
+| Ordinary band-edge execution and actual-holdings volatility guard | [Results](docs/evaluation/THETABOT_COST_RISK_2026-10-13.md) |
 | Single-asset chronological audit | [Results](docs/evaluation/THETABOT_2026-10-06.md) |
 
 Higher historical exposure and legacy execution metrics in earlier reports are
@@ -315,10 +348,13 @@ Greed; its joint oil/macro test does not isolate miners' electricity costs.
 
 ## Verification and remaining work
 
-The 2026-10-12 Bayesian/Monte Carlo code passed **669 regression tests and 8
-legacy metrics tests locally**. Eighteen focused tests cover analytic posterior
-values, matured labels, future-prefix invariance, stable per-day random seeds,
-duplicate-expert uncertainty, bounded blends and the default-off switch.
+The cost/risk change adds 25 focused cases for completed covariance clocks,
+ordinary turnover, required cap sales, actual inventory reductions, minimum
+notionals, unchanged defaults, prefix invariance, independent CSV math and
+corruption rejection. The preceding Bayesian/Monte Carlo study passed 669
+regression tests and eight legacy tests; its predictive/economic failures remain
+documented. The final cost/risk tree passes **694 regression tests and eight
+legacy tests locally**, plus the chronological evaluator and entry-point syntax.
 The [CI workflow](https://github.com/DavJ/theta-bot/actions/workflows/eval-metrics.yml)
 also checks entry-point syntax, chronological evaluation and evidence upload.
 The broader suite covers future-prefix invariance, token identity,
