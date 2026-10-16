@@ -11,7 +11,7 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest spot execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
+Latest prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
 optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
@@ -108,6 +108,30 @@ A separate NumPy CSV audit verifies **332,928 bars and 23,041 fills**, including
 source-open prices, costs, drawdown and actual-holdings covariance mathematics.
 
 - [Cost/risk results and tradeoffs](docs/evaluation/THETABOT_COST_RISK_2026-10-13.md) · [Compressed JSON](docs/evaluation/THETABOT_COST_RISK_2026-10-13.json.gz) · [CSV evidence manifest](docs/evaluation/THETABOT_COST_RISK_2026-10-13_EVIDENCE.zip.manifest.json) · [Fixed protocol](docs/evaluation/COST_RISK_RESEARCH_PLAN.md)
+
+Prospective validation now separates future observations from that known history.
+A frozen protocol binds the two existing policies, capital, costs, source hashes,
+runtime and a future UTC start. Explicit snapshots collect only complete official
+spot 4h bars. Each update replays the entire funded forward account and checks
+every previously accepted data row, receipt and ledger; changing history or
+rules, rewinding time, stale data and concurrent writers fail closed.
+
+The preliminary screen needs **180 full days of closed forward bars**, positive
+candidate P&L under all four cost/time scenarios, profit above the same control
+in nominal/joint stress, reconciled accounts and conservative drawdown within 20%.
+An early drawdown breach rejects it immediately. Passing never enables live
+trading. This is a fixed model replay, not measured executable paper orders;
+the public protocol commit must predate the forward boundary. No background
+collection or automatic trading is started by these commands.
+
+- [Forward-validation plan](docs/evaluation/FORWARD_VALIDATION_PLAN.md)
+- [Published freeze](docs/evaluation/THETABOT_FORWARD_PROTOCOL_2026-10-16.json) · [Initial source/state evidence](docs/evaluation/THETABOT_FORWARD_INITIAL_2026-10-16.json) · [Raw snapshot and receipt](docs/evaluation/THETABOT_FORWARD_INITIAL_2026-10-16_EVIDENCE.zip)
+
+The published freeze starts scoring at **2026-10-17 00:00 UTC**. Its initial
+public-feed check contains 719 warmup bars per asset and **zero forward bars**;
+the phase is `waiting_for_start`, not a successful performance result. The first
+possible 180-day endpoint is **2027-04-15 00:00 UTC**, subject to complete data
+and all other gates. Collection/evaluation still require explicit invocations.
 
 The optional paid-option model initially reserves 10% of the original account,
 with monthly purchases capped at 20% of that sleeve's current cash, including
@@ -272,6 +296,12 @@ python -m scripts.write_bayes_monte_carlo_report
 python -m scripts.research_cost_risk --freeze-only
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_cost_risk --jobs 4 --report-out docs/evaluation
 python -m scripts.audit_cost_risk
+
+# Prospective model replay: publish the protocol before its future start
+python -m scripts.forward_spot freeze --protocol artifacts/forward_spot/protocol.json
+python -m scripts.download_forward_spot --protocol artifacts/forward_spot/protocol.json --out data/raw/forward_spot
+# SNAPSHOT is the immutable directory printed by the downloader
+python -m scripts.forward_spot evaluate --protocol artifacts/forward_spot/protocol.json --data SNAPSHOT --out artifacts/forward_spot/accounts
 ```
 
 Each fixed study persists its development selection before later economic replay.
@@ -355,6 +385,9 @@ corruption rejection. The preceding Bayesian/Monte Carlo study passed 669
 regression tests and eight legacy tests; its predictive/economic failures remain
 documented. The final cost/risk tree passes **694 regression tests and eight
 legacy tests locally**, plus the chronological evaluator and entry-point syntax.
+The prospective layer adds 21 focused cases; the complete updated tree passes
+**715 regression and eight legacy tests locally**. These verify the software and
+the evidence controls, not world-leading profitability.
 The [CI workflow](https://github.com/DavJ/theta-bot/actions/workflows/eval-metrics.yml)
 also checks entry-point syntax, chronological evaluation and evidence upload.
 The broader suite covers future-prefix invariance, token identity,
