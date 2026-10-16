@@ -1,0 +1,79 @@
+{
+  "protocol_sha256": "8ed835e735751f8063aa52579fed78596265ea91ee9a3123365b608984046832",
+  "forward_start": "2026-10-17T00:00:00+00:00",
+  "earliest_180_day_endpoint": "2027-04-15T00:00:00+00:00",
+  "source": "Binance connected spot kline tool; UTC 4h /api/v3/klines",
+  "warmup_rows_by_symbol": {
+    "BTCUSDT": 719,
+    "ETHUSDT": 719,
+    "BNBUSDT": 719
+  },
+  "source_snapshot": {
+    "source": "https://api.binance.com/api/v3/klines",
+    "timeframe": "4h",
+    "observed_at": "2026-10-16T20:22:21.291384+00:00",
+    "protocol_sha256": "8ed835e735751f8063aa52579fed78596265ea91ee9a3123365b608984046832",
+    "datasets": {
+      "BTCUSDT": {
+        "file": "BTCUSDT_4h.json",
+        "rows": 719,
+        "sha256": "6324efdae02ba1009f7d4fef82f7ebedafc62c57f26079e980e05c3854f62bb4"
+      },
+      "ETHUSDT": {
+        "file": "ETHUSDT_4h.json",
+        "rows": 719,
+        "sha256": "ae9bd11b8d482aa4929f86879257ac42e5a30a77a1d7943b30f87bef7281bb32"
+      },
+      "BNBUSDT": {
+        "file": "BNBUSDT_4h.json",
+        "rows": 719,
+        "sha256": "0dee6a2fc9fbcd24a3d2edb5f12f301e0f32f651dfbae0386568d417af919405"
+      }
+    }
+  },
+  "report": {
+    "protocol_sha256": "8ed835e735751f8063aa52579fed78596265ea91ee9a3123365b608984046832",
+    "as_of": "2026-10-16T20:23:15.070130+00:00",
+    "snapshot_observed_at": "2026-10-16T20:22:21.291384+00:00",
+    "forward_start": "2026-10-17T00:00:00+00:00",
+    "forward_closed_bars": 0,
+    "forward_full_days": 0,
+    "phase": "waiting_for_start",
+    "gates": {
+      "enough_closed_forward_days": false,
+      "candidate_drawdowns_within_budget": false,
+      "candidate_positive_after_all_cost_stresses": false,
+      "beats_control_nominal_and_joint": false,
+      "accounting": false
+    },
+    "preliminary_screen_passed": false,
+    "live_eligible": false,
+    "results": {},
+    "publication_timestamp_requires_external_anchor": true,
+    "limitations": [
+      "Fixed model replay, not observed executable paper orders.",
+      "Local checksums are not an unforgeable publication timestamp.",
+      "Modeled fees, impact and terminal marks; no custody/tax/USDT-risk model.",
+      "Historical risk screens and requested volatility do not cap future losses."
+    ]
+  },
+  "account_state": {
+    "protocol_sha256": "8ed835e735751f8063aa52579fed78596265ea91ee9a3123365b608984046832",
+    "last_run": "run-e47c5c48afa14da7bf89676b62d75625",
+    "receipt_sha256": "39f70e78aa297a55a065e49625911b6acfe11c1ec044bac716380b0c51890af6",
+    "as_of": "2026-10-16T20:23:15.070130+00:00",
+    "source_rows": {
+      "BTCUSDT": 719,
+      "ETHUSDT": 719,
+      "BNBUSDT": 719
+    },
+    "prefix_sha256": {
+      "BTCUSDT": "6324efdae02ba1009f7d4fef82f7ebedafc62c57f26079e980e05c3854f62bb4",
+      "ETHUSDT": "ae9bd11b8d482aa4929f86879257ac42e5a30a77a1d7943b30f87bef7281bb32",
+      "BNBUSDT": "0dee6a2fc9fbcd24a3d2edb5f12f301e0f32f651dfbae0386568d417af919405"
+    }
+  },
+  "publication_anchor": "The GitHub commit containing this frozen protocol must precede forward_start.",
+  "live_trading_enabled": false,
+  "background_collection_started": false
+}
