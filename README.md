@@ -11,7 +11,7 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
+Latest Möbius/theta diagnostic: **2026-10-22**; prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
 optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
@@ -132,6 +132,26 @@ public-feed check contains 719 warmup bars per asset and **zero forward bars**;
 the phase is `waiting_for_start`, not a successful performance result. The first
 possible 180-day endpoint is **2027-04-15 00:00 UTC**, subject to complete data
 and all other gates. Collection/evaluation still require explicit invocations.
+
+The fixed Möbius/theta diagnostic tests completed-return extrapolation as an
+additional buy gate on the same guarded momentum strategy. For 10,000 USDT,
+full January 2022–September 2026 net falls from **+83.37%** without a gate to
+**+42.15%** with the full theta gate and **+39.12%** with Möbius weighting;
+the latter's worst modeled full DD is **16.35%**, versus **15.03%** control.
+The separately funded 2025–September 2026 comparison gives **+30.78%, +15.09%
+and +12.52%**, respectively. The candidate fails the frozen improvement screen.
+
+Unregularized full theta and plain cosine forecasts agree to 1.32e-16;
+Möbius weighting and simple squarefree-frequency selection agree to 4.86e-17,
+with exactly identical buy masks on all source rows. Exact Möbius scale inversion
+reduces theta3 to a single cosine. None of these transformations supplies an
+independent market signal. Later predictive correlations are near zero and the
+Möbius MSE exceeds the simple trailing-mean control. The test reproduces 24 old
+control paths, reconciles 120 distinct paths and independently audits 10 exported
+full accounts. Known history is reused; the earlier forward protocol's source
+fingerprint and live settings are preserved.
+
+- [Möbius/theta results](docs/evaluation/THETABOT_MOBIUS_THETA_2026-10-22.md) · [Complete JSON](docs/evaluation/THETABOT_MOBIUS_THETA_2026-10-22.json.gz) · [Frozen plan](docs/evaluation/MOBIUS_THETA_RESEARCH_PLAN.md) · [Published protocol](docs/evaluation/THETABOT_MOBIUS_PROTOCOL_2026-10-22.json) · [CSV evidence manifest](docs/evaluation/THETABOT_MOBIUS_THETA_2026-10-22_EVIDENCE.zip.manifest.json)
 
 The optional paid-option model initially reserves 10% of the original account,
 with monthly purchases capped at 20% of that sleeve's current cash, including
