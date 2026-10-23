@@ -1,0 +1,18 @@
+{
+  "file": "THETABOT_ALLOCATION_BENCHMARKS_2026-10-23_EVIDENCE.zip",
+  "bytes": 9293110,
+  "sha256": "e2a350494774baecbd51d70a1ae514c545021b2085f594077dbfd98a57fb3025",
+  "parts": [
+    {
+      "file": "THETABOT_ALLOCATION_BENCHMARKS_2026-10-23_EVIDENCE.zip.part001",
+      "bytes": 5000000,
+      "sha256": "726d804e7bb8538624d8e5f69d2d96440fa8982dbec6976d3443b6db47b0ba1f"
+    },
+    {
+      "file": "THETABOT_ALLOCATION_BENCHMARKS_2026-10-23_EVIDENCE.zip.part002",
+      "bytes": 4293110,
+      "sha256": "cde79e1620851c97a7e80caa2d03fad6306f9c6e30f27f5aca875de0aec2f3c3"
+    }
+  ],
+  "reassemble": "Concatenate parts in listed order; verify complete SHA-256 before unzipping."
+}

@@ -9,21 +9,36 @@ from spot_bot.core.engine import EngineParams, simulate_execution
 from spot_bot.core.portfolio import apply_fill
 from spot_bot.core.trade_planner import plan_trade
 from spot_bot.core.types import PortfolioState
+from spot_bot.portfolio.risk import PortfolioRisk
 
 
 def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
                       initial_usdt=1000., fee_rate=.001, slippage_bps=5., spread_bps=2.,
                       max_exposure=.5, asset_cap=.25, rebalance_band=.01,
                       min_notional=10., daily_control=False, signal_delay_bars=0,
-                      completed_buy_mask=None, quoted_mask=None):
+                      completed_buy_mask=None, quoted_mask=None,
+                      rebalance_destination='target', risk=None,
+                      completed_covariances=None):
     """Lag signals; explicitly unquoted spot markets cannot execute any fill.
 
     Missing quotes require zero sentinel OHLCV plus an aligned false quote flag.
     Owned unquoted inventory retains its quantity and is conservatively marked
     at zero. The audit counts are a research rejection gate, not observed prices.
+    Optional band-edge rebalancing reduces ordinary requested turnover. Optional
+    risk checks constrain actual inventory between daily decisions using source
+    covariance matrices lagged with the targets. Minimum-notional residuals are
+    reported. Omitting both options preserves the original replay and schema.
     """
     if not markets or not 0 < asset_cap <= max_exposure <= 1:
         raise ValueError("Owned spot capital and nonnegative spot target limits required")
+    if rebalance_destination not in ('target', 'band_edge'):
+        raise ValueError("Unknown spot rebalance destination")
+    if risk is not None and not isinstance(risk, PortfolioRisk):
+        raise ValueError("Optional risk must be PortfolioRisk")
+    if risk is None and completed_covariances is not None:
+        raise ValueError("Covariances require an enabled risk policy")
+    if risk is not None and risk.volatility_target is not None and completed_covariances is None:
+        raise ValueError("Completed covariance history required for volatility risk")
     if (not np.isfinite([initial_usdt, fee_rate, slippage_bps, spread_bps, min_notional,
                          rebalance_band, max_exposure, asset_cap]).all()
             or initial_usdt <= 0 or min_notional < 0 or rebalance_band < 0
@@ -68,6 +83,20 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
             or (completed_targets.sum(axis=1) > max_exposure + 1e-12).any()):
         raise ValueError("Spot targets must align, be finite, nonnegative and within caps")
     targets = completed_targets.shift(1 + signal_delay_bars).fillna(0).to_numpy(dtype=float)
+    covariance = None
+    if completed_covariances is not None:
+        matrices = np.asarray(completed_covariances, dtype=float)
+        if matrices.shape != (len(first), len(symbols), len(symbols)):
+            raise ValueError("Completed covariance matrices must align with bars and symbols")
+        missing = np.isnan(matrices).all(axis=(1, 2))
+        ready = matrices[~missing]
+        if (not np.isfinite(ready).all()
+                or not np.allclose(ready, ready.swapaxes(1, 2), rtol=1e-10, atol=1e-12)
+                or (len(ready) and np.linalg.eigvalsh(ready).min() < -1e-12)):
+            raise ValueError("Covariance must be finite symmetric positive semidefinite or wholly missing")
+        lag = 1 + signal_delay_bars
+        covariance = np.full_like(matrices, np.nan)
+        covariance[lag:] = matrices[:-lag]
     if completed_buy_mask is None:
         buy_allowed = np.ones_like(targets, dtype=bool)
     else:
@@ -98,24 +127,49 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
         decision_peak = bound_peak
         current = qty * prices / nav
         desired = targets[i]
-        decision = not daily_control or ts.hour == 4 * signal_delay_bars
+        scheduled = not daily_control or ts.hour == 4 * signal_delay_bars
+        decision = scheduled
         rebalance = not daily_control or ts.dayofweek == 0
         final = current.copy()
-        if decision:
+        inactive = np.zeros(len(symbols), dtype=bool)
+        cap_reduction = (current > asset_cap + 1e-12) | (current.sum() > max_exposure + 1e-12)
+        risk_sales = np.zeros(len(symbols), dtype=bool)
+        info = {}
+        if scheduled:
             final = desired.copy() if rebalance else current.copy()
             inactive = desired <= 0
             final[inactive] = 0
+            if rebalance_destination == 'band_edge' and rebalance:
+                # The nearest edge minimizes ordinary turnover. Mandatory exits
+                # and existing cap breaches still trade to their required target.
+                boundary = desired - np.sign(desired - current) * rebalance_band
+                boundary = np.where(np.abs(desired - current) <= rebalance_band, current, boundary)
+                final = np.where(inactive | cap_reduction, final, boundary)
             final = np.minimum(final, asset_cap)
             if final.sum() > max_exposure:
                 final *= max_exposure / final.sum()
+                if rebalance_destination == 'band_edge':
+                    # Boundary weights may need joint projection onto the total
+                    # cap. Execute its small required sells before any additions.
+                    cap_reduction |= final < current - 1e-12
             # Compare to actual owned positions, not a signal-state approximation.
             # Block only increases; preserve inactivity exits and required cap sales.
             final = np.where(buy_allowed[i], final, np.minimum(final, current))
-            cap_reduction = (current > asset_cap + 1e-12) | (current.sum() > max_exposure + 1e-12)
+        if risk is not None:
+            constrained, info = risk.constrain(pd.Series(final, index=symbols),
+                covariance[i] if covariance is not None else None, nav, decision_peak)
+            final = constrained.to_numpy()
+            risk_sales = (info['risk_scale'] < 1 - 1e-12) & (final < current - 1e-12)
+            # Between normal decisions, constrain actual inventory and sell only.
+            decision = decision or bool(risk_sales.any())
+        if decision:
             for j in np.argsort(final - current, kind="stable"):
                 if not quoted[i, j]:
                     continue
-                if not inactive[j] and not cap_reduction[j] and abs(final[j] - current[j]) < rebalance_band:
+                if (not inactive[j] and not cap_reduction[j] and not risk_sales[j]
+                        and abs(final[j] - current[j]) < rebalance_band
+                        and not (rebalance_destination == 'band_edge' and scheduled and rebalance
+                                 and abs(desired[j] - current[j]) > rebalance_band)):
                     continue
                 state = replace(holdings[j], usdt=cash, equity=nav, exposure=float(current[j]))
                 plan = plan_trade(state, prices[j], final[j], min_notional, allow_loss_exits=True)
@@ -130,9 +184,21 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
                         "side": "buy" if fill.filled_base > 0 else "sell", "qty": abs(fill.filled_base),
                         "price": fill.avg_price, "mid_price": float(prices[j]),
                         "notional": abs(fill.filled_base) * fill.avg_price, "fee": fill.fee_paid,
-                        "slippage": fill.slippage_paid, "cash_after": cash, "base_after": updated.base})
+                        "slippage": fill.slippage_paid, "cash_after": cash, "base_after": updated.base,
+                        **({'risk_reduction': bool(risk_sales[j]), 'decision_nav': nav,
+                            'scheduled_decision': bool(scheduled)} if risk is not None else {})})
         qty = np.array([h.base for h in holdings])
         post_nav = cash + qty @ prices
+        risk_after = {}
+        if risk is not None:
+            actual_weights = qty * prices / post_nav
+            known_cov = covariance[i] if covariance is not None else None
+            actual_vol = (float(np.sqrt(max(0., actual_weights @ known_cov @ actual_weights) * 365))
+                          if known_cov is not None and np.isfinite(known_cov).all() else None)
+            risk_after = {'open_exposure_after_fills': float(actual_weights.sum()),
+                'estimated_annual_volatility_after_fills': actual_vol,
+                'risk_target_residual': bool((actual_weights > final + 1e-10).any()
+                                             and info['risk_scale'] < 1 - 1e-12)}
         observed_peak = max(observed_peak, post_nav)
         post_drawdown = post_nav / observed_peak - 1
         high = cash + qty @ arrays["high"][i]
@@ -147,10 +213,14 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
             "intraday_drawdown_bound": bound_dd, "high_bound": high, "low_bound": low,
             "exposure": (equity - cash) / equity,
             "held_unquoted_assets": int(((qty > 0) & ~quoted[i]).sum()),
-            **{f"base_{s}": qty[j] for j, s in enumerate(symbols)}})
+            **{f"base_{s}": qty[j] for j, s in enumerate(symbols)},
+            **({**info, **risk_after, 'decision_nav': nav, 'decision_peak_bound': decision_peak,
+                'planned_exposure': float(final.sum()), 'scheduled_decision': bool(scheduled)}
+               if risk is not None else {})})
     equity = pd.DataFrame(equity_rows)
     trades = pd.DataFrame(trade_rows, columns=["timestamp", "symbol", "side", "qty", "price", "mid_price",
-                                              "notional", "fee", "slippage", "cash_after", "base_after"])
+                                              "notional", "fee", "slippage", "cash_after", "base_after"]
+        + (['risk_reduction', 'decision_nav', 'scheduled_decision'] if risk is not None else []))
     net = float(equity.equity.iloc[-1]) - initial_usdt
     fees, impact = float(trades.fee.sum()), float(trades.slippage.sum())
     years = len(locations) / (6 * 365.25)
@@ -174,6 +244,11 @@ def run_intraday_spot(markets, completed_targets, *, start=None, end=None,
                                    for j, s in enumerate(symbols)},
         "sharpe": float(returns.mean() / vol * np.sqrt(365)) if vol > 0 else 0.,
         "rolling_gains": rolling_gains(daily, initial_usdt)}
+    if risk is not None:
+        summary.update(risk_reduction_fills=int(trades.risk_reduction.sum()),
+            risk_target_residual_bars=int(equity.risk_target_residual.sum()),
+            max_estimated_open_volatility=(float(equity.estimated_annual_volatility_after_fills.max())
+                if equity.estimated_annual_volatility_after_fills.notna().any() else None))
     return equity, trades, summary
 
 

@@ -11,10 +11,34 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest spot experiments: **2026-10-09**; optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
+Latest fixed-allocation benchmark audit: **2026-10-23**; Möbius/theta diagnostic: **2026-10-22**; prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
+optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
-Each account starts with 1,000 USDT. Full history is one continuous account from
+The new [fixed-allocation audit](docs/evaluation/THETABOT_ALLOCATION_BENCHMARKS_2026-10-23.md)
+compares the unchanged guarded momentum policy with cash, 25%/50% equal targets
+and capped inverse-volatility targets without momentum. All share execution
+and requested risk settings; references rebalance weekly and sell for risk.
+They are not literal buy-and-hold or exactly matched realized-risk portfolios.
+For 10,000 USDT over January 2022–September 2026, guarded momentum earns
+**+83.37% nominal / +70.47% combined stress**, versus **+31.84% / +32.75%**
+for equal-25, **+50.39% / +49.75%** for equal-50 and **+50.90% / +50.09%**
+for inverse-volatility. Worst full drawdowns are **15.03%, 19.83%, 28.30% and
+28.68%**, respectively; nominal realized annual daily volatility is
+**11.65%, 12.28%, 16.40% and 16.63%**. The fixed incremental-value screen passes
+at both 1,000 and 10,000 USDT. This supports the existing momentum rule on known
+history, without establishing future alpha or production eligibility.
+
+The 10,000-USDT full-history terminal surplus over the invested references
+corresponds to **35.78–66.20 USDT per calendar month under combined stress**.
+This is descriptive headroom for *additional* operating costs relative to each
+reference, not a monthly withdrawal replay or income forecast. Both policies
+can incur operating costs. Full provenance, 120 reconciled paths, 24 reproduced
+old controls and ten independently audited CSV accounts are retained with the
+[frozen plan](docs/evaluation/ALLOCATION_BENCHMARK_RESEARCH_PLAN.md).
+
+The earlier signal-comparison table below starts each account with 1,000 USDT.
+Full history is one continuous account from
 January 2022 through September 2026; the later comparison is a separate continuous
 account from January 2025 through September 2026. Net results include modeled
 0.1% fees per fill, 5bps slippage and half a 2bps spread. Cost stress doubles fees
@@ -40,7 +64,7 @@ Consensus stays within the budget in these three historical scenarios but earns
 less than capped allocation and does not pass the fixed improvement screen.
 None of these comparisons establishes a production-ready strategy.
 
-The latest experiment expands to **15 assets from a dated December 2021 cohort**,
+The broad-universe experiment expands to **15 assets from a dated December 2021 cohort**,
 with historical liquidity selection, weekly ranks, old/new Terra separation and
 documented MATIC/POL continuity. Development freezes `broad_top5_vol20` before
 later economic replay. All six broader policies trail both controls on full
@@ -55,6 +79,102 @@ windows do not estimate independent future doubling probabilities.
 
 - [Broad-universe results, source audits and all rejected variants](docs/evaluation/THETABOT_BROAD_UNIVERSE_2026-10-09.md) · [JSON evidence](docs/evaluation/THETABOT_BROAD_UNIVERSE_2026-10-09.json) · [Fixed protocol](docs/evaluation/BROAD_UNIVERSE_RESEARCH_PLAN.md)
 - [Multiscale, cost and timing results](docs/evaluation/THETABOT_MULTISCALE_SPOT_2026-10-09.md) · [Fixed protocol](docs/evaluation/MULTISCALE_SPOT_RESEARCH_PLAN.md)
+
+The Bayesian/Monte Carlo follow-up adds two causal five-day log-return experts
+and a mixture weighted by already completed joint forecast errors. Bayesian
+regression separates predictive variance from uncertainty in its mean. Conditional
+Monte Carlo samples whole completed return blocks from similar historical price,
+volume and theta states; sampling does not add independent market information.
+Eight fixed policies compare buy filters and optional target blends against the
+existing capped spot strategy and a matching warmup-only control.
+
+For a separately funded 10,000-USDT account over January 2022–September 2026,
+spot earns **+108.82%**, warmup alone **+113.01%**, the Bayesian blend **+58.21%**,
+MC blend **+56.30%** and combined blend **+60.50%**, after modeled costs.
+The combined blend's worst full modeled DD is **12.89%**, versus **21.16%** spot,
+but reduced exposure earns less. All three experts have worse log-return MSE and
+gain-probability Brier loss than unconditional history on identical full/later
+rows. The frozen choice for both account sizes is the warmup-only control; its
+full joint-stress drawdown exceeds the 20% budget. No economic improvement passes.
+
+The MC buy filter changes full net profit from **+7.08% to +19.45%** solely with
+the three fixed seeds; thresholds can amplify numerical sampling differences.
+The study reconciles **368 paths**, reproduces **32 archived controls**, and audits
+**31,212 source decisions** plus all 16 full nominal exported ledgers. The
+integration defaults off, preserves the original target when disabled, and
+adds no live strategy choice or option exposure.
+
+- [Bayesian/Monte Carlo results and rejected variants](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.md) · [Compressed JSON evidence](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.json.gz) · [Complete CSV audit archive](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12_EVIDENCE.zip) · [Fixed protocol](docs/evaluation/BAYES_MONTE_CARLO_RESEARCH_PLAN.md)
+
+The cost/risk follow-up changes execution rather than adding another forecast.
+Ordinary rebalances can trade to the nearest edge of the same 1pp band; mandatory
+inactivity/cap sales still bypass it. An optional 15% annualized volatility guard
+checks actual held weights at each 4h open using only completed, lagged daily
+covariance. It reduces the proposed exposure and never replenishes cash or adds
+leverage. Both options are disabled in the original replay defaults.
+
+The combined `guarded_edge` policy was fixed before development payoffs; the
+separate band/risk changes are diagnostic ablations, not later replacements.
+For **10,000 initial USDT**, over January 2022–September 2026, its modeled net
+profit is **+83.37%**, versus **+108.82%** control; joint cost/time stress gives
+**+70.47%**, versus **+84.20%**. Worst full-period conservative DD improves from
+**21.16% to 15.03%**. Full nominal fees/impact fall from **1,238.57 to 857.55 USDT**,
+but more frequent risk reductions increase fill count from 818 to 1,321.
+For both account sizes the risk screen passes and the profit-improvement screen
+fails. Lower exposure/risk must not be described as newly discovered alpha.
+Minimum-notional residuals are disclosed; requested volatility and historical
+drawdown limits are not future guarantees. No live selection is enabled.
+
+All **160 paths** reconcile; **40 archived controls** reproduce. The study
+rechecks **171 official archive checksums** and exports all 32 full accounts.
+A separate NumPy CSV audit verifies **332,928 bars and 23,041 fills**, including
+source-open prices, costs, drawdown and actual-holdings covariance mathematics.
+
+- [Cost/risk results and tradeoffs](docs/evaluation/THETABOT_COST_RISK_2026-10-13.md) · [Compressed JSON](docs/evaluation/THETABOT_COST_RISK_2026-10-13.json.gz) · [CSV evidence manifest](docs/evaluation/THETABOT_COST_RISK_2026-10-13_EVIDENCE.zip.manifest.json) · [Fixed protocol](docs/evaluation/COST_RISK_RESEARCH_PLAN.md)
+
+Prospective validation now separates future observations from that known history.
+A frozen protocol binds the two existing policies, capital, costs, source hashes,
+runtime and a future UTC start. Explicit snapshots collect only complete official
+spot 4h bars. Each update replays the entire funded forward account and checks
+every previously accepted data row, receipt and ledger; changing history or
+rules, rewinding time, stale data and concurrent writers fail closed.
+
+The preliminary screen needs **180 full days of closed forward bars**, positive
+candidate P&L under all four cost/time scenarios, profit above the same control
+in nominal/joint stress, reconciled accounts and conservative drawdown within 20%.
+An early drawdown breach rejects it immediately. Passing never enables live
+trading. This is a fixed model replay, not measured executable paper orders;
+the public protocol commit must predate the forward boundary. No background
+collection or automatic trading is started by these commands.
+
+- [Forward-validation plan](docs/evaluation/FORWARD_VALIDATION_PLAN.md)
+- [Published freeze](docs/evaluation/THETABOT_FORWARD_PROTOCOL_2026-10-16.json) · [Initial source/state evidence](docs/evaluation/THETABOT_FORWARD_INITIAL_2026-10-16.json) · [Raw snapshot and receipt](docs/evaluation/THETABOT_FORWARD_INITIAL_2026-10-16_EVIDENCE.zip)
+
+The published freeze starts scoring at **2026-10-17 00:00 UTC**. Its initial
+public-feed check contains 719 warmup bars per asset and **zero forward bars**;
+the phase is `waiting_for_start`, not a successful performance result. The first
+possible 180-day endpoint is **2027-04-15 00:00 UTC**, subject to complete data
+and all other gates. Collection/evaluation still require explicit invocations.
+
+The fixed Möbius/theta diagnostic tests completed-return extrapolation as an
+additional buy gate on the same guarded momentum strategy. For 10,000 USDT,
+full January 2022–September 2026 net falls from **+83.37%** without a gate to
+**+42.15%** with the full theta gate and **+39.12%** with Möbius weighting;
+the latter's worst modeled full DD is **16.35%**, versus **15.03%** control.
+The separately funded 2025–September 2026 comparison gives **+30.78%, +15.09%
+and +12.52%**, respectively. The candidate fails the frozen improvement screen.
+
+Unregularized full theta and plain cosine forecasts agree to 1.32e-16;
+Möbius weighting and simple squarefree-frequency selection agree to 4.86e-17,
+with exactly identical buy masks on all source rows. Exact Möbius scale inversion
+reduces theta3 to a single cosine. None of these transformations supplies an
+independent market signal. Later predictive correlations are near zero and the
+Möbius MSE exceeds the simple trailing-mean control. The test reproduces 24 old
+control paths, reconciles 120 distinct paths and independently audits 10 exported
+full accounts. Known history is reused; the earlier forward protocol's source
+fingerprint and live settings are preserved.
+
+- [Möbius/theta results](docs/evaluation/THETABOT_MOBIUS_THETA_2026-10-22.md) · [Complete JSON](docs/evaluation/THETABOT_MOBIUS_THETA_2026-10-22.json.gz) · [Frozen plan](docs/evaluation/MOBIUS_THETA_RESEARCH_PLAN.md) · [Published protocol](docs/evaluation/THETABOT_MOBIUS_PROTOCOL_2026-10-22.json) · [CSV evidence manifest](docs/evaluation/THETABOT_MOBIUS_THETA_2026-10-22_EVIDENCE.zip.manifest.json)
 
 The optional paid-option model initially reserves 10% of the original account,
 with monthly purchases capped at 20% of that sleeve's current cash, including
@@ -210,6 +330,21 @@ python -m scripts.write_option_budgets_report
 # Causal option payoff forecasts, warmup-only controls and forecast uncertainty
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_option_selection --options-enabled
 python -m scripts.write_option_selection_report
+
+# Optional Bayesian/conditional-Monte-Carlo spot signal overlays
+python -m scripts.research_bayes_monte_carlo --probabilistic-enabled --jobs 4
+python -m scripts.write_bayes_monte_carlo_report
+
+# Fixed cost/risk execution study; freeze before any new candidate payoffs
+python -m scripts.research_cost_risk --freeze-only
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_cost_risk --jobs 4 --report-out docs/evaluation
+python -m scripts.audit_cost_risk
+
+# Prospective model replay: publish the protocol before its future start
+python -m scripts.forward_spot freeze --protocol artifacts/forward_spot/protocol.json
+python -m scripts.download_forward_spot --protocol artifacts/forward_spot/protocol.json --out data/raw/forward_spot
+# SNAPSHOT is the immutable directory printed by the downloader
+python -m scripts.forward_spot evaluate --protocol artifacts/forward_spot/protocol.json --data SNAPSHOT --out artifacts/forward_spot/accounts
 ```
 
 Each fixed study persists its development selection before later economic replay.
@@ -273,6 +408,8 @@ These are research references, not production-profit certificates.
 | 20% historical risk-budget comparison | [Results](docs/evaluation/THETABOT_RISK_BUDGET_2026-10-06.md) |
 | Portfolio execution and sizing sensitivity | [Execution](docs/evaluation/THETABOT_EXECUTION_PORTFOLIO_2026-10-06.md) · [Sizing](docs/evaluation/THETABOT_EXPOSURE_2026-10-06.md) |
 | Multi-model forecasts and correlation-aware Kalman fusion | [Results](docs/evaluation/THETABOT_MULTI_2026-10-06.md) |
+| Bayesian/conditional-Monte-Carlo spot signal overlays | [Results](docs/evaluation/THETABOT_BAYES_MONTE_CARLO_2026-10-12.md) |
+| Ordinary band-edge execution and actual-holdings volatility guard | [Results](docs/evaluation/THETABOT_COST_RISK_2026-10-13.md) |
 | Single-asset chronological audit | [Results](docs/evaluation/THETABOT_2026-10-06.md) |
 
 Higher historical exposure and legacy execution metrics in earlier reports are
@@ -284,10 +421,23 @@ Greed; its joint oil/macro test does not isolate miners' electricity costs.
 
 ## Verification and remaining work
 
-The 2026-10-09 research code passed **590 regression tests and 8 legacy metrics
-tests**. Its [CI run](https://github.com/DavJ/theta-bot/actions/runs/37995546773)
-verified pandas 3.0.6 / NumPy 2.5.3, entry-point syntax, chronological evaluation
-and evidence upload. Tests cover future-prefix invariance, token identity,
+The cost/risk change adds 25 focused cases for completed covariance clocks,
+ordinary turnover, required cap sales, actual inventory reductions, minimum
+notionals, unchanged defaults, prefix invariance, independent CSV math and
+corruption rejection. The preceding Bayesian/Monte Carlo study passed 669
+regression tests and eight legacy tests; its predictive/economic failures remain
+documented. The final cost/risk tree passes **694 regression tests and eight
+legacy tests locally**, plus the chronological evaluator and entry-point syntax.
+The prospective layer adds 21 focused cases; the complete updated tree passes
+**715 regression and eight legacy tests locally**. These verify the software and
+the evidence controls, not world-leading profitability.
+The fixed-allocation audit adds 24 focused cases; the complete tree passes
+**763 regression and eight legacy tests locally**. The new cases cover completed
+day publication, future-prefix invariance, independently computed capped weights,
+owned funding, risk warmup and rejection of altered source/runtime freezes.
+The [CI workflow](https://github.com/DavJ/theta-bot/actions/workflows/eval-metrics.yml)
+also checks entry-point syntax, chronological evaluation and evidence upload.
+The broader suite covers future-prefix invariance, token identity,
 publication clocks, sparse quotes, owned balances and independent accounting.
 CI success proves these checks passed; it does not prove future profit or replace
 a security review.

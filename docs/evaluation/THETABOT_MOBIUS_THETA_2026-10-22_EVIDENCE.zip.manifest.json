@@ -1,0 +1,18 @@
+{
+  "file": "THETABOT_MOBIUS_THETA_2026-10-22_EVIDENCE.zip",
+  "bytes": 8820150,
+  "sha256": "d31ad178bd8069cf635099dfcd438620f26a894d805afbc6866ab8eb0f3949d9",
+  "parts": [
+    {
+      "file": "THETABOT_MOBIUS_THETA_2026-10-22_EVIDENCE.zip.part001",
+      "bytes": 5000000,
+      "sha256": "b5f212c0fea2cdb1cab3e0dad8486e6016658c8f04e206271e67df8839d5e464"
+    },
+    {
+      "file": "THETABOT_MOBIUS_THETA_2026-10-22_EVIDENCE.zip.part002",
+      "bytes": 3820150,
+      "sha256": "4b52102c9074fff839d6b8ff357c504585f2b19aca752fe4523409dde44e23d8"
+    }
+  ],
+  "reassemble": "Concatenate parts in listed order; verify the complete SHA-256 before unzipping."
+}
