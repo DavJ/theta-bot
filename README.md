@@ -11,9 +11,24 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest fixed-allocation benchmark audit: **2026-10-23**; Möbius/theta diagnostic: **2026-10-22**; prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
+Latest public-depth execution calibration and fixed-allocation benchmark audit: **2026-10-23**; Möbius/theta diagnostic: **2026-10-22**; prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
 optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
+
+The [public-depth calibration](docs/evaluation/THETABOT_DEPTH_PAPER_2026-10-23.md)
+adds conditional paper execution across visible bid/ask levels, exact quantity
+steps, owned funding and quote-fee accounting. Its protocol was published before
+reading the six BTC/ETH/BNB USDT/USDC books. The first capture supports **48
+independently funded static round-trip probes and 96 audited legs**. With a
+hypothetical 0.1% quote fee per leg, 2,500-quote nominal round-trip costs range
+from **0.1998% to 0.2059%**; modeled stress is approximately **0.499–0.505%**.
+Actual account commissions remain unknown. These probes measure conditional
+execution cost, not strategy profit or actual exchange fills. REST depth has
+no source book timestamp. One batch fails the fixed 200-book/30-day coverage
+gate, and historical cost assumptions remain unchanged. The explicit collector
+uses two public GET endpoints; no background collection is started. The
+[fixed plan](docs/evaluation/DEPTH_PAPER_EXECUTION_PLAN.md) documents the
+unverified reference-price, account and execution-rule constraints.
 
 The new [fixed-allocation audit](docs/evaluation/THETABOT_ALLOCATION_BENCHMARKS_2026-10-23.md)
 compares the unchanged guarded momentum policy with cash, 25%/50% equal targets
@@ -435,6 +450,10 @@ The fixed-allocation audit adds 24 focused cases; the complete tree passes
 **763 regression and eight legacy tests locally**. The new cases cover completed
 day publication, future-prefix invariance, independently computed capped weights,
 owned funding, risk warmup and rejection of altered source/runtime freezes.
+The depth-paper layer adds 34 focused cases; the current tree passes
+**797 regression and eight legacy tests locally**. These check depth consumption,
+exact lot steps, fee-inclusive cash budgets, refusal of unavailable liquidity,
+observation clocks, independent rational accounting and immutable evidence.
 The [CI workflow](https://github.com/DavJ/theta-bot/actions/workflows/eval-metrics.yml)
 also checks entry-point syntax, chronological evaluation and evidence upload.
 The broader suite covers future-prefix invariance, token identity,
