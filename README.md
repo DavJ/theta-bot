@@ -11,11 +11,34 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest Möbius/theta diagnostic: **2026-10-22**; prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
+Latest fixed-allocation benchmark audit: **2026-10-23**; Möbius/theta diagnostic: **2026-10-22**; prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
 optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
-Each account starts with 1,000 USDT. Full history is one continuous account from
+The new [fixed-allocation audit](docs/evaluation/THETABOT_ALLOCATION_BENCHMARKS_2026-10-23.md)
+compares the unchanged guarded momentum policy with cash, 25%/50% equal targets
+and capped inverse-volatility targets without momentum. All share execution
+and requested risk settings; references rebalance weekly and sell for risk.
+They are not literal buy-and-hold or exactly matched realized-risk portfolios.
+For 10,000 USDT over January 2022–September 2026, guarded momentum earns
+**+83.37% nominal / +70.47% combined stress**, versus **+31.84% / +32.75%**
+for equal-25, **+50.39% / +49.75%** for equal-50 and **+50.90% / +50.09%**
+for inverse-volatility. Worst full drawdowns are **15.03%, 19.83%, 28.30% and
+28.68%**, respectively; nominal realized annual daily volatility is
+**11.65%, 12.28%, 16.40% and 16.63%**. The fixed incremental-value screen passes
+at both 1,000 and 10,000 USDT. This supports the existing momentum rule on known
+history, without establishing future alpha or production eligibility.
+
+The 10,000-USDT full-history terminal surplus over the invested references
+corresponds to **35.78–66.20 USDT per calendar month under combined stress**.
+This is descriptive headroom for *additional* operating costs relative to each
+reference, not a monthly withdrawal replay or income forecast. Both policies
+can incur operating costs. Full provenance, 120 reconciled paths, 24 reproduced
+old controls and ten independently audited CSV accounts are retained with the
+[frozen plan](docs/evaluation/ALLOCATION_BENCHMARK_RESEARCH_PLAN.md).
+
+The earlier signal-comparison table below starts each account with 1,000 USDT.
+Full history is one continuous account from
 January 2022 through September 2026; the later comparison is a separate continuous
 account from January 2025 through September 2026. Net results include modeled
 0.1% fees per fill, 5bps slippage and half a 2bps spread. Cost stress doubles fees
@@ -408,6 +431,10 @@ legacy tests locally**, plus the chronological evaluator and entry-point syntax.
 The prospective layer adds 21 focused cases; the complete updated tree passes
 **715 regression and eight legacy tests locally**. These verify the software and
 the evidence controls, not world-leading profitability.
+The fixed-allocation audit adds 24 focused cases; the complete tree passes
+**763 regression and eight legacy tests locally**. The new cases cover completed
+day publication, future-prefix invariance, independently computed capped weights,
+owned funding, risk warmup and rejection of altered source/runtime freezes.
 The [CI workflow](https://github.com/DavJ/theta-bot/actions/workflows/eval-metrics.yml)
 also checks entry-point syntax, chronological evaluation and evidence upload.
 The broader suite covers future-prefix invariance, token identity,
