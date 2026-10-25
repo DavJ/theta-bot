@@ -1,0 +1,18 @@
+{
+  "file": "THETABOT_RISK_UTILIZATION_2026-10-25_EVIDENCE.zip",
+  "bytes": 6226853,
+  "sha256": "c5baa85cce0e09659d186d118eca0de2a4c0f141bdcd320a3335404e147b123e",
+  "parts": [
+    {
+      "file": "THETABOT_RISK_UTILIZATION_2026-10-25_EVIDENCE.zip.part001",
+      "bytes": 5000000,
+      "sha256": "d96a6023dcc04e58066c137ffa93411ad6a957afc2049394b103aa5b376c2718"
+    },
+    {
+      "file": "THETABOT_RISK_UTILIZATION_2026-10-25_EVIDENCE.zip.part002",
+      "bytes": 1226853,
+      "sha256": "4936096714cdbb200e24a178581a8a55a322c64327cf682fa07eb6b691096f4f"
+    }
+  ],
+  "reassemble": "Concatenate listed parts and verify complete SHA-256 before unzipping."
+}
