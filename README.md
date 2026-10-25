@@ -55,6 +55,37 @@ and matching archives, with a fresh selection timestamp. Existing prospective
 and public-depth protocols retain their source fingerprints. These results add
 research candidates; production profitability remains unestablished.
 
+The [fixed calendar/asset-omission audit](docs/evaluation/THETABOT_ROBUSTNESS_2026-10-25.md)
+keeps all four policies and replays 10,000-USDT accounts without each asset in
+turn, with the existing capped budget redistributed to eligible retained assets.
+The fixed entry-20 candidate remains profitable in all later/full omission
+accounts under nominal and combined stress, and every omission path stays within
+the historical 20% drawdown budget. Full nominal/joint returns are **79.88%/61.63%**
+without BTC, **80.52%/67.22%** without ETH and **78.61%/62.09%** without BNB,
+versus **98.13%/78.28%** with all three. No subset replaces the fixed universe.
+
+Actual nominal net contributions in the original entry-20 account are
+**3,044.37 USDT BTC, 3,308.10 ETH and 3,460.07 BNB**. These sum to the shared
+account's **9,812.54-USDT** profit and include each asset's fees/impact; they are
+not stand-alone strategy returns. The full omission replays account for different
+cash allocation and risk scaling. This diagnostic supports that the known-history
+profit is not supplied by only one of these three surviving assets.
+
+Calendar results still show losses: entry-20 has **6/46 negative rolling
+12-month windows**, worst **-5.98%**, and a **-10.11% worst month** nominally;
+combined stress has **7/46 negative windows**, worst **-4.90%**. The windows
+overlap, so these fractions are not future probabilities. Entry-15 has four
+negative nominal windows with worst **-4.65%**. Excluding the best three months
+mathematically leaves entry-20 at **+40.04% nominal / +26.48% combined stress**;
+this is ex-post concentration arithmetic, not an executable timing strategy.
+The study reconciles **96 paths**, reproduces **24 preceding controls** and
+independently audits **14 full accounts**. It adds no new signal, parameter
+selection or unseen evidence, and does not establish dependable monthly income.
+The full-history accounts begin in cash and require 60 completed daily returns
+before sizing; entry-20 first buys on **2022-03-21**. The 2022 result therefore
+includes an initial cash/warmup phase. Later accounts can use preceding price
+history but start with their own cash and no inherited positions.
+
 The [public-depth calibration](docs/evaluation/THETABOT_DEPTH_PAPER_2026-10-23.md)
 adds conditional paper execution across visible bid/ask levels, exact quantity
 steps, owned funding and quote-fee accounting. Its protocol was published before
@@ -420,6 +451,8 @@ python -m scripts.research_entry_hysteresis freeze
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_entry_hysteresis run --jobs 4
 python -m scripts.research_risk_utilization freeze
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_risk_utilization run --jobs 4
+python -m scripts.research_robustness freeze
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m scripts.research_robustness run --jobs 4
 
 # Prospective model replay: publish the protocol before its future start
 python -m scripts.forward_spot freeze --protocol artifacts/forward_spot/protocol.json
@@ -493,6 +526,7 @@ These are research references, not production-profit certificates.
 | Ordinary band-edge execution and actual-holdings volatility guard | [Results](docs/evaluation/THETABOT_COST_RISK_2026-10-13.md) |
 | Fixed entry hysteresis and diagnostic confirmations | [Results](docs/evaluation/THETABOT_ENTRY_HYSTERESIS_2026-10-25.md) |
 | Fixed 15%/17.5%/20% volatility requests | [Results](docs/evaluation/THETABOT_RISK_UTILIZATION_2026-10-25.md) |
+| Fixed asset omissions, calendar losses and asset attribution | [Results](docs/evaluation/THETABOT_ROBUSTNESS_2026-10-25.md) |
 | Single-asset chronological audit | [Results](docs/evaluation/THETABOT_2026-10-06.md) |
 
 Higher historical exposure and legacy execution metrics in earlier reports are
@@ -530,6 +564,15 @@ The entry/risk follow-up adds **54 focused cases**, all passing locally, plus
 entry-state memory, strict hurdle/warmup, future-prefix invariance, unchanged
 controls and prior frozen sources, configured-risk raw CSV reconciliation,
 corrupted risk fields, both covariance lags and altered protocol/report rejection.
+The calendar/omission audit adds **38 focused cases**, all passing locally.
+They check budget redistribution, absence of omitted inventory/fills with both
+lags, compounded calendar/rolling returns without account resets, complete-month
+boundaries, log-return concentration, asset attribution including price gaps and
+fees/impact, and rejection of altered evidence even after outer rehashing.
+An additional standard-library evidence test recomputes **798 monthly returns
+and 1,120 overlapping 12/24-month windows** with Decimal arithmetic from the
+14 published raw accounts, and verifies all **64 CSV checksums**, calendar
+years, concentration arithmetic, source fingerprints and attribution totals.
 The [CI workflow](https://github.com/DavJ/theta-bot/actions/workflows/eval-metrics.yml)
 also checks entry-point syntax, chronological evaluation and evidence upload.
 The broader suite covers future-prefix invariance, token identity,

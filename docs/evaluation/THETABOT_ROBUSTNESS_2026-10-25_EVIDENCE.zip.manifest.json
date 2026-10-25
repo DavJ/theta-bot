@@ -1,0 +1,23 @@
+{
+  "file": "THETABOT_ROBUSTNESS_2026-10-25_EVIDENCE.zip",
+  "bytes": 10354439,
+  "sha256": "d802a32f4b9ae7ea6154fd577c560b22bbbffe1c6b3fc7c11f677c13fcc551f2",
+  "parts": [
+    {
+      "file": "THETABOT_ROBUSTNESS_2026-10-25_EVIDENCE.zip.part001",
+      "bytes": 5000000,
+      "sha256": "67d5bfc34928f7a8fa14f5eb820b09b96a8afd78e467a0332beade31b5a088ba"
+    },
+    {
+      "file": "THETABOT_ROBUSTNESS_2026-10-25_EVIDENCE.zip.part002",
+      "bytes": 5000000,
+      "sha256": "b6e5532dd566cc2be438076420739d6bcdbae47a7700cdda12394aa310ae27f9"
+    },
+    {
+      "file": "THETABOT_ROBUSTNESS_2026-10-25_EVIDENCE.zip.part003",
+      "bytes": 354439,
+      "sha256": "fe37bf0b9386bbe1064965ca24d298166f3ee60ddffa23ec8181d8acb1e47f1f"
+    }
+  ],
+  "reassemble": "Concatenate listed parts and verify complete SHA-256 before unzipping."
+}
