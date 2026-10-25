@@ -1,0 +1,18 @@
+{
+  "file": "THETABOT_ENTRY_HYSTERESIS_2026-10-25_EVIDENCE.zip",
+  "bytes": 7772573,
+  "sha256": "14f15c941f13d7cb676f783b4873502bb6e5129c51bf8fe66ad8c18be6fa9ed4",
+  "parts": [
+    {
+      "file": "THETABOT_ENTRY_HYSTERESIS_2026-10-25_EVIDENCE.zip.part001",
+      "bytes": 5000000,
+      "sha256": "d54fd754e146bdb62e110a8054b723a69472e240c096f7778f33cfda3aee4f38"
+    },
+    {
+      "file": "THETABOT_ENTRY_HYSTERESIS_2026-10-25_EVIDENCE.zip.part002",
+      "bytes": 2772573,
+      "sha256": "117785cd219923794bb2379733759d97ecbf607ecfd977f04e4133161600cf42"
+    }
+  ],
+  "reassemble": "Concatenate listed parts and verify complete SHA-256 before unzipping."
+}
