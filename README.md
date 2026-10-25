@@ -11,7 +11,7 @@ theta-derived forecasts and additional signal sources remain research modules.
 
 ## Current results
 
-Latest public-depth execution calibration and fixed-allocation benchmark audit: **2026-10-23**; Möbius/theta diagnostic: **2026-10-22**; prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
+Latest public-depth execution calibration: **2026-10-25**; fixed-allocation benchmark audit: **2026-10-23**; Möbius/theta diagnostic: **2026-10-22**; prospective-validation tooling: **2026-10-16**; execution/risk study: **2026-10-13**; signal models: **2026-10-12**;
 optional long-option models: **2026-10-10 / 2026-10-12**. These are historical simulations,
 with previously studied periods, rather than newly unseen confirmation data.
 
@@ -29,6 +29,25 @@ gate, and historical cost assumptions remain unchanged. The explicit collector
 uses two public GET endpoints; no background collection is started. The
 [fixed plan](docs/evaluation/DEPTH_PAPER_EXECUTION_PLAN.md) documents the
 unverified reference-price, account and execution-rule constraints.
+
+The [2026-10-25 continuation](docs/evaluation/THETABOT_DEPTH_PAPER_2026-10-25T020053Z_51206499ac4f.md)
+retains both captures in one verified archive: **96 conditional round trips and
+192 audited legs**, with two distinct books per market spanning approximately
+**29.4 hours**. Latest 2,500-quote nominal costs are approximately
+**0.1998–0.2011%** under the same frozen model. Coverage remains sparse and the
+200-book/30-day gate is unmet. The new publication wrapper uses UTC observation
+times and capture hashes in filenames, rejects conflicting existing files, and
+normalizes ZIP metadata for repeatable evidence. Original source/protocol and
+the first published capture remain unchanged. Explicit continuation:
+
+```bash
+python -m scripts.write_depth_paper_report \
+  --protocol docs/evaluation/THETABOT_DEPTH_PROTOCOL_2026-10-23.json \
+  --out artifacts/depth_paper --collect
+```
+
+Restore the latest verified evidence archive's captures, reports and protocol
+before continuing an existing study; follow the report's reproduction notes.
 
 The new [fixed-allocation audit](docs/evaluation/THETABOT_ALLOCATION_BENCHMARKS_2026-10-23.md)
 compares the unchanged guarded momentum policy with cash, 25%/50% equal targets
@@ -450,10 +469,13 @@ The fixed-allocation audit adds 24 focused cases; the complete tree passes
 **763 regression and eight legacy tests locally**. The new cases cover completed
 day publication, future-prefix invariance, independently computed capped weights,
 owned funding, risk warmup and rejection of altered source/runtime freezes.
-The depth-paper layer adds 34 focused cases; the current tree passes
+The depth-paper layer adds 34 focused cases; that tree passed
 **797 regression and eight legacy tests locally**. These check depth consumption,
 exact lot steps, fee-inclusive cash budgets, refusal of unavailable liquidity,
 observation clocks, independent rational accounting and immutable evidence.
+The publication wrapper adds three cases for deterministic replay, conflict
+rejection without changing any files, and safe capture identity. All **37
+depth/publication cases pass locally**; the full suite also runs in CI.
 The [CI workflow](https://github.com/DavJ/theta-bot/actions/workflows/eval-metrics.yml)
 also checks entry-point syntax, chronological evaluation and evidence upload.
 The broader suite covers future-prefix invariance, token identity,
